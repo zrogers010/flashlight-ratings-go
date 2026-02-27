@@ -6,14 +6,14 @@ VALUES
     ('Sofirn', 'sofirn', 'CN', 'https://www.sofirnlight.com')
 ON CONFLICT (slug) DO NOTHING;
 
-INSERT INTO flashlights (brand_id, name, slug, model_code, description, is_active)
-SELECT b.id, 'FC11C', 'wurkkos-fc11c', 'FC11C', 'USB-C EDC flashlight with balanced flood/throw.', TRUE
+INSERT INTO flashlights (brand_id, name, slug, model_code, description, launch_date, msrp_usd, is_active)
+SELECT b.id, 'FC11C', 'wurkkos-fc11c', 'FC11C', 'USB-C EDC flashlight with balanced flood/throw.', DATE '2023-01-01', 44.99, TRUE
 FROM brands b
 WHERE b.slug = 'wurkkos'
 ON CONFLICT (slug) DO NOTHING;
 
-INSERT INTO flashlights (brand_id, name, slug, model_code, description, is_active)
-SELECT b.id, 'IF22A', 'sofirn-if22a', 'IF22A', 'Compact throw-focused flashlight with high candela.', TRUE
+INSERT INTO flashlights (brand_id, name, slug, model_code, description, launch_date, msrp_usd, is_active)
+SELECT b.id, 'IF22A', 'sofirn-if22a', 'IF22A', 'Compact throw-focused flashlight with high candela.', DATE '2022-01-01', 69.99, TRUE
 FROM brands b
 WHERE b.slug = 'sofirn'
 ON CONFLICT (slug) DO NOTHING;
@@ -21,22 +21,29 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO flashlight_specs (
     flashlight_id,
     max_lumens,
+    sustained_lumens,
     max_candela,
     beam_distance_m,
+    runtime_500_min,
     runtime_medium_min,
     runtime_high_min,
+    turbo_stepdown_sec,
+    beam_pattern,
     battery_included,
     battery_rechargeable,
+    battery_replaceable,
+    recharge_type,
     usb_c_rechargeable,
     weight_g,
     length_mm,
     waterproof_rating,
     impact_resistance_m,
+    body_material,
     has_strobe,
     has_lockout,
     has_pocket_clip
 )
-SELECT f.id, 1200, 12000, 220, 300, 95, TRUE, TRUE, TRUE, 79.0, 116.0, 'IPX7', 1.0, TRUE, TRUE, TRUE
+SELECT f.id, 1200, 650, 12000, 220, 145, 300, 95, 65, 'hybrid', TRUE, TRUE, TRUE, 'usb-c', TRUE, 79.0, 116.0, 'IPX7', 1.0, 'Aluminum', TRUE, TRUE, TRUE
 FROM flashlights f
 WHERE f.slug = 'wurkkos-fc11c'
 ON CONFLICT (flashlight_id) DO NOTHING;
@@ -44,22 +51,29 @@ ON CONFLICT (flashlight_id) DO NOTHING;
 INSERT INTO flashlight_specs (
     flashlight_id,
     max_lumens,
+    sustained_lumens,
     max_candela,
     beam_distance_m,
+    runtime_500_min,
     runtime_medium_min,
     runtime_high_min,
+    turbo_stepdown_sec,
+    beam_pattern,
     battery_included,
     battery_rechargeable,
+    battery_replaceable,
+    recharge_type,
     usb_c_rechargeable,
     weight_g,
     length_mm,
     waterproof_rating,
     impact_resistance_m,
+    body_material,
     has_strobe,
     has_lockout,
     has_pocket_clip
 )
-SELECT f.id, 2100, 85000, 680, 220, 75, TRUE, TRUE, TRUE, 126.0, 127.0, 'IPX8', 1.0, TRUE, TRUE, TRUE
+SELECT f.id, 2100, 950, 85000, 680, 120, 220, 75, 45, 'throw', TRUE, TRUE, TRUE, 'usb-c', TRUE, 126.0, 127.0, 'IPX8', 1.0, 'Aluminum', TRUE, TRUE, TRUE
 FROM flashlights f
 WHERE f.slug = 'sofirn-if22a'
 ON CONFLICT (flashlight_id) DO NOTHING;
@@ -67,7 +81,12 @@ ON CONFLICT (flashlight_id) DO NOTHING;
 INSERT INTO use_cases (name, slug)
 VALUES
     ('Tactical', 'tactical'),
-    ('Everyday Carry', 'edc')
+    ('Everyday Carry', 'edc'),
+    ('Law Enforcement', 'law-enforcement'),
+    ('Camping', 'camping'),
+    ('Search & Rescue', 'search-rescue'),
+    ('Weapon Mount', 'weapon-mount'),
+    ('Keychain', 'keychain')
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
@@ -81,6 +100,27 @@ INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
 SELECT f.id, u.id, 0.98
 FROM flashlights f
 JOIN use_cases u ON u.slug = 'tactical'
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
+
+INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
+SELECT f.id, u.id, 0.87
+FROM flashlights f
+JOIN use_cases u ON u.slug = 'camping'
+WHERE f.slug = 'wurkkos-fc11c'
+ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
+
+INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
+SELECT f.id, u.id, 0.82
+FROM flashlights f
+JOIN use_cases u ON u.slug = 'law-enforcement'
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
+
+INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
+SELECT f.id, u.id, 0.88
+FROM flashlights f
+JOIN use_cases u ON u.slug = 'search-rescue'
 WHERE f.slug = 'sofirn-if22a'
 ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
 

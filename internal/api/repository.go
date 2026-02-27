@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type flashlightFilters struct {
@@ -83,6 +84,8 @@ SELECT
 	f.name,
 	f.slug,
 	f.model_code,
+	CASE WHEN f.launch_date IS NULL THEN NULL ELSE EXTRACT(YEAR FROM f.launch_date)::bigint END AS release_year,
+	f.msrp_usd,
 	f.description,
 	lm.url,
 	la.affiliate_url,
@@ -208,15 +211,22 @@ WITH latest_run AS (
 	LIMIT 1
 ),
 latest_price AS (
-	SELECT p.price
+	SELECT p.price, p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.flashlight_id = $1
 	  AND p.currency_code = 'USD'
 	ORDER BY p.captured_at DESC
 	LIMIT 1
 ),
+latest_amazon AS (
+	SELECT aps.rating_count, aps.average_rating, aps.captured_at
+	FROM amazon_product_snapshots aps
+	WHERE aps.flashlight_id = $1
+	ORDER BY aps.captured_at DESC
+	LIMIT 1
+),
 latest_affiliate AS (
-	SELECT a.affiliate_url
+	SELECT a.affiliate_url, a.asin
 	FROM affiliate_links a
 	WHERE a.flashlight_id = $1
 	  AND a.provider = 'amazon'
@@ -253,19 +263,27 @@ SELECT
 		LIMIT 1
 	) AS image_url,
 	(SELECT affiliate_url FROM latest_affiliate),
+	(SELECT asin FROM latest_affiliate),
 	s.max_lumens,
+	s.sustained_lumens,
 	s.max_candela,
 	s.beam_distance_m,
 	s.runtime_low_min,
 	s.runtime_medium_min,
 	s.runtime_high_min,
 	s.runtime_turbo_min,
+	s.runtime_500_min,
+	s.turbo_stepdown_sec,
+	s.beam_pattern,
+	s.recharge_type,
+	s.battery_replaceable,
 	s.waterproof_rating,
 	s.weight_g,
 	s.length_mm,
 	s.head_diameter_mm,
 	s.body_diameter_mm,
 	s.impact_resistance_m,
+	s.body_material,
 	s.usb_c_rechargeable,
 	s.battery_included,
 	s.battery_rechargeable,
@@ -281,6 +299,10 @@ SELECT
 	s.cct_min_k,
 	s.cct_max_k,
 	(SELECT price FROM latest_price),
+	(SELECT captured_at FROM latest_price),
+	(SELECT rating_count FROM latest_amazon),
+	(SELECT average_rating FROM latest_amazon),
+	(SELECT captured_at FROM latest_amazon),
 	(SELECT tactical_score FROM latest_scores),
 	(SELECT edc_score FROM latest_scores),
 	(SELECT value_score FROM latest_scores),
@@ -320,7 +342,16 @@ SELECT
 			WHERE fm.flashlight_id = f.id
 		),
 		'[]'::json
-	) AS modes
+	) AS modes,
+	COALESCE(
+		(
+			SELECT json_agg(u.slug ORDER BY u.slug)
+			FROM flashlight_use_cases fuc
+			JOIN use_cases u ON u.id = fuc.use_case_id
+			WHERE fuc.flashlight_id = f.id
+		),
+		'[]'::json
+	) AS use_case_tags
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
@@ -328,14 +359,16 @@ WHERE f.id = $1
 `
 
 	var (
-		item                                                                                 flashlightDetail
-		modelCode, desc, imageURL, ip, amazonURL, switchType, ledModel                       sql.NullString
-		maxLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, cri sql.NullInt64
-		cctMinK, cctMaxK                                                                     sql.NullInt64
-		weight, lengthMM, headMM, bodyMM, impact, price, tactical, edc, value, throw, flood  sql.NullFloat64
-		usbC, batteryIncluded, batteryRechargeable                                           sql.NullBool
-		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip     sql.NullBool
-		batteryTypesJSON, imageURLsJSON, modesJSON                                           []byte
+		item                                                                                                                                          flashlightDetail
+		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial                                 sql.NullString
+		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri sql.NullInt64
+		cctMinK, cctMaxK                                                                                                                              sql.NullInt64
+		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, tactical, edc, value, throw, flood                                 sql.NullFloat64
+		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable                                                                                sql.NullBool
+		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                              sql.NullBool
+		priceUpdatedAt, amazonSyncedAt                                                                                                                sql.NullTime
+		amazonRatingCount                                                                                                                             sql.NullInt64
+		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON                                                                                   []byte
 	)
 
 	if err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -344,22 +377,32 @@ WHERE f.id = $1
 		&item.Name,
 		&item.Slug,
 		&modelCode,
+		&releaseYear,
+		&msrpUSD,
 		&desc,
 		&imageURL,
 		&amazonURL,
+		&asin,
 		&maxLumens,
+		&sustainedLumens,
 		&maxCandela,
 		&beam,
 		&runtimeLow,
 		&runtimeMedium,
 		&runtimeHi,
 		&runtimeTurbo,
+		&runtime500,
+		&turboStepdown,
+		&beamPattern,
+		&rechargeType,
+		&batteryReplaceable,
 		&ip,
 		&weight,
 		&lengthMM,
 		&headMM,
 		&bodyMM,
 		&impact,
+		&bodyMaterial,
 		&usbC,
 		&batteryIncluded,
 		&batteryRechargeable,
@@ -375,6 +418,10 @@ WHERE f.id = $1
 		&cctMinK,
 		&cctMaxK,
 		&price,
+		&priceUpdatedAt,
+		&amazonRatingCount,
+		&amazonAvgRating,
+		&amazonSyncedAt,
 		&tactical,
 		&edc,
 		&value,
@@ -383,27 +430,38 @@ WHERE f.id = $1
 		&batteryTypesJSON,
 		&imageURLsJSON,
 		&modesJSON,
+		&useCaseTagsJSON,
 	); err != nil {
 		return flashlightDetail{}, err
 	}
 
 	item.ModelCode = nullString(modelCode)
+	item.ReleaseYear = nullInt(releaseYear)
+	item.MSRPUSD = nullFloat(msrpUSD)
 	item.Description = nullString(desc)
 	item.ImageURL = nullString(imageURL)
 	item.AmazonURL = nullString(amazonURL)
+	item.ASIN = nullString(asin)
 	item.MaxLumens = nullInt(maxLumens)
+	item.SustainedLumens = nullInt(sustainedLumens)
 	item.MaxCandela = nullInt(maxCandela)
 	item.BeamDistanceM = nullInt(beam)
 	item.RuntimeLowMin = nullInt(runtimeLow)
 	item.RuntimeMediumMin = nullInt(runtimeMedium)
 	item.RuntimeHighMin = nullInt(runtimeHi)
 	item.RuntimeTurboMin = nullInt(runtimeTurbo)
+	item.Runtime500Min = nullInt(runtime500)
+	item.TurboStepdownSec = nullInt(turboStepdown)
+	item.BeamPattern = nullString(beamPattern)
+	item.RechargeType = nullString(rechargeType)
+	item.BatteryReplaceable = nullBool(batteryReplaceable)
 	item.Waterproof = nullString(ip)
 	item.WeightG = nullFloat(weight)
 	item.LengthMM = nullFloat(lengthMM)
 	item.HeadDiameterMM = nullFloat(headMM)
 	item.BodyDiameterMM = nullFloat(bodyMM)
 	item.ImpactResistance = nullFloat(impact)
+	item.BodyMaterial = nullString(bodyMaterial)
 	item.USBCRechargeable = nullBool(usbC)
 	item.BatteryIncluded = nullBool(batteryIncluded)
 	item.BatteryRech = nullBool(batteryRechargeable)
@@ -414,11 +472,17 @@ WHERE f.id = $1
 	item.HasMagTailcap = nullBool(hasMagTailcap)
 	item.HasPocketClip = nullBool(hasPocketClip)
 	item.SwitchType = nullString(switchType)
+	item.HasTailSwitch = switchHas(item.SwitchType, "tail")
+	item.HasSideSwitch = switchHas(item.SwitchType, "side")
 	item.LEDModel = nullString(ledModel)
 	item.CRI = nullInt(cri)
 	item.CCTMinK = nullInt(cctMinK)
 	item.CCTMaxK = nullInt(cctMaxK)
 	item.PriceUSD = nullFloat(price)
+	item.AmazonRatingCount = nullInt(amazonRatingCount)
+	item.AmazonAverageRating = nullFloat(amazonAvgRating)
+	item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
+	item.AmazonLastSyncedAt = nullTimeString(amazonSyncedAt)
 	item.TacticalScore = nullFloat(tactical)
 	item.EDCScore = nullFloat(edc)
 	item.ValueScore = nullFloat(value)
@@ -427,6 +491,7 @@ WHERE f.id = $1
 	item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
 	item.ImageURLs = decodeJSONStringArray(imageURLsJSON)
 	item.Modes = decodeModesJSON(modesJSON)
+	item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 	return item, nil
 }
 
@@ -901,6 +966,14 @@ func nullBool(v sql.NullBool) *bool {
 	return &out
 }
 
+func nullTimeString(v sql.NullTime) *string {
+	if !v.Valid {
+		return nil
+	}
+	out := v.Time.UTC().Format(time.RFC3339)
+	return &out
+}
+
 func decodeJSONStringArray(raw []byte) []string {
 	if len(raw) == 0 {
 		return []string{}
@@ -921,4 +994,13 @@ func decodeModesJSON(raw []byte) []flashlightMode {
 		return []flashlightMode{}
 	}
 	return out
+}
+
+func switchHas(s *string, needle string) *bool {
+	if s == nil {
+		return nil
+	}
+	v := strings.ToLower(strings.TrimSpace(*s))
+	out := strings.Contains(v, needle)
+	return &out
 }

@@ -128,12 +128,14 @@ Then issue TLS cert with certbot (recommended) and update Nginx config for HTTPS
 Apply SQL migrations in order:
 - `db/migrations/0001_initial_schema.sql`
 - `db/migrations/0002_market_intelligence.sql`
+- `db/migrations/0003_flashlight_detail_fields.sql`
 
 Example with `psql`:
 
 ```bash
 psql "$DATABASE_URL" -f db/migrations/0001_initial_schema.sql
 psql "$DATABASE_URL" -f db/migrations/0002_market_intelligence.sql
+psql "$DATABASE_URL" -f db/migrations/0003_flashlight_detail_fields.sql
 ```
 
 ## 9. Keep secrets out of GitHub

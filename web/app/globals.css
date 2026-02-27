@@ -81,6 +81,21 @@ a {
   background: linear-gradient(160deg, #fff3df 0%, #f4e8d3 100%);
 }
 
+.detail-hero {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1.7fr 1fr;
+  align-items: start;
+}
+
+.detail-hero-main h1 {
+  margin-bottom: 8px;
+}
+
+.buy-box {
+  background: #fff;
+}
+
 .grid {
   display: grid;
   gap: 14px;
@@ -308,6 +323,17 @@ th button {
   margin: 0;
 }
 
+.small {
+  font-size: 0.84rem;
+}
+
+.clean-list {
+  margin: 0 0 12px 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
 .review-card {
   margin: 0;
   padding: 14px;
@@ -340,6 +366,59 @@ th button {
   border: 1px solid var(--line);
 }
 
+.compare-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compare-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #fff;
+  font-size: 0.86rem;
+}
+
+.compare-chip.active {
+  border-color: var(--accent-2);
+  background: #e7faf7;
+}
+
+.compare-chip.disabled {
+  opacity: 0.5;
+}
+
+.compare-table th,
+.compare-table td {
+  vertical-align: top;
+  min-width: 180px;
+}
+
+.compare-row-label {
+  position: sticky;
+  left: 0;
+  background: var(--bg-elev);
+  z-index: 1;
+  min-width: 180px;
+  font-weight: 600;
+}
+
+.compare-model-head h4 {
+  margin: 8px 0;
+}
+
+.compare-model-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.compare-best {
+  background: #fff4dc;
+  font-weight: 700;
+}
+
 @media (max-width: 700px) {
   .site-header .container {
     flex-direction: column;
@@ -361,6 +440,10 @@ th button {
     grid-template-columns: 1fr;
   }
 
+  .detail-hero {
+    grid-template-columns: 1fr;
+  }
+
   th,
   td {
     padding: 8px 7px;
@@ -374,6 +457,19 @@ th button {
 
   .image-card {
     min-height: 140px;
+  }
+
+  .compare-table th,
+  .compare-table td {
+    min-width: 150px;
+  }
+
+  .compare-row-label {
+    min-width: 140px;
+  }
+
+  .compare-model-image {
+    height: 100px;
   }
 }
 

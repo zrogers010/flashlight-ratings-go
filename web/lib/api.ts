@@ -35,6 +35,9 @@ export type FlashlightItem = {
 };
 
 export type FlashlightDetail = FlashlightItem & {
+  release_year?: number;
+  msrp_usd?: number;
+  asin?: string;
   weight_g?: number;
   length_mm?: number;
   head_diameter_mm?: number;
@@ -43,6 +46,15 @@ export type FlashlightDetail = FlashlightItem & {
   runtime_low_min?: number;
   runtime_medium_min?: number;
   runtime_turbo_min?: number;
+  sustained_lumens?: number;
+  runtime_500_min?: number;
+  turbo_stepdown_sec?: number;
+  beam_pattern?: string;
+  recharge_type?: string;
+  battery_replaceable?: boolean;
+  has_tail_switch?: boolean;
+  has_side_switch?: boolean;
+  body_material?: string;
   usb_c_rechargeable?: boolean;
   battery_included?: boolean;
   battery_rechargeable?: boolean;
@@ -57,6 +69,10 @@ export type FlashlightDetail = FlashlightItem & {
   cri?: number;
   cct_min_k?: number;
   cct_max_k?: number;
+  amazon_rating_count?: number;
+  amazon_average_rating?: number;
+  amazon_last_synced_at?: string;
+  price_last_updated_at?: string;
   modes: {
     name: string;
     output_lumens?: number;
@@ -66,6 +82,7 @@ export type FlashlightDetail = FlashlightItem & {
   }[];
   image_urls: string[];
   battery_types: string[];
+  use_case_tags: string[];
 };
 
 export type FlashlightListResponse = {
