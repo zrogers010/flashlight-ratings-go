@@ -62,53 +62,63 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 		opts.InitiatedBy = "scorejob"
 	}
 
-	tx, err := e.db.BeginTx(ctx, nil)
+	runID, err := startRun(ctx, e.db, opts)
 	if err != nil {
 		return 0, err
+	}
+
+	tx, err := e.db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = failRun(ctx, e.db, runID, err)
+		return runID, err
 	}
 	defer tx.Rollback()
 
-	runID, err := startRun(ctx, tx, opts)
-	if err != nil {
-		return 0, err
-	}
-
 	profileIDs, err := ensureProfiles(ctx, tx, []string{"tactical", "edc", "value", "throw", "flood"})
 	if err != nil {
-		return runID, failRun(ctx, tx, runID, err)
+		_ = failRun(ctx, e.db, runID, err)
+		return runID, err
 	}
 
 	rows, err := loadSpecs(ctx, tx)
 	if err != nil {
-		return runID, failRun(ctx, tx, runID, err)
+		_ = failRun(ctx, e.db, runID, err)
+		return runID, err
 	}
 
 	for _, row := range rows {
 		scores, breakdown := computeScores(row, opts.FormulaVersion)
 		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["tactical"], scores.Tactical, breakdown); err != nil {
-			return runID, failRun(ctx, tx, runID, err)
+			_ = failRun(ctx, e.db, runID, err)
+			return runID, err
 		}
 		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["edc"], scores.EDC, breakdown); err != nil {
-			return runID, failRun(ctx, tx, runID, err)
+			_ = failRun(ctx, e.db, runID, err)
+			return runID, err
 		}
 		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["value"], scores.Value, breakdown); err != nil {
-			return runID, failRun(ctx, tx, runID, err)
+			_ = failRun(ctx, e.db, runID, err)
+			return runID, err
 		}
 		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["throw"], scores.Throw, breakdown); err != nil {
-			return runID, failRun(ctx, tx, runID, err)
+			_ = failRun(ctx, e.db, runID, err)
+			return runID, err
 		}
 		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["flood"], scores.Flood, breakdown); err != nil {
-			return runID, failRun(ctx, tx, runID, err)
+			_ = failRun(ctx, e.db, runID, err)
+			return runID, err
 		}
 	}
 
 	if err := rankRun(ctx, tx, runID); err != nil {
-		return runID, failRun(ctx, tx, runID, err)
-	}
-	if err := completeRun(ctx, tx, runID); err != nil {
+		_ = failRun(ctx, e.db, runID, err)
 		return runID, err
 	}
 	if err := tx.Commit(); err != nil {
+		_ = failRun(ctx, e.db, runID, err)
+		return runID, err
+	}
+	if err := completeRun(ctx, e.db, runID); err != nil {
 		return runID, err
 	}
 

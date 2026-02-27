@@ -1,0 +1,23 @@
+[Unit]
+Description=Flashlight Ratings Web (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=flashlight
+Group=flashlight
+WorkingDirectory=/opt/flashlight-ratings-go/web
+EnvironmentFile=/etc/flashlight-ratings-go/web.env
+ExecStart=/usr/bin/npm run start -- -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/flashlight-ratings-go/web
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

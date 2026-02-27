@@ -35,7 +35,7 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('max_candela', 0.25000, 5000::numeric, 45000::numeric, 120000::numeric, '{}'),
     ('beam_distance_m', 0.18000, 80::numeric, 350::numeric, 650::numeric, '{}'),
@@ -54,7 +54,7 @@ ON CONFLICT (profile_id, metric_id) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('weight_g', 0.20000, 180::numeric, 90::numeric, 45::numeric, '{}'),
     ('length_mm', 0.15000, 160::numeric, 125::numeric, 95::numeric, '{}'),
@@ -73,7 +73,7 @@ ON CONFLICT (profile_id, metric_id) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('performance_per_dollar', 0.70000, 0.25::numeric, 1.10::numeric, 2.50::numeric, '{}'),
     ('runtime_medium_min', 0.15000, 60::numeric, 240::numeric, 900::numeric, '{}'),
@@ -88,7 +88,7 @@ ON CONFLICT (profile_id, metric_id) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('max_candela', 0.45000, 5000::numeric, 45000::numeric, 120000::numeric, '{}'),
     ('beam_distance_m', 0.30000, 80::numeric, 350::numeric, 700::numeric, '{}'),
@@ -103,7 +103,7 @@ ON CONFLICT (profile_id, metric_id) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('max_lumens', 0.50000, 120::numeric, 1200::numeric, 5000::numeric, '{}'),
     ('runtime_medium_min', 0.25000, 60::numeric, 240::numeric, 900::numeric, '{}'),
@@ -118,7 +118,7 @@ ON CONFLICT (profile_id, metric_id) DO NOTHING;
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, NULL, NULL, NULL, '{}'::jsonb
 FROM scoring_profiles p
-JOIN (
+CROSS JOIN (
     VALUES
     ('subscore_tactical', 0.35000),
     ('subscore_edc', 0.35000),

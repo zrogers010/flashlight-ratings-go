@@ -7,36 +7,41 @@ import (
 	"strings"
 )
 
-func startRun(ctx context.Context, tx *sql.Tx, opts RunOptions) (int64, error) {
+type queryExecer interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func startRun(ctx context.Context, db queryExecer, opts RunOptions) (int64, error) {
 	const q = `
 INSERT INTO scoring_runs (run_label, formula_version, status, initiated_by, started_at)
 VALUES ($1, $2, 'running', $3, NOW())
 RETURNING id
 `
 	var runID int64
-	if err := tx.QueryRowContext(ctx, q, opts.RunLabel, opts.FormulaVersion, opts.InitiatedBy).Scan(&runID); err != nil {
+	if err := db.QueryRowContext(ctx, q, opts.RunLabel, opts.FormulaVersion, opts.InitiatedBy).Scan(&runID); err != nil {
 		return 0, err
 	}
 	return runID, nil
 }
 
-func completeRun(ctx context.Context, tx *sql.Tx, runID int64) error {
+func completeRun(ctx context.Context, db queryExecer, runID int64) error {
 	const q = `
 UPDATE scoring_runs
 SET status = 'completed', completed_at = NOW()
 WHERE id = $1
 `
-	_, err := tx.ExecContext(ctx, q, runID)
+	_, err := db.ExecContext(ctx, q, runID)
 	return err
 }
 
-func failRun(ctx context.Context, tx *sql.Tx, runID int64, runErr error) error {
+func failRun(ctx context.Context, db queryExecer, runID int64, runErr error) error {
 	const q = `
 UPDATE scoring_runs
 SET status = 'failed', completed_at = NOW(), notes = $2
 WHERE id = $1
 `
-	_, _ = tx.ExecContext(ctx, q, runID, truncate(fmt.Sprintf("error: %v", runErr), 2000))
+	_, _ = db.ExecContext(ctx, q, runID, truncate(fmt.Sprintf("error: %v", runErr), 2000))
 	return runErr
 }
 
