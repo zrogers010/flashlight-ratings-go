@@ -57,6 +57,13 @@ export type FlashlightDetail = FlashlightItem & {
   cri?: number;
   cct_min_k?: number;
   cct_max_k?: number;
+  modes: {
+    name: string;
+    output_lumens?: number;
+    runtime_min?: number;
+    candela?: number;
+    beam_distance_m?: number;
+  }[];
   image_urls: string[];
   battery_types: string[];
 };

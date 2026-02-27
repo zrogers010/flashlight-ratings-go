@@ -25,10 +25,43 @@ const reviews = [
   }
 ];
 
+const guides = [
+  {
+    title: "How To Pick Throw vs Flood",
+    body: "Use candela and beam distance for long-range spotting, and lumens + beam profile for close-range task light."
+  },
+  {
+    title: "Runtime Numbers Explained",
+    body: "Manufacturer runtime is often step-down based. Compare low/medium/high tables to estimate real-world sustained use."
+  },
+  {
+    title: "Best EDC Weight Range",
+    body: "Most people find 60g-110g ideal for pocket carry. Above that, clip quality and body shape become critical."
+  }
+];
+
+const faq = [
+  {
+    q: "How often are rankings updated?",
+    a: "The worker reruns sync and scoring on a schedule, then pages show the latest completed scoring batch."
+  },
+  {
+    q: "Do prices update in real time?",
+    a: "Prices reflect the most recent snapshot available in the database and may lag the live Amazon listing."
+  },
+  {
+    q: "Are affiliate links disclosed?",
+    a: "Yes. Every page with purchase links includes the affiliate disclosure."
+  }
+];
+
 export default async function HomePage() {
   const [rankings, flashlights] = await Promise.all([fetchRankings("tactical"), fetchFlashlights()]);
   const top = rankings.items.slice(0, 3);
-  const featured = flashlights.items.slice(0, 4);
+  const featured = flashlights.items.slice(0, 6);
+  const latest = [...flashlights.items]
+    .sort((a, b) => (b.price_usd || 0) - (a.price_usd || 0))
+    .slice(0, 3);
 
   return (
     <section className="grid">
@@ -36,8 +69,7 @@ export default async function HomePage() {
         <p className="kicker">Field-Tested Picks</p>
         <h1>Find The Right Flashlight Fast</h1>
         <p className="muted">
-          Explore ranked models with specs, prices, and affiliate links. Compare output, throw, runtime, and carry
-          features in one place.
+          Browse verified specs, ranked recommendations, runtime tables, and direct links to in-stock products.
         </p>
         <div className="cta-row">
           <Link href="/rankings" className="button-link">
@@ -46,6 +78,33 @@ export default async function HomePage() {
           <Link href="/flashlights" className="button-link button-secondary">
             Browse Catalog
           </Link>
+          <Link href="/compare?ids=1,2" className="button-link button-secondary">
+            Compare Models
+          </Link>
+        </div>
+      </div>
+
+      <div className="panel stat-grid">
+        <div className="stat-card">
+          <p className="kicker">Catalog Size</p>
+          <h3>{flashlights.total}</h3>
+          <p className="muted">models indexed</p>
+        </div>
+        <div className="stat-card">
+          <p className="kicker">Top Tactical</p>
+          <h3>{top[0] ? `${top[0].score.toFixed(1)}` : "N/A"}</h3>
+          <p className="muted">current leading score</p>
+        </div>
+        <div className="stat-card">
+          <p className="kicker">Price Range</p>
+          <h3>
+            $
+            {flashlights.items.length
+              ? Math.min(...flashlights.items.map((x) => x.price_usd || 9999)).toFixed(0)
+              : "N/A"}
+            +
+          </h3>
+          <p className="muted">starting point in catalog</p>
         </div>
       </div>
 
@@ -86,17 +145,54 @@ export default async function HomePage() {
                   <div className="image-fallback">No image</div>
                 )}
               </div>
+              <p className="kicker">{item.brand}</p>
               <h3>
                 <Link href={`/flashlights/${item.id}`}>
-                  {item.brand} {item.name}
+                  {item.name} {item.model_code ? <span className="muted">{item.model_code}</span> : null}
                 </Link>
               </h3>
               <p className="muted clamp-3">{item.description || "Description coming soon."}</p>
               <div className="spec-row">
                 <span>{fmt(item.max_lumens)} lm</span>
-                <span>{fmt(item.beam_distance_m)} m</span>
+                <span>{fmt(item.beam_distance_m)} m throw</span>
                 <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "N/A"}</span>
               </div>
+              <div className="cta-row">
+                <Link href={`/flashlights/${item.id}`} className="button-link button-secondary">
+                  Details
+                </Link>
+                <AmazonCTA href={item.amazon_url} />
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2>Buying Guides</h2>
+        <div className="guide-grid">
+          {guides.map((g) => (
+            <article key={g.title} className="guide-card">
+              <h3>{g.title}</h3>
+              <p className="muted">{g.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2>Price Watch</h2>
+        <div className="card-grid">
+          {latest.map((item) => (
+            <article key={`price-${item.id}`} className="product-card">
+              <h3>
+                <Link href={`/flashlights/${item.id}`}>
+                  {item.brand} {item.name}
+                </Link>
+              </h3>
+              <p className="muted">{item.description || "See full detail page for full specification profile."}</p>
+              <p className="price-line">{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "N/A"}</p>
+              <AmazonCTA href={item.amazon_url} />
             </article>
           ))}
         </div>
@@ -110,6 +206,18 @@ export default async function HomePage() {
               <p>"{r.quote}"</p>
               <cite>{r.author}</cite>
             </blockquote>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2>FAQ</h2>
+        <div className="faq-grid">
+          {faq.map((item) => (
+            <article key={item.q} className="faq-card">
+              <h3>{item.q}</h3>
+              <p className="muted">{item.a}</p>
+            </article>
           ))}
         </div>
       </div>

@@ -132,6 +132,54 @@ FROM flashlights f
 WHERE f.slug = 'sofirn-if22a'
 ON CONFLICT DO NOTHING;
 
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Moonlight', 2, 24000, 40, 12, 1
+FROM flashlights f
+WHERE f.slug = 'wurkkos-fc11c'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Low', 150, 850, 1900, 88, 2
+FROM flashlights f
+WHERE f.slug = 'wurkkos-fc11c'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'High', 800, 95, 9800, 198, 3
+FROM flashlights f
+WHERE f.slug = 'wurkkos-fc11c'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Turbo', 1200, 60, 12000, 220, 4
+FROM flashlights f
+WHERE f.slug = 'wurkkos-fc11c'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Low', 120, 1200, 2500, 100, 1
+FROM flashlights f
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Medium', 600, 210, 25000, 320, 2
+FROM flashlights f
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'High', 1200, 75, 48000, 438, 3
+FROM flashlights f
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
+INSERT INTO flashlight_modes (flashlight_id, mode_name, output_lumens, runtime_min, candela, beam_distance_m, mode_order)
+SELECT f.id, 'Turbo', 2100, 35, 85000, 680, 4
+FROM flashlights f
+WHERE f.slug = 'sofirn-if22a'
+ON CONFLICT (flashlight_id, mode_name) DO NOTHING;
+
 INSERT INTO flashlight_price_snapshots (flashlight_id, source, source_sku, currency_code, price, in_stock)
 SELECT f.id, 'amazon', 'B0CJY12QZR', 'USD', 39.99, TRUE
 FROM flashlights f

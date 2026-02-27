@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -118,12 +119,15 @@ func loadConfig() workerConfig {
 		scoreFormula:     envOr("SCORING_FORMULA_VERSION", "v1"),
 		scoreInitiatedBy: envOr("SCORING_INITIATED_BY", "worker"),
 		amazonSync: amazon.SyncConfig{
-			Region:       envOr("AMAZON_REGION", "US"),
-			PartnerTag:   envOr("AMAZON_PARTNER_TAG", ""),
-			DryRun:       envOr("AMAZON_SYNC_DRY_RUN", "false") == "true",
-			BatchSize:    envIntOr("AMAZON_SYNC_BATCH_SIZE", 10),
-			MaxRetries:   envIntOr("AMAZON_SYNC_MAX_RETRIES", 2),
-			RetryBackoff: time.Duration(envIntOr("AMAZON_SYNC_RETRY_BACKOFF_MS", 750)) * time.Millisecond,
+			Region:         envOr("AMAZON_REGION", "US"),
+			Marketplace:    envOr("AMAZON_MARKETPLACE", ""),
+			PartnerTag:     envOr("AMAZON_PARTNER_TAG", ""),
+			DryRun:         envOr("AMAZON_SYNC_DRY_RUN", "false") == "true",
+			BatchSize:      envIntOr("AMAZON_SYNC_BATCH_SIZE", 10),
+			MaxRetries:     envIntOr("AMAZON_SYNC_MAX_RETRIES", 2),
+			RetryBackoff:   time.Duration(envIntOr("AMAZON_SYNC_RETRY_BACKOFF_MS", 750)) * time.Millisecond,
+			AllowedBrands:  parseCSVSet(envOr("AMAZON_ALLOWED_BRANDS", "")),
+			AllowedSellers: parseCSVSet(envOr("AMAZON_ALLOWED_SELLERS", "")),
 		},
 	}
 }
@@ -146,4 +150,16 @@ func envIntOr(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func parseCSVSet(v string) map[string]struct{} {
+	out := map[string]struct{}{}
+	for _, part := range strings.Split(v, ",") {
+		norm := strings.ToLower(strings.TrimSpace(part))
+		if norm == "" {
+			continue
+		}
+		out[norm] = struct{}{}
+	}
+	return out
 }

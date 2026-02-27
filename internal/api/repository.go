@@ -303,7 +303,24 @@ SELECT
 			  AND m.media_type = 'image'
 		),
 		'[]'::json
-	) AS image_urls
+	) AS image_urls,
+	COALESCE(
+		(
+			SELECT json_agg(
+				json_build_object(
+					'name', fm.mode_name,
+					'output_lumens', fm.output_lumens,
+					'runtime_min', fm.runtime_min,
+					'candela', fm.candela,
+					'beam_distance_m', fm.beam_distance_m
+				)
+				ORDER BY fm.mode_order ASC, fm.id ASC
+			)
+			FROM flashlight_modes fm
+			WHERE fm.flashlight_id = f.id
+		),
+		'[]'::json
+	) AS modes
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
@@ -318,7 +335,7 @@ WHERE f.id = $1
 		weight, lengthMM, headMM, bodyMM, impact, price, tactical, edc, value, throw, flood  sql.NullFloat64
 		usbC, batteryIncluded, batteryRechargeable                                           sql.NullBool
 		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip     sql.NullBool
-		batteryTypesJSON, imageURLsJSON                                                      []byte
+		batteryTypesJSON, imageURLsJSON, modesJSON                                           []byte
 	)
 
 	if err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -365,6 +382,7 @@ WHERE f.id = $1
 		&flood,
 		&batteryTypesJSON,
 		&imageURLsJSON,
+		&modesJSON,
 	); err != nil {
 		return flashlightDetail{}, err
 	}
@@ -408,6 +426,7 @@ WHERE f.id = $1
 	item.FloodScore = nullFloat(flood)
 	item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
 	item.ImageURLs = decodeJSONStringArray(imageURLsJSON)
+	item.Modes = decodeModesJSON(modesJSON)
 	return item, nil
 }
 
@@ -889,6 +908,17 @@ func decodeJSONStringArray(raw []byte) []string {
 	var out []string
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return []string{}
+	}
+	return out
+}
+
+func decodeModesJSON(raw []byte) []flashlightMode {
+	if len(raw) == 0 {
+		return []flashlightMode{}
+	}
+	var out []flashlightMode
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return []flashlightMode{}
 	}
 	return out
 }

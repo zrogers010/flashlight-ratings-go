@@ -32,6 +32,8 @@ For PA-API, use:
 - `AMAZON_SECRET_ACCESS_KEY`
 - `AMAZON_PARTNER_TAG`
 - `AMAZON_REGION` (usually `US`)
+- `AMAZON_ALLOWED_BRANDS` (recommended)
+- `AMAZON_ALLOWED_SELLERS` (recommended)
 
 Create/retrieve keys in AWS IAM for a dedicated service principal. Save the secret once at creation time. Rotate periodically.
 

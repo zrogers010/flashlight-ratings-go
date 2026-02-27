@@ -127,9 +127,11 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 		"Marketplace": c.marketplace,
 		"Resources": []string{
 			"ItemInfo.Title",
+			"ItemInfo.ByLineInfo",
 			"CustomerReviews.Count",
 			"CustomerReviews.StarRating",
 			"Offers.Listings.Price",
+			"Offers.Listings.MerchantInfo",
 			"Images.Primary.Large",
 		},
 	}
@@ -218,8 +220,14 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 	out := make([]Product, 0, len(parsed.ItemsResult.Items))
 	for _, item := range parsed.ItemsResult.Items {
 		p := Product{
-			ASIN:         item.ASIN,
-			CurrencyCode: "USD",
+			ASIN:          item.ASIN,
+			CurrencyCode:  "USD",
+			Title:         item.ItemInfo.Title.DisplayValue,
+			Brand:         item.ItemInfo.ByLineInfo.Brand.DisplayValue,
+			DetailPageURL: item.DetailPageURL,
+		}
+		if item.Images.Primary.Large.URL != "" {
+			p.ImageURL = item.Images.Primary.Large.URL
 		}
 		if item.CustomerReviews.Count != nil {
 			v := *item.CustomerReviews.Count
@@ -235,6 +243,7 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 			if item.Offers.Listings[0].Price.Currency != "" {
 				p.CurrencyCode = item.Offers.Listings[0].Price.Currency
 			}
+			p.Seller = item.Offers.Listings[0].MerchantInfo.Name
 		}
 		raw, _ := json.Marshal(item)
 		p.RawPayload = raw
@@ -272,7 +281,25 @@ type paapiGetItemsResponse struct {
 }
 
 type paapiItem struct {
-	ASIN            string `json:"ASIN"`
+	ASIN          string `json:"ASIN"`
+	DetailPageURL string `json:"DetailPageURL"`
+	ItemInfo      struct {
+		Title struct {
+			DisplayValue string `json:"DisplayValue"`
+		} `json:"Title"`
+		ByLineInfo struct {
+			Brand struct {
+				DisplayValue string `json:"DisplayValue"`
+			} `json:"Brand"`
+		} `json:"ByLineInfo"`
+	} `json:"ItemInfo"`
+	Images struct {
+		Primary struct {
+			Large struct {
+				URL string `json:"URL"`
+			} `json:"Large"`
+		} `json:"Primary"`
+	} `json:"Images"`
 	CustomerReviews struct {
 		Count      *int     `json:"Count"`
 		StarRating *float64 `json:"StarRating"`
@@ -283,6 +310,9 @@ type paapiItem struct {
 				Amount   *float64 `json:"Amount"`
 				Currency string   `json:"Currency"`
 			} `json:"Price"`
+			MerchantInfo struct {
+				Name string `json:"Name"`
+			} `json:"MerchantInfo"`
 		} `json:"Listings"`
 	} `json:"Offers"`
 }

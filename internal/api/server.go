@@ -66,30 +66,39 @@ type paginatedFlashlightsResponse struct {
 
 type flashlightDetail struct {
 	flashlightItem
-	WeightG          *float64 `json:"weight_g,omitempty"`
-	LengthMM         *float64 `json:"length_mm,omitempty"`
-	HeadDiameterMM   *float64 `json:"head_diameter_mm,omitempty"`
-	BodyDiameterMM   *float64 `json:"body_diameter_mm,omitempty"`
-	ImpactResistance *float64 `json:"impact_resistance_m,omitempty"`
-	RuntimeLowMin    *int64   `json:"runtime_low_min,omitempty"`
-	RuntimeMediumMin *int64   `json:"runtime_medium_min,omitempty"`
-	RuntimeTurboMin  *int64   `json:"runtime_turbo_min,omitempty"`
-	USBCRechargeable *bool    `json:"usb_c_rechargeable,omitempty"`
-	BatteryIncluded  *bool    `json:"battery_included,omitempty"`
-	BatteryRech      *bool    `json:"battery_rechargeable,omitempty"`
-	HasStrobe        *bool    `json:"has_strobe,omitempty"`
-	HasMemoryMode    *bool    `json:"has_memory_mode,omitempty"`
-	HasLockout       *bool    `json:"has_lockout,omitempty"`
-	HasMoonlightMode *bool    `json:"has_moonlight_mode,omitempty"`
-	HasMagTailcap    *bool    `json:"has_magnetic_tailcap,omitempty"`
-	HasPocketClip    *bool    `json:"has_pocket_clip,omitempty"`
-	SwitchType       *string  `json:"switch_type,omitempty"`
-	LEDModel         *string  `json:"led_model,omitempty"`
-	CRI              *int64   `json:"cri,omitempty"`
-	CCTMinK          *int64   `json:"cct_min_k,omitempty"`
-	CCTMaxK          *int64   `json:"cct_max_k,omitempty"`
-	ImageURLs        []string `json:"image_urls"`
-	BatteryTypes     []string `json:"battery_types"`
+	WeightG          *float64         `json:"weight_g,omitempty"`
+	LengthMM         *float64         `json:"length_mm,omitempty"`
+	HeadDiameterMM   *float64         `json:"head_diameter_mm,omitempty"`
+	BodyDiameterMM   *float64         `json:"body_diameter_mm,omitempty"`
+	ImpactResistance *float64         `json:"impact_resistance_m,omitempty"`
+	RuntimeLowMin    *int64           `json:"runtime_low_min,omitempty"`
+	RuntimeMediumMin *int64           `json:"runtime_medium_min,omitempty"`
+	RuntimeTurboMin  *int64           `json:"runtime_turbo_min,omitempty"`
+	USBCRechargeable *bool            `json:"usb_c_rechargeable,omitempty"`
+	BatteryIncluded  *bool            `json:"battery_included,omitempty"`
+	BatteryRech      *bool            `json:"battery_rechargeable,omitempty"`
+	HasStrobe        *bool            `json:"has_strobe,omitempty"`
+	HasMemoryMode    *bool            `json:"has_memory_mode,omitempty"`
+	HasLockout       *bool            `json:"has_lockout,omitempty"`
+	HasMoonlightMode *bool            `json:"has_moonlight_mode,omitempty"`
+	HasMagTailcap    *bool            `json:"has_magnetic_tailcap,omitempty"`
+	HasPocketClip    *bool            `json:"has_pocket_clip,omitempty"`
+	SwitchType       *string          `json:"switch_type,omitempty"`
+	LEDModel         *string          `json:"led_model,omitempty"`
+	CRI              *int64           `json:"cri,omitempty"`
+	CCTMinK          *int64           `json:"cct_min_k,omitempty"`
+	CCTMaxK          *int64           `json:"cct_max_k,omitempty"`
+	Modes            []flashlightMode `json:"modes"`
+	ImageURLs        []string         `json:"image_urls"`
+	BatteryTypes     []string         `json:"battery_types"`
+}
+
+type flashlightMode struct {
+	Name          string `json:"name"`
+	OutputLumens  *int64 `json:"output_lumens,omitempty"`
+	RuntimeMin    *int64 `json:"runtime_min,omitempty"`
+	Candela       *int64 `json:"candela,omitempty"`
+	BeamDistanceM *int64 `json:"beam_distance_m,omitempty"`
 }
 
 type compareResponse struct {

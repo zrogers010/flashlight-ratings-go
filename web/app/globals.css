@@ -209,6 +209,24 @@ th button {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.stat-card h3 {
+  margin: 4px 0;
+  font-size: 1.55rem;
+}
+
 .product-card {
   display: flex;
   flex-direction: column;
@@ -269,6 +287,27 @@ th button {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.guide-grid,
+.faq-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.guide-card,
+.faq-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+}
+
+.price-line {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
 .review-card {
   margin: 0;
   padding: 14px;
@@ -306,5 +345,40 @@ th button {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .button-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    padding: 8px 7px;
+    font-size: 0.86rem;
+  }
+
+  .table-thumb {
+    width: 42px;
+    height: 42px;
+  }
+
+  .image-card {
+    min-height: 140px;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 980px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

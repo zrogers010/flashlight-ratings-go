@@ -5,20 +5,29 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
 type SyncConfig struct {
-	Region       string
-	PartnerTag   string
-	DryRun       bool
-	BatchSize    int
-	MaxRetries   int
-	RetryBackoff time.Duration
+	Region         string
+	Marketplace    string
+	PartnerTag     string
+	DryRun         bool
+	BatchSize      int
+	MaxRetries     int
+	RetryBackoff   time.Duration
+	AllowedBrands  map[string]struct{}
+	AllowedSellers map[string]struct{}
 }
 
 type Product struct {
 	ASIN          string
+	Title         string
+	Brand         string
+	Seller        string
+	DetailPageURL string
+	ImageURL      string
 	RatingCount   *int
 	AverageRating *float64
 	OfferPrice    *float64
@@ -39,6 +48,9 @@ type Syncer struct {
 func NewSyncer(db *sql.DB, client Client, cfg SyncConfig) *Syncer {
 	if cfg.Region == "" {
 		cfg.Region = "US"
+	}
+	if cfg.Marketplace == "" {
+		cfg.Marketplace = defaultMarketplace(cfg.Region)
 	}
 	if cfg.BatchSize <= 0 {
 		cfg.BatchSize = 10
@@ -84,17 +96,76 @@ func (s *Syncer) Run(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("lookup asins [%s..]: %w", chunk[0], err)
 		}
+		seen := make(map[string]struct{}, len(items))
 		for _, item := range items {
 			flashlightID, ok := indexByASIN[item.ASIN]
 			if !ok {
+				continue
+			}
+			seen[item.ASIN] = struct{}{}
+			if !s.allowedByQuality(item) {
+				if err := s.markListingInactive(ctx, flashlightID, item.ASIN); err != nil {
+					return err
+				}
 				continue
 			}
 			if err := s.persistSnapshot(ctx, flashlightID, item); err != nil {
 				return err
 			}
 		}
+		for _, asin := range chunk {
+			if _, ok := seen[asin]; ok {
+				continue
+			}
+			flashlightID, has := indexByASIN[asin]
+			if !has {
+				continue
+			}
+			if err := s.markListingInactive(ctx, flashlightID, asin); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
+}
+
+func defaultMarketplace(region string) string {
+	switch strings.ToUpper(region) {
+	case "US":
+		return "www.amazon.com"
+	case "CA":
+		return "www.amazon.ca"
+	case "UK":
+		return "www.amazon.co.uk"
+	case "DE":
+		return "www.amazon.de"
+	case "FR":
+		return "www.amazon.fr"
+	case "IT":
+		return "www.amazon.it"
+	case "ES":
+		return "www.amazon.es"
+	case "JP":
+		return "www.amazon.co.jp"
+	case "IN":
+		return "www.amazon.in"
+	default:
+		return "www.amazon.com"
+	}
+}
+
+func (s *Syncer) allowedByQuality(p Product) bool {
+	if len(s.cfg.AllowedBrands) > 0 {
+		if _, ok := s.cfg.AllowedBrands[strings.ToLower(strings.TrimSpace(p.Brand))]; !ok {
+			return false
+		}
+	}
+	if len(s.cfg.AllowedSellers) > 0 {
+		if _, ok := s.cfg.AllowedSellers[strings.ToLower(strings.TrimSpace(p.Seller))]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Syncer) lookupWithRetry(ctx context.Context, asins []string) ([]Product, error) {
@@ -204,7 +275,79 @@ VALUES ($1, 'amazon', $2, $3, $4, TRUE, NOW())
 		}
 	}
 
+	const upsertAffiliate = `
+UPDATE affiliate_links
+SET affiliate_url = $3,
+	is_active = TRUE,
+	updated_at = NOW()
+WHERE flashlight_id = $1
+  AND provider = 'amazon'
+  AND region_code = $2
+  AND asin = $4
+`
+	canonicalURL := canonicalAmazonURL(s.cfg.Marketplace, p.ASIN, s.cfg.PartnerTag)
+	_, err = tx.ExecContext(ctx, upsertAffiliate, flashlightID, s.cfg.Region, canonicalURL, p.ASIN)
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(p.Title) != "" {
+		const upsertDesc = `
+UPDATE flashlights
+SET description = $2,
+	updated_at = NOW()
+WHERE id = $1
+  AND (description IS NULL OR description = '')
+`
+		if _, err := tx.ExecContext(ctx, upsertDesc, flashlightID, p.Title); err != nil {
+			return err
+		}
+	}
+
+	if strings.TrimSpace(p.ImageURL) != "" {
+		const upsertMedia = `
+INSERT INTO flashlight_media (flashlight_id, media_type, url, alt_text, sort_order)
+SELECT $1, 'image', $2, $3, 1
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM flashlight_media fm
+	WHERE fm.flashlight_id = $1
+	  AND fm.media_type = 'image'
+	  AND fm.url = $2
+)
+`
+		if _, err := tx.ExecContext(ctx, upsertMedia, flashlightID, p.ImageURL, p.Title); err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit()
+}
+
+func (s *Syncer) markListingInactive(ctx context.Context, flashlightID int64, asin string) error {
+	const q = `
+UPDATE affiliate_links
+SET is_active = FALSE,
+	updated_at = NOW()
+WHERE flashlight_id = $1
+  AND provider = 'amazon'
+  AND region_code = $2
+  AND asin = $3
+`
+	_, err := s.db.ExecContext(ctx, q, flashlightID, s.cfg.Region, asin)
+	return err
+}
+
+func canonicalAmazonURL(marketplace, asin, partnerTag string) string {
+	host := strings.TrimSpace(marketplace)
+	if host == "" {
+		host = "www.amazon.com"
+	}
+	tag := strings.TrimSpace(partnerTag)
+	if tag == "" {
+		return fmt.Sprintf("https://%s/dp/%s", host, asin)
+	}
+	return fmt.Sprintf("https://%s/dp/%s?tag=%s", host, asin, tag)
 }
 
 func nullInt(v *int) any {

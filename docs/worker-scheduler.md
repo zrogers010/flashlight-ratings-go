@@ -26,6 +26,13 @@ Amazon sync tuning env vars also apply:
 - `AMAZON_SYNC_BATCH_SIZE`
 - `AMAZON_SYNC_MAX_RETRIES`
 - `AMAZON_SYNC_RETRY_BACKOFF_MS`
+- `AMAZON_ALLOWED_BRANDS` (comma-separated brand allowlist)
+- `AMAZON_ALLOWED_SELLERS` (comma-separated seller allowlist)
+
+Quality controls:
+- Listings not returned by PA-API in a sync cycle are marked inactive.
+- Listings outside your allowlist filters are marked inactive.
+- Active affiliate URLs are canonicalized to `https://<marketplace>/dp/<asin>?tag=<partner-tag>`.
 
 For production setup on EC2/systemd (including secure env files), see:
 - `docs/production-deployment.md`

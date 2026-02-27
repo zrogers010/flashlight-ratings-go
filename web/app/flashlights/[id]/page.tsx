@@ -101,6 +101,38 @@ export default async function FlashlightDetailPage({
         </div>
       </div>
 
+      <div className="panel">
+        <h3>Mode Table</h3>
+        {data.modes && data.modes.length > 0 ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>Output (lm)</th>
+                  <th>Runtime (min)</th>
+                  <th>Candela</th>
+                  <th>Throw (m)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.modes.map((mode) => (
+                  <tr key={mode.name}>
+                    <td>{mode.name}</td>
+                    <td>{fmt(mode.output_lumens)}</td>
+                    <td>{fmt(mode.runtime_min)}</td>
+                    <td>{fmt(mode.candela)}</td>
+                    <td>{fmt(mode.beam_distance_m)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="muted">No per-mode runtime/output table is available yet for this model.</p>
+        )}
+      </div>
+
       <AmazonDisclosure />
     </section>
   );
