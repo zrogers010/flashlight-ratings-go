@@ -4,6 +4,8 @@ INSERT INTO scoring_profiles (slug, display_name, description, version) VALUES
 ('tactical', 'Tactical Score', 'Prioritizes candela, throw, durability, and high-output reliability.', 1),
 ('edc', 'EDC Score', 'Prioritizes carry comfort, usability, recharge convenience, and practical runtime.', 1),
 ('value', 'Value Score', 'Prioritizes performance and quality per dollar.', 1),
+('throw', 'Throw Score', 'Prioritizes distance performance and intensity.', 1),
+('flood', 'Flood Score', 'Prioritizes wide-area illumination and practical sustained output.', 1),
 ('overall', 'Overall Score', 'Blends Tactical, EDC, and Value into a single ranking score.', 1)
 ON CONFLICT (slug) DO NOTHING;
 
@@ -24,7 +26,9 @@ INSERT INTO scoring_metrics (slug, display_name, direction, normalization_method
 ('performance_per_dollar', 'Performance per Dollar', 'higher_better', 'log', 'score/usd', 'Derived metric from performance_core / latest_price_usd.'),
 ('subscore_tactical', 'Tactical Subscore', 'higher_better', 'linear', 'score', 'Derived tactical subscore used by Overall.'),
 ('subscore_edc', 'EDC Subscore', 'higher_better', 'linear', 'score', 'Derived EDC subscore used by Overall.'),
-('subscore_value', 'Value Subscore', 'higher_better', 'linear', 'score', 'Derived Value subscore used by Overall.')
+('subscore_value', 'Value Subscore', 'higher_better', 'linear', 'score', 'Derived Value subscore used by Overall.'),
+('subscore_throw', 'Throw Subscore', 'higher_better', 'linear', 'score', 'Derived Throw subscore used by Overall.'),
+('subscore_flood', 'Flood Subscore', 'higher_better', 'linear', 'score', 'Derived Flood subscore used by Overall.')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Tactical weights
@@ -80,6 +84,36 @@ JOIN scoring_metrics m ON m.slug = w.metric_slug
 WHERE p.slug = 'value'
 ON CONFLICT (profile_id, metric_id) DO NOTHING;
 
+-- Throw weights
+INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
+SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
+FROM scoring_profiles p
+JOIN (
+    VALUES
+    ('max_candela', 0.45000, 5000::numeric, 45000::numeric, 120000::numeric, '{}'),
+    ('beam_distance_m', 0.30000, 80::numeric, 350::numeric, 700::numeric, '{}'),
+    ('runtime_high_min', 0.15000, 30::numeric, 120::numeric, 300::numeric, '{}'),
+    ('waterproof_rating', 0.10000, NULL::numeric, NULL::numeric, NULL::numeric, '{"ip_map":{"IPX4":35,"IPX6":65,"IPX7":80,"IPX8":95}}')
+) AS w(metric_slug, weight, floor_v, target_v, cap_v, config)
+JOIN scoring_metrics m ON m.slug = w.metric_slug
+WHERE p.slug = 'throw'
+ON CONFLICT (profile_id, metric_id) DO NOTHING;
+
+-- Flood weights
+INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
+SELECT p.id, m.id, w.weight, w.floor_v, w.target_v, w.cap_v, w.config::jsonb
+FROM scoring_profiles p
+JOIN (
+    VALUES
+    ('max_lumens', 0.50000, 120::numeric, 1200::numeric, 5000::numeric, '{}'),
+    ('runtime_medium_min', 0.25000, 60::numeric, 240::numeric, 900::numeric, '{}'),
+    ('performance_per_dollar', 0.15000, 0.25::numeric, 1.10::numeric, 2.50::numeric, '{}'),
+    ('waterproof_rating', 0.10000, NULL::numeric, NULL::numeric, NULL::numeric, '{"ip_map":{"IPX4":30,"IPX6":60,"IPX7":80,"IPX8":95}}')
+) AS w(metric_slug, weight, floor_v, target_v, cap_v, config)
+JOIN scoring_metrics m ON m.slug = w.metric_slug
+WHERE p.slug = 'flood'
+ON CONFLICT (profile_id, metric_id) DO NOTHING;
+
 -- Overall score from subscores
 INSERT INTO scoring_profile_metrics (profile_id, metric_id, weight, floor_value, target_value, cap_value, config)
 SELECT p.id, m.id, w.weight, NULL, NULL, NULL, '{}'::jsonb
@@ -88,7 +122,9 @@ JOIN (
     VALUES
     ('subscore_tactical', 0.35000),
     ('subscore_edc', 0.35000),
-    ('subscore_value', 0.30000)
+    ('subscore_value', 0.20000),
+    ('subscore_throw', 0.05000),
+    ('subscore_flood', 0.05000)
 ) AS w(metric_slug, weight)
 JOIN scoring_metrics m ON m.slug = w.metric_slug
 WHERE p.slug = 'overall'
