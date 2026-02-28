@@ -136,6 +136,8 @@ export default async function FindYoursPage({
         <div className="card-grid">
           {run.top_results.map((entry, idx) => (
             <article key={entry.model_id} className="product-card">
+              <Link href={`/flashlights/${entry.model_id}`} className="card-link-overlay" aria-label={`View ${entry.brand} ${entry.name} details`} />
+
               <div className="image-card">
                 {entry.image_url ? (
                   <img src={entry.image_url} alt={`${entry.brand} ${entry.name}`} loading="lazy" />
@@ -148,9 +150,7 @@ export default async function FindYoursPage({
                 <div>
                   <p className="kicker">Match #{idx + 1}</p>
                   <h3 style={{ fontSize: "1.05rem" }}>
-                    <Link href={`/flashlights/${entry.model_id}`}>
-                      {entry.brand} {entry.name}
-                    </Link>
+                    {entry.brand} {entry.name}
                   </h3>
                 </div>
                 <ScoreBadge score={entry.overall_score} />
@@ -183,9 +183,6 @@ export default async function FindYoursPage({
               </div>
 
               <div className="cta-row">
-                <Link href={`/flashlights/${entry.model_id}`} className="btn btn-ghost btn-sm">
-                  Details
-                </Link>
                 <AmazonCTA href={entry.amazon_url} price={entry.price_usd} />
               </div>
             </article>

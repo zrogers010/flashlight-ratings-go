@@ -96,9 +96,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const name = `${data.brand} ${data.name}`;
   const score = topScore(data);
 
+  const desc = `${name} review: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated.${data.price_usd !== undefined ? ` $${fmt(data.price_usd, 2)} on Amazon.` : ""} Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100.`;
+
   return {
-    title: `${name} Review — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` | Score: ${score.toFixed(1)}` : ""}`,
-    description: `${name}: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m beam distance. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"}.${data.price_usd !== undefined ? ` $${fmt(data.price_usd, 2)} on Amazon.` : ""}`,
+    title: `${name} Review — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
+    description: desc,
+    alternates: { canonical: `/flashlights/${params.id}` },
     openGraph: {
       title: `${name} — Flashlight Review & Score`,
       description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)}`,

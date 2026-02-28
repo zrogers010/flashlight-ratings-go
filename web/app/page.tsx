@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { FAQ } from "@/components/FAQ";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchRankings } from "@/lib/api";
+
+export const metadata: Metadata = {
+  title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews | FlashlightRatings",
+  description: "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
+  alternates: { canonical: "/" }
+};
 
 const useCases = [
   { label: "Tactical", href: "/best-flashlights/tactical", icon: "⚔" },
@@ -54,17 +61,29 @@ export default async function HomePage() {
   const prices = flashlights.items.map((x) => x.price_usd).filter((p): p is number => p !== undefined);
   const minPrice = prices.length ? Math.min(...prices) : 0;
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a }
+    }))
+  };
+
   return (
     <section className="grid">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+
       {/* ── Hero ──────────────────────────────────── */}
       <div className="panel hero" style={{ textAlign: "center", padding: "48px 24px" }}>
-        <p className="kicker" style={{ marginBottom: 8 }}>Data-Driven Flashlight Rankings</p>
-        <h1 style={{ fontSize: "2.25rem", maxWidth: 680, margin: "0 auto 12px" }}>
-          Find the Right Flashlight, Backed by Data
+        <p className="kicker" style={{ marginBottom: 8 }}>Independent, Algorithm-Powered Reviews</p>
+        <h1 style={{ fontSize: "2.25rem", maxWidth: 700, margin: "0 auto 12px" }}>
+          Best Flashlights of 2026, Ranked by Data
         </h1>
-        <p className="muted" style={{ maxWidth: 560, margin: "0 auto 24px", fontSize: "1.05rem" }}>
-          {catalogSize} models scored across 5 dimensions. Verified specs, algorithmic rankings,
-          and real-time Amazon pricing — all in one place.
+        <p className="muted" style={{ maxWidth: 600, margin: "0 auto 24px", fontSize: "1.05rem" }}>
+          {catalogSize} flashlights scored across tactical, EDC, camping, throw, and value profiles.
+          Verified manufacturer specs, algorithmic rankings, and live Amazon pricing — no sponsored placements.
         </p>
         <div className="cta-row" style={{ justifyContent: "center" }}>
           <Link href="/find-yours" className="button-link">

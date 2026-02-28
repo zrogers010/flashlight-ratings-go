@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";
 import "./globals.css";
+
+const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,31 +18,62 @@ const jetbrains = JetBrains_Mono({
   display: "swap"
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0d1117",
+  width: "device-width",
+  initialScale: 1
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "FlashlightRatings — Data-Driven Flashlight Rankings & Reviews",
+    default: "Best Flashlights 2026 — Data-Driven Rankings & Reviews | FlashlightRatings",
     template: "%s | FlashlightRatings"
   },
   description:
-    "Find the best flashlight for any use case. Expert rankings across tactical, EDC, camping, and more — powered by verified specs, scoring algorithms, and real-time Amazon pricing.",
+    "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
   keywords: [
-    "best flashlights",
+    "best flashlights 2026",
     "flashlight rankings",
     "flashlight reviews",
     "tactical flashlight",
     "EDC flashlight",
-    "flashlight comparison"
+    "flashlight comparison",
+    "brightest flashlight",
+    "best tactical flashlight",
+    "best EDC flashlight",
+    "flashlight buying guide",
+    "SureFire",
+    "Streamlight",
+    "Fenix",
+    "Olight"
   ],
+  alternates: {
+    canonical: SITE_URL
+  },
   openGraph: {
     type: "website",
+    locale: "en_US",
     siteName: "FlashlightRatings",
-    title: "FlashlightRatings — Data-Driven Flashlight Rankings & Reviews",
+    url: SITE_URL,
+    title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews",
     description:
-      "Find the best flashlight for any use case. Expert rankings across tactical, EDC, camping, and more."
+      "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing."
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Best Flashlights 2026 — FlashlightRatings",
+    description: "Data-driven flashlight rankings & reviews. Compare specs, scores, and prices."
   },
   robots: {
     index: true,
-    follow: true
+    follow: true,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    "max-video-preview": -1
+  },
+  other: {
+    "google-site-verification": process.env.GOOGLE_SITE_VERIFICATION || ""
   }
 };
 
@@ -49,6 +82,37 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "FlashlightRatings",
+              url: SITE_URL,
+              description: "Data-driven flashlight rankings, reviews, and buying guides.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${SITE_URL}/flashlights?q={search_term_string}`,
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "FlashlightRatings",
+              url: SITE_URL,
+              logo: `${SITE_URL}/icon.svg`
+            })
+          }}
+        />
+      </head>
       <body>
         <header className="site-header">
           <div className="container">

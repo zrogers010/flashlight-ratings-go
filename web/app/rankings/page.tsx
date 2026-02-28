@@ -34,8 +34,9 @@ export async function generateMetadata({
     : "overall";
 
   return {
-    title: `${useCaseLabel[selected]} Flashlight Rankings — Top Flashlights Ranked by Score`,
-    description: useCaseDesc[selected]
+    title: `Best ${useCaseLabel[selected]} Flashlights 2026 — Top Ranked by Algorithm`,
+    description: useCaseDesc[selected],
+    alternates: { canonical: `/rankings${selected !== "overall" ? `?use_case=${selected}` : ""}` }
   };
 }
 

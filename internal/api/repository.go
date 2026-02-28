@@ -253,6 +253,8 @@ SELECT
 	f.name,
 	f.slug,
 	f.model_code,
+	EXTRACT(YEAR FROM f.launch_date)::INTEGER,
+	f.msrp_usd,
 	f.description,
 	(
 		SELECT m.url

@@ -104,6 +104,10 @@ const categoryMap: Record<string, CategoryConfig> = {
   }
 };
 
+export function generateStaticParams() {
+  return Object.keys(categoryMap).map((category) => ({ category }));
+}
+
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   const config = categoryMap[params.category];
   if (!config) {
@@ -111,7 +115,8 @@ export async function generateMetadata({ params }: { params: { category: string 
   }
   return {
     title: `${config.h1} 2026 — Ranked by Expert Score`,
-    description: config.description
+    description: config.description,
+    alternates: { canonical: `/best-flashlights/${params.category}` }
   };
 }
 

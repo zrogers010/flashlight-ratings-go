@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { RankingItem } from "@/lib/api";
 import Link from "next/link";
 import { AmazonCTA } from "@/components/AmazonCTA";
@@ -14,6 +15,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 }
 
 export function RankingsTable({ items }: { items: RankingItem[] }) {
+  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -54,18 +56,18 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
       <table>
         <thead>
           <tr>
-            <th style={{ width: 70 }}>
+            <th style={{ width: 60 }}>
               <button onClick={() => onSort("rank")}>
                 Rank <SortIcon active={sortKey === "rank"} dir={sortDir} />
               </button>
             </th>
-            <th style={{ width: 80 }}>
+            <th style={{ width: 70 }}>
               <button onClick={() => onSort("score")}>
                 Score <SortIcon active={sortKey === "score"} dir={sortDir} />
               </button>
             </th>
-            <th style={{ width: 60 }}>Image</th>
-            <th>
+            <th className="hide-mobile" style={{ width: 60 }}>Image</th>
+            <th className="hide-mobile">
               <button onClick={() => onSort("brand")}>
                 Brand <SortIcon active={sortKey === "brand"} dir={sortDir} />
               </button>
@@ -75,12 +77,19 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                 Model <SortIcon active={sortKey === "name"} dir={sortDir} />
               </button>
             </th>
-            <th style={{ width: 180 }}>Action</th>
+            <th className="hide-mobile" style={{ width: 160 }}>Action</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((item) => (
-            <tr key={`${item.profile}-${item.flashlight.id}`}>
+            <tr
+              key={`${item.profile}-${item.flashlight.id}`}
+              className="clickable-row"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a")) return;
+                router.push(`/flashlights/${item.flashlight.id}`);
+              }}
+            >
               <td>
                 <span style={{
                   fontFamily: "var(--font-mono)",
@@ -93,22 +102,27 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
               <td>
                 <ScoreBadge score={item.score} size="sm" />
               </td>
-              <td>
+              <td className="hide-mobile">
                 {item.flashlight.image_url ? (
                   <img className="table-thumb" src={item.flashlight.image_url} alt={item.flashlight.name} />
                 ) : (
                   <span className="badge">—</span>
                 )}
               </td>
-              <td style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
+              <td className="hide-mobile" style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
                 {item.flashlight.brand}
               </td>
               <td>
-                <Link href={`/flashlights/${item.flashlight.id}`} style={{ fontWeight: 600 }}>
-                  {item.flashlight.name}
-                </Link>
+                <div style={{ fontWeight: 600 }}>
+                  <Link href={`/flashlights/${item.flashlight.id}`}>
+                    {item.flashlight.name}
+                  </Link>
+                </div>
+                <span className="show-mobile-inline" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+                  {item.flashlight.brand}
+                </span>
               </td>
-              <td>
+              <td className="hide-mobile">
                 <AmazonCTA href={item.flashlight.amazon_url} />
               </td>
             </tr>

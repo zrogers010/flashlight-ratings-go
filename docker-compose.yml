@@ -3,16 +3,16 @@ services:
     image: postgres:16-alpine
     container_name: flashlight-db
     environment:
-      POSTGRES_DB: flashlight
-      POSTGRES_USER: flashlight_app
-      POSTGRES_PASSWORD: flashlight_dev
+      POSTGRES_DB: ${POSTGRES_DB:-flashlight}
+      POSTGRES_USER: ${POSTGRES_USER:-flashlight_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flashlight_dev}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flashlight_app -d flashlight"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flashlight_app} -d ${POSTGRES_DB:-flashlight}"]
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/migrations/0001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
@@ -21,6 +21,7 @@ services:
       - ./db/migrations/0004_intelligence_runs.sql:/docker-entrypoint-initdb.d/004_intelligence_runs.sql:ro
       - ./db/seeds/0001_scoring_profiles.sql:/docker-entrypoint-initdb.d/005_scoring_profiles.sql:ro
       - ./db/seeds/0002_demo_flashlights.sql:/docker-entrypoint-initdb.d/006_demo_flashlights.sql:ro
+    restart: unless-stopped
 
   api:
     build:
@@ -33,10 +34,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://flashlight_app:flashlight_dev@db:5432/flashlight?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-flashlight_app}:${POSTGRES_PASSWORD:-flashlight_dev}@db:5432/${POSTGRES_DB:-flashlight}?sslmode=disable
       API_ADDR: :8080
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
 
   worker:
     build:
@@ -51,24 +53,27 @@ services:
     env_file:
       - worker.env
     environment:
-      DATABASE_URL: postgres://flashlight_app:flashlight_dev@db:5432/flashlight?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-flashlight_app}:${POSTGRES_PASSWORD:-flashlight_dev}@db:5432/${POSTGRES_DB:-flashlight}?sslmode=disable
+    restart: unless-stopped
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
         API_BASE_URL: http://api:8080
     container_name: flashlight-web
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
       API_BASE_URL: http://api:8080
+      SITE_URL: ${SITE_URL:-https://flashlightratings.com}
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
 
 volumes:
   pgdata:

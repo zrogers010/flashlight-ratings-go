@@ -72,12 +72,8 @@ export default async function ComparePage({
           <h3 style={{ marginBottom: 16 }}>Pick flashlights to compare</h3>
           <div className="card-grid">
             {catalog.items.slice(0, 12).map((item) => (
-              <Link
-                key={item.id}
-                href={`/compare?ids=${item.id}`}
-                className="product-card"
-                style={{ textDecoration: "none" }}
-              >
+              <article key={item.id} className="product-card">
+                <Link href={`/flashlights/${item.id}`} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
                 <div className="image-card">
                   {item.image_url ? (
                     <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
@@ -91,7 +87,12 @@ export default async function ComparePage({
                   <span>{fmt(item.max_lumens)} lm</span>
                   <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "—"}</span>
                 </div>
-              </Link>
+                <div className="cta-row">
+                  <Link href={`/compare?ids=${ids.length ? ids.join(",") + "," : ""}${item.id}`} className="btn btn-ghost btn-sm">
+                    + Compare
+                  </Link>
+                </div>
+              </article>
             ))}
           </div>
         </div>

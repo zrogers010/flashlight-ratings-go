@@ -33,9 +33,12 @@ function topScore(item: FlashlightItem) {
 export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: number }) {
   const score = topScore(item);
   const useCase = bestUseCase(item);
+  const href = `/flashlights/${item.id}`;
 
   return (
     <article className="product-card">
+      <Link href={href} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
+
       <div className="image-card">
         {item.image_url ? (
           <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
@@ -49,10 +52,8 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
           {rank !== undefined && <p className="kicker">#{rank}</p>}
           <p className="kicker">{item.brand}</p>
           <h3 style={{ fontSize: "1.05rem" }}>
-            <Link href={`/flashlights/${item.id}`}>
-              {item.name}
-              {item.model_code ? <span className="muted" style={{ fontWeight: 400 }}> {item.model_code}</span> : null}
-            </Link>
+            {item.name}
+            {item.model_code ? <span className="muted" style={{ fontWeight: 400 }}> {item.model_code}</span> : null}
           </h3>
         </div>
         {score > 0 && <ScoreBadge score={score} size="sm" />}
@@ -66,10 +67,11 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
         {item.waterproof_rating && <span>{item.waterproof_rating}</span>}
       </div>
 
+      {item.price_usd !== undefined && (
+        <p className="card-price">${fmt(item.price_usd, 2)}</p>
+      )}
+
       <div className="cta-row">
-        <Link href={`/flashlights/${item.id}`} className="btn btn-ghost btn-sm">
-          Details
-        </Link>
         <AmazonCTA href={item.amazon_url} price={item.price_usd} />
       </div>
     </article>
