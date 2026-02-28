@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -84,8 +86,6 @@ SELECT
 	f.name,
 	f.slug,
 	f.model_code,
-	CASE WHEN f.launch_date IS NULL THEN NULL ELSE EXTRACT(YEAR FROM f.launch_date)::bigint END AS release_year,
-	f.msrp_usd,
 	f.description,
 	lm.url,
 	la.affiliate_url,
@@ -862,6 +862,411 @@ LIMIT %d
 		out = append(out, item)
 	}
 	return out, rows.Err()
+}
+
+type intelligenceCandidate struct {
+	ID               int64
+	Brand            string
+	Name             string
+	Category         string
+	ImageURL         *string
+	AmazonURL        *string
+	PriceUSD         *float64
+	MaxLumens        *int64
+	MaxCandela       *int64
+	BeamDistanceM    *int64
+	RuntimeHighMin   *int64
+	RuntimeMediumMin *int64
+	WeightG          *float64
+	LengthMM         *float64
+	Waterproof       *string
+	BatteryType      *string
+	TacticalScore    *float64
+	EDCScore         *float64
+	ValueScore       *float64
+	ThrowScore       *float64
+	FloodScore       *float64
+}
+
+func (s *Server) createIntelligenceRun(ctx context.Context, req intelligenceRunRequest) (intelligenceRunResponse, error) {
+	candidates, err := s.intelligenceCandidates(ctx)
+	if err != nil {
+		return intelligenceRunResponse{}, err
+	}
+	ranked := rankIntelligence(candidates, req)
+	top := ranked
+	if len(top) > 5 {
+		top = top[:5]
+	}
+
+	resultsJSON, err := json.Marshal(top)
+	if err != nil {
+		return intelligenceRunResponse{}, err
+	}
+
+	const q = `
+INSERT INTO intelligence_runs (
+	intended_use, budget_usd, battery_preference, size_constraint, algorithm_version, top_results
+)
+VALUES ($1, $2, $3, $4, 'v1', $5::jsonb)
+RETURNING id, created_at
+`
+	var (
+		runID     int64
+		createdAt time.Time
+	)
+	if err := s.db.QueryRowContext(
+		ctx,
+		q,
+		req.IntendedUse,
+		req.BudgetUSD,
+		req.BatteryPreference,
+		req.SizeConstraint,
+		string(resultsJSON),
+	).Scan(&runID, &createdAt); err != nil {
+		return intelligenceRunResponse{}, err
+	}
+
+	return intelligenceRunResponse{
+		RunID:             runID,
+		CreatedAt:         createdAt.UTC().Format(time.RFC3339),
+		IntendedUse:       req.IntendedUse,
+		BudgetUSD:         req.BudgetUSD,
+		BatteryPreference: req.BatteryPreference,
+		SizeConstraint:    req.SizeConstraint,
+		AlgorithmVersion:  "v1",
+		TopResults:        top,
+	}, nil
+}
+
+func (s *Server) getIntelligenceRunByID(ctx context.Context, id int64) (intelligenceRunResponse, error) {
+	const q = `
+SELECT
+	id,
+	created_at,
+	intended_use,
+	budget_usd,
+	battery_preference,
+	size_constraint,
+	algorithm_version,
+	top_results
+FROM intelligence_runs
+WHERE id = $1
+`
+	var (
+		resp          intelligenceRunResponse
+		createdAt     time.Time
+		topResultsRaw []byte
+	)
+	if err := s.db.QueryRowContext(ctx, q, id).Scan(
+		&resp.RunID,
+		&createdAt,
+		&resp.IntendedUse,
+		&resp.BudgetUSD,
+		&resp.BatteryPreference,
+		&resp.SizeConstraint,
+		&resp.AlgorithmVersion,
+		&topResultsRaw,
+	); err != nil {
+		return intelligenceRunResponse{}, err
+	}
+	resp.CreatedAt = createdAt.UTC().Format(time.RFC3339)
+	if err := json.Unmarshal(topResultsRaw, &resp.TopResults); err != nil {
+		resp.TopResults = []intelligenceRunResult{}
+	}
+	return resp, nil
+}
+
+func (s *Server) intelligenceCandidates(ctx context.Context) ([]intelligenceCandidate, error) {
+	const q = `
+WITH latest_run AS (
+	SELECT id
+	FROM scoring_runs
+	WHERE status = 'completed'
+	ORDER BY completed_at DESC NULLS LAST, id DESC
+	LIMIT 1
+),
+latest_price AS (
+	SELECT DISTINCT ON (p.flashlight_id)
+		p.flashlight_id,
+		p.price
+	FROM flashlight_price_snapshots p
+	WHERE p.currency_code = 'USD'
+	ORDER BY p.flashlight_id, p.captured_at DESC
+),
+latest_affiliate AS (
+	SELECT DISTINCT ON (a.flashlight_id)
+		a.flashlight_id,
+		a.affiliate_url
+	FROM affiliate_links a
+	WHERE a.provider = 'amazon'
+	  AND a.region_code = 'US'
+	  AND a.is_active = TRUE
+	ORDER BY a.flashlight_id, a.is_primary DESC, a.updated_at DESC, a.id DESC
+),
+latest_media AS (
+	SELECT DISTINCT ON (m.flashlight_id)
+		m.flashlight_id,
+		m.url
+	FROM flashlight_media m
+	WHERE m.media_type = 'image'
+	ORDER BY m.flashlight_id, m.sort_order ASC, m.id ASC
+),
+latest_scores AS (
+	SELECT
+		fs.flashlight_id,
+		MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
+		MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
+		MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
+		MAX(CASE WHEN sp.slug = 'throw' THEN fs.score END) AS throw_score,
+		MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score
+	FROM flashlight_scores fs
+	JOIN scoring_profiles sp ON sp.id = fs.profile_id
+	JOIN latest_run lr ON lr.id = fs.run_id
+	GROUP BY fs.flashlight_id
+),
+battery_choice AS (
+	SELECT
+		fbc.flashlight_id,
+		MIN(bt.code) AS battery_code
+	FROM flashlight_battery_compatibility fbc
+	JOIN battery_types bt ON bt.id = fbc.battery_type_id
+	GROUP BY fbc.flashlight_id
+)
+SELECT
+	f.id,
+	b.name,
+	f.name,
+	COALESCE(uc.slug, 'general') AS category,
+	lm.url,
+	la.affiliate_url,
+	lp.price,
+	s.max_lumens,
+	s.max_candela,
+	s.beam_distance_m,
+	s.runtime_high_min,
+	s.runtime_medium_min,
+	s.weight_g,
+	s.length_mm,
+	s.waterproof_rating,
+	bc.battery_code,
+	ls.tactical_score,
+	ls.edc_score,
+	ls.value_score,
+	ls.throw_score,
+	ls.flood_score
+FROM flashlights f
+JOIN brands b ON b.id = f.brand_id
+LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
+LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
+LEFT JOIN latest_affiliate la ON la.flashlight_id = f.id
+LEFT JOIN latest_media lm ON lm.flashlight_id = f.id
+LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
+LEFT JOIN battery_choice bc ON bc.flashlight_id = f.id
+LEFT JOIN LATERAL (
+	SELECT u.slug
+	FROM flashlight_use_cases fuc
+	JOIN use_cases u ON u.id = fuc.use_case_id
+	WHERE fuc.flashlight_id = f.id
+	ORDER BY fuc.confidence DESC, u.slug ASC
+	LIMIT 1
+) uc ON TRUE
+WHERE f.is_active = TRUE
+`
+	rows, err := s.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]intelligenceCandidate, 0, 32)
+	for rows.Next() {
+		var (
+			item                                                             intelligenceCandidate
+			imageURL, amazonURL, waterproof, batteryCode                     sql.NullString
+			price, weight, lengthMM, tactical, edc, value, throwScore, flood sql.NullFloat64
+			maxLumens, maxCandela, beam, runtimeHigh, runtimeMedium          sql.NullInt64
+		)
+		if err := rows.Scan(
+			&item.ID,
+			&item.Brand,
+			&item.Name,
+			&item.Category,
+			&imageURL,
+			&amazonURL,
+			&price,
+			&maxLumens,
+			&maxCandela,
+			&beam,
+			&runtimeHigh,
+			&runtimeMedium,
+			&weight,
+			&lengthMM,
+			&waterproof,
+			&batteryCode,
+			&tactical,
+			&edc,
+			&value,
+			&throwScore,
+			&flood,
+		); err != nil {
+			return nil, err
+		}
+		item.ImageURL = nullString(imageURL)
+		item.AmazonURL = nullString(amazonURL)
+		item.PriceUSD = nullFloat(price)
+		item.MaxLumens = nullInt(maxLumens)
+		item.MaxCandela = nullInt(maxCandela)
+		item.BeamDistanceM = nullInt(beam)
+		item.RuntimeHighMin = nullInt(runtimeHigh)
+		item.RuntimeMediumMin = nullInt(runtimeMedium)
+		item.WeightG = nullFloat(weight)
+		item.LengthMM = nullFloat(lengthMM)
+		item.Waterproof = nullString(waterproof)
+		item.BatteryType = nullString(batteryCode)
+		item.TacticalScore = nullFloat(tactical)
+		item.EDCScore = nullFloat(edc)
+		item.ValueScore = nullFloat(value)
+		item.ThrowScore = nullFloat(throwScore)
+		item.FloodScore = nullFloat(flood)
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
+func rankIntelligence(candidates []intelligenceCandidate, req intelligenceRunRequest) []intelligenceRunResult {
+	out := make([]intelligenceRunResult, 0, len(candidates))
+	for _, c := range candidates {
+		use := intelligenceUseCaseScore(c, req.IntendedUse)
+		budget := intelligenceBudgetScore(c, req.BudgetUSD)
+		battery := intelligenceBatteryScore(c, req.BatteryPreference)
+		size := intelligenceSizeScore(c, req.SizeConstraint)
+		total := use*0.55 + budget*0.2 + battery*0.15 + size*0.1
+		out = append(out, intelligenceRunResult{
+			ModelID:           c.ID,
+			Brand:             c.Brand,
+			Name:              c.Name,
+			Category:          c.Category,
+			ImageURL:          c.ImageURL,
+			AmazonURL:         c.AmazonURL,
+			PriceUSD:          c.PriceUSD,
+			MaxLumens:         c.MaxLumens,
+			MaxCandela:        c.MaxCandela,
+			BeamDistanceM:     c.BeamDistanceM,
+			RuntimeHighMin:    c.RuntimeHighMin,
+			RuntimeMediumMin:  c.RuntimeMediumMin,
+			WeightG:           c.WeightG,
+			LengthMM:          c.LengthMM,
+			WaterproofRating:  c.Waterproof,
+			BatteryType:       c.BatteryType,
+			OverallScore:      round1(total),
+			UseCaseScore:      round1(use),
+			BudgetScore:       round1(budget),
+			BatteryMatchScore: round1(battery),
+			SizeFitScore:      round1(size),
+			TacticalScore:     c.TacticalScore,
+			EDCScore:          c.EDCScore,
+			ValueScore:        c.ValueScore,
+			ThrowScore:        c.ThrowScore,
+			FloodScore:        c.FloodScore,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].OverallScore > out[j].OverallScore
+	})
+	return out
+}
+
+func intelligenceUseCaseScore(c intelligenceCandidate, use string) float64 {
+	tactical := valOr(c.TacticalScore, 0)
+	edc := valOr(c.EDCScore, 0)
+	value := valOr(c.ValueScore, 0)
+	throwScore := valOr(c.ThrowScore, 0)
+	flood := valOr(c.FloodScore, 0)
+	switch use {
+	case "tactical", "law-enforcement", "weapon-mount":
+		return tactical*0.65 + throwScore*0.35
+	case "camping":
+		return flood*0.5 + value*0.3 + edc*0.2
+	case "search-rescue":
+		return throwScore*0.5 + tactical*0.3 + flood*0.2
+	case "keychain", "edc":
+		return edc
+	default:
+		return edc
+	}
+}
+
+func intelligenceBudgetScore(c intelligenceCandidate, budget float64) float64 {
+	price := valOr(c.PriceUSD, 999999)
+	if price <= budget {
+		headroom := (budget - price) / math.Max(budget, 1)
+		return math.Min(100, 88+headroom*12)
+	}
+	over := (price - budget) / math.Max(budget, 1)
+	return math.Max(0, 90-over*140)
+}
+
+func intelligenceBatteryScore(c intelligenceCandidate, pref string) float64 {
+	if pref == "any" {
+		return 80
+	}
+	b := strings.ToLower(strings.TrimSpace(valOrString(c.BatteryType, "")))
+	if strings.Contains(b, pref) {
+		return 100
+	}
+	return 15
+}
+
+func intelligenceSizeScore(c intelligenceCandidate, size string) float64 {
+	if size == "any" {
+		return 80
+	}
+	length := valOr(c.LengthMM, 9999)
+	weight := valOr(c.WeightG, 9999)
+	switch size {
+	case "pocket":
+		if length <= 115 && weight <= 100 {
+			return 100
+		}
+		if length <= 125 && weight <= 130 {
+			return 70
+		}
+		return 20
+	case "compact":
+		if length <= 130 && weight <= 150 {
+			return 100
+		}
+		if length <= 145 && weight <= 180 {
+			return 75
+		}
+		return 40
+	case "full-size":
+		if length >= 130 {
+			return 100
+		}
+		return 60
+	default:
+		return 80
+	}
+}
+
+func valOr(v *float64, fallback float64) float64 {
+	if v == nil {
+		return fallback
+	}
+	return *v
+}
+
+func valOrString(v *string, fallback string) string {
+	if v == nil {
+		return fallback
+	}
+	return *v
+}
+
+func round1(v float64) float64 {
+	return math.Round(v*10) / 10
 }
 
 func buildFlashlightWhere(f flashlightFilters) (string, []any) {

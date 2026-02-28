@@ -93,6 +93,53 @@ export type FlashlightListResponse = {
   items: FlashlightItem[];
 };
 
+export type IntelligenceRunInput = {
+  intended_use: string;
+  budget_usd: number;
+  battery_preference: string;
+  size_constraint: string;
+};
+
+export type IntelligenceRunResult = {
+  model_id: number;
+  brand: string;
+  name: string;
+  category: string;
+  image_url?: string;
+  amazon_url?: string;
+  price_usd?: number;
+  max_lumens?: number;
+  max_candela?: number;
+  beam_distance_m?: number;
+  runtime_high_min?: number;
+  runtime_medium_min?: number;
+  weight_g?: number;
+  length_mm?: number;
+  waterproof_rating?: string;
+  battery_type?: string;
+  overall_score: number;
+  use_case_score: number;
+  budget_score: number;
+  battery_match_score: number;
+  size_fit_score: number;
+  tactical_score?: number;
+  edc_score?: number;
+  value_score?: number;
+  throw_score?: number;
+  flood_score?: number;
+};
+
+export type IntelligenceRunResponse = {
+  run_id: number;
+  created_at: string;
+  intended_use: string;
+  budget_usd: number;
+  battery_preference: string;
+  size_constraint: string;
+  algorithm_version: string;
+  top_results: IntelligenceRunResult[];
+};
+
 const API_BASE =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -122,4 +169,21 @@ export async function fetchCompare(ids: string) {
 
 export async function fetchFlashlights() {
   return getJSON<FlashlightListResponse>("/flashlights?page=1&page_size=24");
+}
+
+export async function createIntelligenceRun(input: IntelligenceRunInput) {
+  const res = await fetch(`${API_BASE}/intelligence/runs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    throw new Error(`Intelligence run failed: ${res.status}`);
+  }
+  return (await res.json()) as IntelligenceRunResponse;
+}
+
+export async function fetchIntelligenceRun(runID: string | number) {
+  return getJSON<IntelligenceRunResponse>(`/intelligence/runs/${encodeURIComponent(String(runID))}`);
 }

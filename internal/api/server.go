@@ -27,6 +27,8 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/compare", s.handleCompare)
 	mux.HandleFunc("/rankings", s.handleRankings)
 	mux.HandleFunc("/finder", s.handleFinder)
+	mux.HandleFunc("/intelligence/runs", s.handleIntelligenceRuns)
+	mux.HandleFunc("/intelligence/runs/", s.handleIntelligenceRunByID)
 	return mux
 }
 
@@ -167,6 +169,53 @@ type finderRanking struct {
 	ThrowScore    *float64 `json:"throw_score,omitempty"`
 	ValueScore    *float64 `json:"value_score,omitempty"`
 	FinderScore   float64  `json:"finder_score"`
+}
+
+type intelligenceRunRequest struct {
+	IntendedUse       string  `json:"intended_use"`
+	BudgetUSD         float64 `json:"budget_usd"`
+	BatteryPreference string  `json:"battery_preference"`
+	SizeConstraint    string  `json:"size_constraint"`
+}
+
+type intelligenceRunResult struct {
+	ModelID           int64    `json:"model_id"`
+	Brand             string   `json:"brand"`
+	Name              string   `json:"name"`
+	Category          string   `json:"category"`
+	ImageURL          *string  `json:"image_url,omitempty"`
+	AmazonURL         *string  `json:"amazon_url,omitempty"`
+	PriceUSD          *float64 `json:"price_usd,omitempty"`
+	MaxLumens         *int64   `json:"max_lumens,omitempty"`
+	MaxCandela        *int64   `json:"max_candela,omitempty"`
+	BeamDistanceM     *int64   `json:"beam_distance_m,omitempty"`
+	RuntimeHighMin    *int64   `json:"runtime_high_min,omitempty"`
+	RuntimeMediumMin  *int64   `json:"runtime_medium_min,omitempty"`
+	WeightG           *float64 `json:"weight_g,omitempty"`
+	LengthMM          *float64 `json:"length_mm,omitempty"`
+	WaterproofRating  *string  `json:"waterproof_rating,omitempty"`
+	BatteryType       *string  `json:"battery_type,omitempty"`
+	OverallScore      float64  `json:"overall_score"`
+	UseCaseScore      float64  `json:"use_case_score"`
+	BudgetScore       float64  `json:"budget_score"`
+	BatteryMatchScore float64  `json:"battery_match_score"`
+	SizeFitScore      float64  `json:"size_fit_score"`
+	TacticalScore     *float64 `json:"tactical_score,omitempty"`
+	EDCScore          *float64 `json:"edc_score,omitempty"`
+	ValueScore        *float64 `json:"value_score,omitempty"`
+	ThrowScore        *float64 `json:"throw_score,omitempty"`
+	FloodScore        *float64 `json:"flood_score,omitempty"`
+}
+
+type intelligenceRunResponse struct {
+	RunID             int64                   `json:"run_id"`
+	CreatedAt         string                  `json:"created_at"`
+	IntendedUse       string                  `json:"intended_use"`
+	BudgetUSD         float64                 `json:"budget_usd"`
+	BatteryPreference string                  `json:"battery_preference"`
+	SizeConstraint    string                  `json:"size_constraint"`
+	AlgorithmVersion  string                  `json:"algorithm_version"`
+	TopResults        []intelligenceRunResult `json:"top_results"`
 }
 
 func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
@@ -360,6 +409,79 @@ func (s *Server) handleFinder(w http.ResponseWriter, r *http.Request) {
 		Filters: filters,
 		Items:   items,
 	})
+}
+
+func (s *Server) handleIntelligenceRuns(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+
+	var req intelligenceRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json body"})
+		return
+	}
+
+	req.IntendedUse = strings.TrimSpace(strings.ToLower(req.IntendedUse))
+	if req.IntendedUse == "" {
+		req.IntendedUse = "edc"
+	}
+	if req.BudgetUSD <= 0 {
+		req.BudgetUSD = 80
+	}
+	req.BatteryPreference = strings.TrimSpace(strings.ToLower(req.BatteryPreference))
+	if req.BatteryPreference == "" {
+		req.BatteryPreference = "any"
+	}
+	req.SizeConstraint = strings.TrimSpace(strings.ToLower(req.SizeConstraint))
+	if req.SizeConstraint == "" {
+		req.SizeConstraint = "any"
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, err := s.createIntelligenceRun(ctx, req)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to create intelligence run"})
+		return
+	}
+	writeJSON(w, http.StatusCreated, resp)
+}
+
+func (s *Server) handleIntelligenceRunByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+
+	idPart := strings.TrimPrefix(r.URL.Path, "/intelligence/runs/")
+	idPart = strings.TrimSpace(idPart)
+	if idPart == "" || strings.Contains(idPart, "/") {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid run id"})
+		return
+	}
+
+	id, err := strconv.ParseInt(idPart, 10, 64)
+	if err != nil || id <= 0 {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid run id"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, err := s.getIntelligenceRunByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, apiError{Error: "intelligence run not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to fetch intelligence run"})
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func validUseCase(v string) bool {

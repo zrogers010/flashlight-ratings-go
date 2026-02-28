@@ -419,6 +419,75 @@ th button {
   font-weight: 700;
 }
 
+.intelligence-form h3 {
+  margin-top: 0;
+}
+
+.intelligence-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.intelligence-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.intelligence-grid select,
+.intelligence-grid input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  padding: 9px 10px;
+  font: inherit;
+}
+
+.score-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.score-stack div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.score-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.bar-row {
+  display: grid;
+  gap: 6px;
+}
+
+.bar-row label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.bar-row > div {
+  height: 9px;
+  border-radius: 999px;
+  background: #f1e7d6;
+  overflow: hidden;
+}
+
+.bar-row > div > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #ff9b4a);
+}
+
 @media (max-width: 700px) {
   .site-header .container {
     flex-direction: column;
@@ -470,6 +539,10 @@ th button {
 
   .compare-model-image {
     height: 100px;
+  }
+
+  .intelligence-grid {
+    grid-template-columns: 1fr;
   }
 }
 

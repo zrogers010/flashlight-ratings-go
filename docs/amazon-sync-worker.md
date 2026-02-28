@@ -41,3 +41,11 @@ DATABASE_URL=postgres://... AMAZON_SYNC_DRY_RUN=true go run ./cmd/amazon-sync
 1. Add retry/backoff and ASIN batching.
 2. Persist image URLs from PA-API into flashlight media records.
 3. Add sync metrics for observability (success/error/staleness).
+
+## If PA-API is not approved yet
+
+- Keep `AMAZON_SYNC_DRY_RUN=true`.
+- Import real affiliate links + specs manually:
+  - `docs/manual-catalog-import.md`
+- Follow readiness plan to unlock PA-API:
+  - `docs/associates-paapi-readiness.md`

@@ -129,6 +129,7 @@ Apply SQL migrations in order:
 - `db/migrations/0001_initial_schema.sql`
 - `db/migrations/0002_market_intelligence.sql`
 - `db/migrations/0003_flashlight_detail_fields.sql`
+- `db/migrations/0004_intelligence_runs.sql`
 
 Example with `psql`:
 
@@ -136,6 +137,7 @@ Example with `psql`:
 psql "$DATABASE_URL" -f db/migrations/0001_initial_schema.sql
 psql "$DATABASE_URL" -f db/migrations/0002_market_intelligence.sql
 psql "$DATABASE_URL" -f db/migrations/0003_flashlight_detail_fields.sql
+psql "$DATABASE_URL" -f db/migrations/0004_intelligence_runs.sql
 ```
 
 ## 9. Keep secrets out of GitHub

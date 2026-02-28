@@ -45,6 +45,7 @@ if command -v psql >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then
   psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0001_initial_schema.sql
   psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0002_market_intelligence.sql
   psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0003_flashlight_detail_fields.sql
+  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0004_intelligence_runs.sql
 else
   echo "Skipping DB migrations (psql missing or DATABASE_URL not set)."
 fi
