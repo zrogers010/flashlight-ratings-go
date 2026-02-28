@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─── Configuration ──────────────────────────────────────────────────
-APP_DIR="${APP_DIR:-/opt/flashlight-ratings}"
+APP_DIR="${APP_DIR:-$HOME/flashlight-ratings}"
 BRANCH="${BRANCH:-main}"
 REPO="${REPO:-https://github.com/zrogers010/flashlight-ratings-go.git}"
 COMPOSE="docker compose"
@@ -149,7 +149,7 @@ do_setup() {
 # ═════════════════════════════════════════════════════════════════════
 # DEPLOY — run as deploy user
 #   Usage:  sudo su - deploy
-#           bash /opt/flashlight-ratings/scripts/deploy.sh
+#           bash ~/flashlight-ratings/scripts/deploy.sh
 # ═════════════════════════════════════════════════════════════════════
 do_deploy() {
   echo "═══ FlashlightRatings — Deploy ═══"
