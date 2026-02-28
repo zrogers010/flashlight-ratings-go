@@ -5,7 +5,14 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-$HOME/flashlight-ratings}"
 BRANCH="${BRANCH:-main}"
 REPO="${REPO:-https://github.com/zrogers010/flashlight-ratings-go.git}"
-COMPOSE="docker compose"
+# Use docker-compose (V1) or docker compose (V2), whichever is available
+if command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+else
+  COMPOSE="docker-compose"
+fi
 DOMAIN="${DOMAIN:-flashlightratings.com}"
 
 API_INTERNAL_URL="http://api:8080"
@@ -196,9 +203,9 @@ do_deploy() {
 
   # ── Build ────────────────────────────────────────────────────────
   echo "→ Building images..."
-  ${COMPOSE} build \
-    --build-arg NEXT_PUBLIC_API_BASE_URL="${API_PUBLIC_URL}" \
-    --build-arg API_BASE_URL="${API_INTERNAL_URL}"
+  NEXT_PUBLIC_API_BASE_URL="${API_PUBLIC_URL}" \
+  API_BASE_URL="${API_INTERNAL_URL}" \
+  ${COMPOSE} build
 
   # ── Deploy ───────────────────────────────────────────────────────
   echo "→ Stopping old containers..."
