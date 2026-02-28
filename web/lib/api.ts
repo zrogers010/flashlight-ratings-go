@@ -140,6 +140,15 @@ export type IntelligenceRunResponse = {
   top_results: IntelligenceRunResult[];
 };
 
+export type IntelligenceResponse = {
+  intended_use: string;
+  budget_usd: number;
+  battery_preference: string;
+  size_constraint: string;
+  algorithm_version: string;
+  top_results: IntelligenceRunResult[];
+};
+
 const API_BASE =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -155,8 +164,10 @@ async function getJSON<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function fetchRankings(useCase: string) {
-  return getJSON<{ items: RankingItem[] }>(`/rankings?use_case=${encodeURIComponent(useCase)}`);
+export async function fetchRankings(useCase: string, pageSize = 200) {
+  return getJSON<{ items: RankingItem[] }>(
+    `/rankings?use_case=${encodeURIComponent(useCase)}&page=1&page_size=${encodeURIComponent(String(pageSize))}`
+  );
 }
 
 export async function fetchFlashlightByID(id: string) {
@@ -186,4 +197,17 @@ export async function createIntelligenceRun(input: IntelligenceRunInput) {
 
 export async function fetchIntelligenceRun(runID: string | number) {
   return getJSON<IntelligenceRunResponse>(`/intelligence/runs/${encodeURIComponent(String(runID))}`);
+}
+
+export async function fetchIntelligenceRecommendations(input: IntelligenceRunInput) {
+  const res = await fetch(`${API_BASE}/intelligence/recommendations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    throw new Error(`Intelligence recommendation failed: ${res.status}`);
+  }
+  return (await res.json()) as IntelligenceResponse;
 }

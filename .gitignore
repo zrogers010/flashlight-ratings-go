@@ -28,6 +28,10 @@ tmp/
 temp/
 .cache/
 
+# Test artifacts
+web/mobile-screenshots/
+web/mobile-test*.js
+
 # Go
 bin/
 dist/
@@ -39,6 +43,7 @@ web/node_modules/
 web/.next/
 web/out/
 web/.turbo/
+web/tsconfig.tsbuildinfo
 web/.env.local
 web/.env.development.local
 web/.env.test.local

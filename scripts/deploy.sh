@@ -1,65 +1,107 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/flashlight-ratings-go}"
+# ─── Configuration ──────────────────────────────────────────────────
+APP_DIR="${APP_DIR:-/opt/flashlight-ratings}"
+BRANCH="${BRANCH:-main}"
+COMPOSE="docker compose"
+DOMAIN="${DOMAIN:-flashlightratings.com}"
+
+# Build args baked into the web container at image build time
+API_INTERNAL_URL="http://api:8080"
+API_PUBLIC_URL="https://${DOMAIN}/api"
+
+# ─── Preflight ──────────────────────────────────────────────────────
+echo "═══ FlashlightRatings deploy ═══"
+echo "  dir:    ${APP_DIR}"
+echo "  branch: ${BRANCH}"
+echo "  domain: ${DOMAIN}"
+echo ""
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "ERROR: docker is not installed"
+  exit 1
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo "ERROR: docker daemon not running (or no permission — is this user in the docker group?)"
+  exit 1
+fi
+
+if [[ ! -d "${APP_DIR}" ]]; then
+  echo "ERROR: ${APP_DIR} does not exist. Clone the repo first:"
+  echo "  sudo mkdir -p ${APP_DIR}"
+  echo "  sudo chown deploy:deploy ${APP_DIR}"
+  echo "  git clone git@github.com:YOUR_USER/flashlight-ratings-go.git ${APP_DIR}"
+  exit 1
+fi
+
 cd "${APP_DIR}"
 
-if ! command -v git >/dev/null 2>&1; then
-  echo "git is required" >&2
-  exit 1
-fi
+# ─── Check secrets ──────────────────────────────────────────────────
+for envfile in .env worker.env; do
+  if [[ ! -f "${envfile}" ]]; then
+    echo "ERROR: ${envfile} not found. Copy from the example and fill in secrets:"
+    echo "  cp deploy/env/${envfile/\.env/}.env.example ${envfile} 2>/dev/null || cp .env.example ${envfile}"
+    echo "  nano ${envfile}"
+    exit 1
+  fi
+done
 
-if ! command -v go >/dev/null 2>&1; then
-  echo "go is required" >&2
-  exit 1
-fi
+# Source .env so docker compose picks up variables
+set -a; source .env; set +a
 
-if ! command -v npm >/dev/null 2>&1; then
-  echo "npm is required" >&2
-  exit 1
-fi
-
-if [ ! -d .git ]; then
-  echo "APP_DIR does not look like a git checkout: ${APP_DIR}" >&2
-  exit 1
-fi
-
-BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-echo "Deploying branch: ${BRANCH}"
-
+# ─── Pull latest code ──────────────────────────────────────────────
+echo "→ Pulling latest from origin/${BRANCH}..."
 git fetch origin "${BRANCH}"
-git pull --ff-only origin "${BRANCH}"
+git reset --hard "origin/${BRANCH}"
+echo "  commit: $(git rev-parse --short HEAD)"
+echo ""
 
-mkdir -p bin
-CGO_ENABLED=0 go build -o bin/api ./cmd/api
-CGO_ENABLED=0 go build -o bin/worker ./cmd/worker
+# ─── Build and deploy ──────────────────────────────────────────────
+echo "→ Building images..."
+${COMPOSE} build \
+  --build-arg NEXT_PUBLIC_API_BASE_URL="${API_PUBLIC_URL}" \
+  --build-arg API_BASE_URL="${API_INTERNAL_URL}"
 
-if [ -f /etc/flashlight-ratings-go/api.env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source /etc/flashlight-ratings-go/api.env
-  set +a
-fi
+echo "→ Stopping old containers..."
+${COMPOSE} down --remove-orphans --timeout 30
 
-if command -v psql >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then
-  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0001_initial_schema.sql
-  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0002_market_intelligence.sql
-  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0003_flashlight_detail_fields.sql
-  psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f db/migrations/0004_intelligence_runs.sql
+echo "→ Starting services..."
+${COMPOSE} up -d
+
+echo "→ Waiting for database health check..."
+timeout 60 bash -c 'until docker inspect --format="{{.State.Health.Status}}" flashlight-db 2>/dev/null | grep -q healthy; do sleep 2; done' \
+  || { echo "WARNING: DB health check timed out"; }
+
+# ─── Import catalog data ───────────────────────────────────────────
+echo "→ Importing manual catalog..."
+bash scripts/import-manual-catalog.sh data/manual_catalog.csv
+
+echo "→ Restarting worker (triggers scoring)..."
+${COMPOSE} restart worker
+sleep 5
+
+# ─── Verify ─────────────────────────────────────────────────────────
+echo ""
+echo "→ Health checks:"
+
+api_status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/rankings 2>/dev/null || echo "000")
+echo "  API /rankings:       ${api_status}"
+
+web_status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+echo "  Web /:               ${web_status}"
+
+echo ""
+if [[ "${api_status}" == "200" && "${web_status}" == "200" ]]; then
+  echo "✓ Deploy complete — all services healthy"
 else
-  echo "Skipping DB migrations (psql missing or DATABASE_URL not set)."
+  echo "⚠ Deploy finished but some services may be unhealthy. Check logs:"
+  echo "  ${COMPOSE} logs --tail=50"
 fi
 
-pushd web >/dev/null
-npm ci
-npm run build
-popd >/dev/null
-
-if command -v systemctl >/dev/null 2>&1; then
-  systemctl restart flashlight-api flashlight-worker flashlight-web
-  systemctl --no-pager --full status flashlight-api flashlight-worker flashlight-web || true
-else
-  echo "systemctl not found; restart services manually."
-fi
-
-echo "Deploy completed."
+echo ""
+echo "Reminder: set up a reverse proxy (nginx/caddy) to forward:"
+echo "  ${DOMAIN}     → localhost:3000"
+echo "  ${DOMAIN}/api → localhost:8080"
+echo ""

@@ -1,55 +1,43 @@
-import Link from "next/link";
-import { AmazonCTA } from "@/components/AmazonCTA";
+import type { Metadata } from "next";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { FlashlightCard } from "@/components/FlashlightCard";
+import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights } from "@/lib/api";
 
-function fmt(v?: number, digits = 0) {
-  if (v === undefined || Number.isNaN(v)) return "N/A";
-  return v.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  });
-}
+export const metadata: Metadata = {
+  title: "All Flashlights — Full Catalog with Specs & Prices",
+  description:
+    "Browse every flashlight in our catalog. Specs, scores, images, and current Amazon pricing for each model."
+};
 
 export default async function FlashlightsPage() {
   const data = await fetchFlashlights();
 
   return (
     <section className="grid">
-      <div className="panel">
-        <p className="kicker">Catalog</p>
-        <h1>Flashlight Listings</h1>
-        <p className="muted">Images, prices, specs, and quick links to full technical details.</p>
+      <Breadcrumbs items={[{ label: "Catalog" }]} />
+
+      <div className="panel hero">
+        <p className="kicker">Full Catalog</p>
+        <h1>All Flashlights</h1>
+        <p className="muted" style={{ maxWidth: 560 }}>
+          {data.total} models with verified specs, algorithmic scores, and real-time Amazon pricing.
+        </p>
       </div>
 
       <div className="card-grid">
         {data.items.map((item) => (
-          <article key={item.id} className="panel product-card">
-            <div className="image-card">
-              {item.image_url ? (
-                <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
-              ) : (
-                <div className="image-fallback">No image</div>
-              )}
-            </div>
-            <p className="kicker">{item.brand}</p>
-            <h3>
-              {item.name} {item.model_code ? <span className="muted">{item.model_code}</span> : null}
-            </h3>
-            <p className="muted clamp-3">{item.description || "Description coming soon."}</p>
-            <div className="spec-row">
-              <span>{fmt(item.max_lumens)} lm</span>
-              <span>{fmt(item.beam_distance_m)} m throw</span>
-              <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "N/A"}</span>
-            </div>
-            <div className="cta-row">
-              <Link href={`/flashlights/${item.id}`} className="button-link button-secondary">
-                Full Details
-              </Link>
-              <AmazonCTA href={item.amazon_url} />
-            </div>
-          </article>
+          <FlashlightCard key={item.id} item={item} />
         ))}
       </div>
+
+      {data.items.length === 0 && (
+        <div className="panel" style={{ textAlign: "center", padding: 40 }}>
+          <p className="muted">No flashlights in the catalog yet.</p>
+        </div>
+      )}
+
+      <AmazonDisclosure />
     </section>
   );
 }
