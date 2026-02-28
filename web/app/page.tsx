@@ -1,226 +1,185 @@
 import Link from "next/link";
-import { AmazonCTA } from "@/components/AmazonCTA";
+import { FlashlightCard } from "@/components/FlashlightCard";
+import { FAQ } from "@/components/FAQ";
+import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchRankings } from "@/lib/api";
 
-function fmt(v?: number, digits = 0) {
-  if (v === undefined || Number.isNaN(v)) return "N/A";
-  return v.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  });
-}
-
-const reviews = [
-  {
-    quote: "Rankings helped me narrow from 20 models to 2 serious options in minutes.",
-    author: "Dylan, Search & Rescue Volunteer"
-  },
-  {
-    quote: "The side-by-side compare view made battery and throw differences obvious.",
-    author: "Mina, Everyday Carry Enthusiast"
-  },
-  {
-    quote: "Finally a flashlight site that shows both raw specs and practical value scoring.",
-    author: "Carlos, Gear Reviewer"
-  }
+const useCases = [
+  { label: "Tactical", href: "/best-flashlights/tactical", icon: "⚔" },
+  { label: "EDC", href: "/best-flashlights/edc", icon: "🔑" },
+  { label: "Camping", href: "/best-flashlights/camping", icon: "⛺" },
+  { label: "Search & Rescue", href: "/best-flashlights/search-rescue", icon: "🔦" },
+  { label: "Best Value", href: "/best-flashlights/value", icon: "💰" },
+  { label: "Max Throw", href: "/best-flashlights/throw", icon: "🎯" }
 ];
 
-const guides = [
-  {
-    title: "How To Pick Throw vs Flood",
-    body: "Use candela and beam distance for long-range spotting, and lumens + beam profile for close-range task light."
-  },
-  {
-    title: "Runtime Numbers Explained",
-    body: "Manufacturer runtime is often step-down based. Compare low/medium/high tables to estimate real-world sustained use."
-  },
-  {
-    title: "Best EDC Weight Range",
-    body: "Most people find 60g-110g ideal for pocket carry. Above that, clip quality and body shape become critical."
-  }
+const methodology = [
+  { name: "Tactical", weights: "Candela 30% · Runtime 20% · Durability 20% · Throw 20% · Price 10%" },
+  { name: "EDC", weights: "Runtime 30% · Flood 20% · Price 20% · Durability 15% · Lumens 15%" },
+  { name: "Value", weights: "Performance 60% · Price 40%" },
+  { name: "Throw", weights: "Candela 45% · Beam Distance 30% · Runtime 15% · Durability 10%" },
+  { name: "Flood", weights: "Lumens 50% · Runtime 25% · Price 15% · Durability 10%" }
 ];
 
 const faq = [
   {
-    q: "How often are rankings updated?",
-    a: "The worker reruns sync and scoring on a schedule, then pages show the latest completed scoring batch."
+    q: "How are flashlights ranked?",
+    a: "Every flashlight is scored across 5 dimensions (Tactical, EDC, Value, Throw, Flood) using a weighted algorithm that factors in candela, lumens, runtime, durability, and price. Scores are normalized on a 0-100 scale."
   },
   {
-    q: "Do prices update in real time?",
-    a: "Prices reflect the most recent snapshot available in the database and may lag the live Amazon listing."
+    q: "How often are rankings and prices updated?",
+    a: "Our sync worker pulls fresh data from the Amazon Product Advertising API on a regular schedule. Scores are recalculated with each sync. Prices may lag live Amazon listings by a few hours."
   },
   {
-    q: "Are affiliate links disclosed?",
-    a: "Yes. Every page with purchase links includes the affiliate disclosure."
+    q: "Are these affiliate links?",
+    a: "Yes. As an Amazon Associate we earn from qualifying purchases. This supports the site at no extra cost to you. We rank by algorithm, not commission — every recommendation is data-driven."
+  },
+  {
+    q: "Can I compare flashlights side by side?",
+    a: "Yes! Use our Compare tool to view specs, scores, and prices for up to 20 flashlights in a side-by-side table. Or use Find Yours to get personalized recommendations based on your use case and budget."
   }
 ];
 
 export default async function HomePage() {
-  const [rankings, flashlights] = await Promise.all([fetchRankings("tactical"), fetchFlashlights()]);
-  const top = rankings.items.slice(0, 3);
-  const featured = flashlights.items.slice(0, 6);
-  const latest = [...flashlights.items]
-    .sort((a, b) => (b.price_usd || 0) - (a.price_usd || 0))
-    .slice(0, 3);
+  const [rankings, flashlights] = await Promise.all([
+    fetchRankings("tactical"),
+    fetchFlashlights()
+  ]);
+
+  const topRanked = rankings.items.slice(0, 3);
+  const featured = flashlights.items.slice(0, 8);
+
+  const catalogSize = flashlights.total;
+  const topScore = topRanked[0]?.score;
+  const prices = flashlights.items.map((x) => x.price_usd).filter((p): p is number => p !== undefined);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
 
   return (
     <section className="grid">
-      <div className="panel hero">
-        <p className="kicker">Field-Tested Picks</p>
-        <h1>Find The Right Flashlight Fast</h1>
-        <p className="muted">
-          Browse verified specs, ranked recommendations, runtime tables, and direct links to in-stock products.
+      {/* ── Hero ──────────────────────────────────── */}
+      <div className="panel hero" style={{ textAlign: "center", padding: "48px 24px" }}>
+        <p className="kicker" style={{ marginBottom: 8 }}>Data-Driven Flashlight Rankings</p>
+        <h1 style={{ fontSize: "2.25rem", maxWidth: 680, margin: "0 auto 12px" }}>
+          Find the Right Flashlight, Backed by Data
+        </h1>
+        <p className="muted" style={{ maxWidth: 560, margin: "0 auto 24px", fontSize: "1.05rem" }}>
+          {catalogSize} models scored across 5 dimensions. Verified specs, algorithmic rankings,
+          and real-time Amazon pricing — all in one place.
         </p>
-        <div className="cta-row">
-          <Link href="/rankings" className="button-link">
+        <div className="cta-row" style={{ justifyContent: "center" }}>
+          <Link href="/find-yours" className="button-link">
+            Find Your Flashlight
+          </Link>
+          <Link href="/rankings" className="button-link button-secondary">
             View Rankings
           </Link>
-          <Link href="/flashlights" className="button-link button-secondary">
-            Browse Catalog
-          </Link>
-          <Link href="/compare?ids=1,2" className="button-link button-secondary">
-            Compare Models
-          </Link>
         </div>
       </div>
 
-      <div className="panel stat-grid">
+      {/* ── Use Case Grid ─────────────────────────── */}
+      <div className="use-case-grid">
+        {useCases.map((uc) => (
+          <Link key={uc.label} href={uc.href} className="use-case-card">
+            <span className="use-case-icon">{uc.icon}</span>
+            <span>{uc.label}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Stats ─────────────────────────────────── */}
+      <div className="stat-grid">
         <div className="stat-card">
-          <p className="kicker">Catalog Size</p>
-          <h3>{flashlights.total}</h3>
-          <p className="muted">models indexed</p>
+          <p className="kicker">Catalog</p>
+          <p className="stat-value">{catalogSize}</p>
+          <p className="stat-label">models indexed</p>
         </div>
         <div className="stat-card">
-          <p className="kicker">Top Tactical</p>
-          <h3>{top[0] ? `${top[0].score.toFixed(1)}` : "N/A"}</h3>
-          <p className="muted">current leading score</p>
+          <p className="kicker">Top Score</p>
+          <p className="stat-value">{topScore ? topScore.toFixed(1) : "—"}</p>
+          <p className="stat-label">tactical leader</p>
         </div>
         <div className="stat-card">
-          <p className="kicker">Price Range</p>
-          <h3>
-            $
-            {flashlights.items.length
-              ? Math.min(...flashlights.items.map((x) => x.price_usd || 9999)).toFixed(0)
-              : "N/A"}
-            +
-          </h3>
-          <p className="muted">starting point in catalog</p>
+          <p className="kicker">Starting At</p>
+          <p className="stat-value">${minPrice.toFixed(0)}</p>
+          <p className="stat-label">lowest in catalog</p>
+        </div>
+        <div className="stat-card">
+          <p className="kicker">Scoring</p>
+          <p className="stat-value">5</p>
+          <p className="stat-label">ranking dimensions</p>
         </div>
       </div>
 
+      {/* ── Top Ranked ────────────────────────────── */}
       <div className="panel">
-        <h2>Top Tactical Right Now</h2>
+        <div className="section-header">
+          <h2>Top Ranked Tactical</h2>
+          <Link href="/best-flashlights/tactical">View all →</Link>
+        </div>
+        <p className="muted" style={{ marginBottom: 16, fontSize: "0.9rem" }}>
+          Highest-scoring flashlights in our tactical category right now.
+        </p>
         <div className="card-grid">
-          {top.map((item) => (
-            <article key={item.flashlight.id} className="product-card">
-              <div className="image-card">
-                {item.flashlight.image_url ? (
-                  <img src={item.flashlight.image_url} alt={item.flashlight.name} loading="lazy" />
-                ) : (
-                  <div className="image-fallback">No image</div>
-                )}
-              </div>
-              <p className="kicker">Rank #{item.rank}</p>
-              <h3>
-                <Link href={`/flashlights/${item.flashlight.id}`}>
-                  {item.flashlight.brand} {item.flashlight.name}
-                </Link>
-              </h3>
-              <p className="muted">Score: {fmt(item.score, 2)}</p>
-              <AmazonCTA href={item.flashlight.amazon_url} />
-            </article>
+          {topRanked.map((item) => (
+            <FlashlightCard
+              key={item.flashlight.id}
+              item={{
+                id: item.flashlight.id,
+                brand: item.flashlight.brand,
+                name: item.flashlight.name,
+                slug: item.flashlight.slug,
+                image_url: item.flashlight.image_url,
+                amazon_url: item.flashlight.amazon_url,
+                tactical_score: item.score
+              }}
+              rank={item.rank}
+            />
           ))}
         </div>
       </div>
 
+      {/* ── Featured Models ───────────────────────── */}
       <div className="panel">
-        <h2>Featured Models</h2>
+        <div className="section-header">
+          <h2>Browse the Catalog</h2>
+          <Link href="/best-flashlights">See all models →</Link>
+        </div>
+        <p className="muted" style={{ marginBottom: 16, fontSize: "0.9rem" }}>
+          Specs, scores, and prices for every flashlight we track.
+        </p>
         <div className="card-grid">
           {featured.map((item) => (
-            <article key={item.id} className="product-card">
-              <div className="image-card">
-                {item.image_url ? (
-                  <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
-                ) : (
-                  <div className="image-fallback">No image</div>
-                )}
-              </div>
-              <p className="kicker">{item.brand}</p>
-              <h3>
-                <Link href={`/flashlights/${item.id}`}>
-                  {item.name} {item.model_code ? <span className="muted">{item.model_code}</span> : null}
-                </Link>
-              </h3>
-              <p className="muted clamp-3">{item.description || "Description coming soon."}</p>
-              <div className="spec-row">
-                <span>{fmt(item.max_lumens)} lm</span>
-                <span>{fmt(item.beam_distance_m)} m throw</span>
-                <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "N/A"}</span>
-              </div>
-              <div className="cta-row">
-                <Link href={`/flashlights/${item.id}`} className="button-link button-secondary">
-                  Details
-                </Link>
-                <AmazonCTA href={item.amazon_url} />
-              </div>
-            </article>
+            <FlashlightCard key={item.id} item={item} />
           ))}
         </div>
       </div>
 
+      {/* ── How We Score ──────────────────────────── */}
       <div className="panel">
-        <h2>Buying Guides</h2>
-        <div className="guide-grid">
-          {guides.map((g) => (
-            <article key={g.title} className="guide-card">
-              <h3>{g.title}</h3>
-              <p className="muted">{g.body}</p>
-            </article>
+        <div className="section-header">
+          <h2>How We Score</h2>
+          <Link href="/guides/how-we-score">Full methodology →</Link>
+        </div>
+        <p className="muted" style={{ marginBottom: 16, fontSize: "0.9rem" }}>
+          Every flashlight is evaluated across 5 weighted scoring profiles using verified manufacturer specs.
+        </p>
+        <div className="method-grid">
+          {methodology.map((m) => (
+            <div key={m.name} className="method-card">
+              <h4>{m.name}</h4>
+              <p>{m.weights}</p>
+            </div>
           ))}
         </div>
       </div>
 
+      {/* ── FAQ ───────────────────────────────────── */}
       <div className="panel">
-        <h2>Price Watch</h2>
-        <div className="card-grid">
-          {latest.map((item) => (
-            <article key={`price-${item.id}`} className="product-card">
-              <h3>
-                <Link href={`/flashlights/${item.id}`}>
-                  {item.brand} {item.name}
-                </Link>
-              </h3>
-              <p className="muted">{item.description || "See full detail page for full specification profile."}</p>
-              <p className="price-line">{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "N/A"}</p>
-              <AmazonCTA href={item.amazon_url} />
-            </article>
-          ))}
-        </div>
+        <h2 style={{ marginBottom: 16 }}>Frequently Asked Questions</h2>
+        <FAQ items={faq} />
       </div>
 
-      <div className="panel">
-        <h2>Recent User Reviews</h2>
-        <div className="review-grid">
-          {reviews.map((r) => (
-            <blockquote key={r.author} className="review-card">
-              <p>"{r.quote}"</p>
-              <cite>{r.author}</cite>
-            </blockquote>
-          ))}
-        </div>
-      </div>
-
-      <div className="panel">
-        <h2>FAQ</h2>
-        <div className="faq-grid">
-          {faq.map((item) => (
-            <article key={item.q} className="faq-card">
-              <h3>{item.q}</h3>
-              <p className="muted">{item.a}</p>
-            </article>
-          ))}
-        </div>
-      </div>
+      <AmazonDisclosure />
     </section>
   );
 }

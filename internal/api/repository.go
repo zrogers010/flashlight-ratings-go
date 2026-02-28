@@ -647,10 +647,16 @@ WITH latest_run AS (
 	WHERE status = 'completed'
 	ORDER BY completed_at DESC NULLS LAST, id DESC
 	LIMIT 1
+),
+selected_profile AS (
+	SELECT id, slug
+	FROM scoring_profiles
+	WHERE slug = $1
+	LIMIT 1
 )
 SELECT
-	fs.rank_position,
-	fs.score,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(fs.score, 0) DESC, f.id ASC) AS rank_position,
+	COALESCE(fs.score, 0) AS score,
 	sp.slug,
 	f.id,
 	b.name,
@@ -658,11 +664,12 @@ SELECT
 	f.slug,
 	lm.url,
 	la.affiliate_url
-FROM flashlight_scores fs
-JOIN latest_run lr ON lr.id = fs.run_id
-JOIN scoring_profiles sp ON sp.id = fs.profile_id
-JOIN flashlights f ON f.id = fs.flashlight_id
+FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
+JOIN selected_profile sp ON TRUE
+LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
+	AND fs.profile_id = sp.id
+	AND fs.run_id = (SELECT id FROM latest_run)
 LEFT JOIN LATERAL (
 	SELECT m.url
 	FROM flashlight_media m
@@ -681,8 +688,8 @@ LEFT JOIN LATERAL (
 	ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
 	LIMIT 1
 ) la ON TRUE
-WHERE sp.slug = $1
-ORDER BY fs.rank_position ASC, fs.score DESC
+WHERE f.is_active = TRUE
+ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
 `
 
@@ -720,18 +727,16 @@ LIMIT $2 OFFSET $3
 	}
 
 	countQuery := `
-WITH latest_run AS (
+WITH selected_profile AS (
 	SELECT id
-	FROM scoring_runs
-	WHERE status = 'completed'
-	ORDER BY completed_at DESC NULLS LAST, id DESC
+	FROM scoring_profiles
+	WHERE slug = $1
 	LIMIT 1
 )
 SELECT COUNT(*)
-FROM flashlight_scores fs
-JOIN latest_run lr ON lr.id = fs.run_id
-JOIN scoring_profiles sp ON sp.id = fs.profile_id
-WHERE sp.slug = $1
+FROM flashlights f
+JOIN selected_profile sp ON TRUE
+WHERE f.is_active = TRUE
 `
 	var total int
 	if err := s.db.QueryRowContext(ctx, countQuery, useCase).Scan(&total); err != nil {
@@ -930,6 +935,27 @@ RETURNING id, created_at
 	return intelligenceRunResponse{
 		RunID:             runID,
 		CreatedAt:         createdAt.UTC().Format(time.RFC3339),
+		IntendedUse:       req.IntendedUse,
+		BudgetUSD:         req.BudgetUSD,
+		BatteryPreference: req.BatteryPreference,
+		SizeConstraint:    req.SizeConstraint,
+		AlgorithmVersion:  "v1",
+		TopResults:        top,
+	}, nil
+}
+
+func (s *Server) intelligenceRecommendations(ctx context.Context, req intelligenceRunRequest) (intelligenceResponse, error) {
+	candidates, err := s.intelligenceCandidates(ctx)
+	if err != nil {
+		return intelligenceResponse{}, err
+	}
+	ranked := rankIntelligence(candidates, req)
+	top := ranked
+	if len(top) > 5 {
+		top = top[:5]
+	}
+
+	return intelligenceResponse{
 		IntendedUse:       req.IntendedUse,
 		BudgetUSD:         req.BudgetUSD,
 		BatteryPreference: req.BatteryPreference,

@@ -26,6 +26,18 @@ echo "Importing manual catalog from ${CSV_PATH} ..."
 {
   cat <<'SQL'
 BEGIN;
+ALTER TABLE flashlights
+  ADD COLUMN IF NOT EXISTS msrp_usd NUMERIC(12,2) CHECK (msrp_usd > 0);
+
+ALTER TABLE flashlight_specs
+  ADD COLUMN IF NOT EXISTS sustained_lumens INTEGER CHECK (sustained_lumens > 0),
+  ADD COLUMN IF NOT EXISTS runtime_500_min INTEGER CHECK (runtime_500_min > 0),
+  ADD COLUMN IF NOT EXISTS turbo_stepdown_sec INTEGER CHECK (turbo_stepdown_sec > 0),
+  ADD COLUMN IF NOT EXISTS beam_pattern TEXT CHECK (beam_pattern IN ('flood', 'throw', 'hybrid')),
+  ADD COLUMN IF NOT EXISTS recharge_type TEXT CHECK (recharge_type IN ('usb-c', 'magnetic', 'none')),
+  ADD COLUMN IF NOT EXISTS battery_replaceable BOOLEAN,
+  ADD COLUMN IF NOT EXISTS body_material TEXT;
+
 CREATE TEMP TABLE tmp_manual_catalog (
   brand_name TEXT NOT NULL,
   brand_slug TEXT,
@@ -313,31 +325,29 @@ ins_amazon_snapshots AS (
   INSERT INTO amazon_product_snapshots (
     flashlight_id,
     asin,
-    title,
-    brand,
-    listing_url,
-    image_url,
-    offer_price,
-    currency_code,
-    in_stock,
     rating_count,
     average_rating,
-    seller_name,
+    offer_price,
+    currency_code,
+    raw_payload,
     captured_at
   )
   SELECT
     f.id,
     c.asin,
-    c.model_name,
-    c.brand_name,
-    c.amazon_url,
-    c.image_url,
-    c.current_price_usd,
-    'USD',
-    TRUE,
     c.amazon_rating_count,
     c.amazon_average_rating,
-    'manual-import',
+    c.current_price_usd,
+    'USD',
+    jsonb_strip_nulls(
+      jsonb_build_object(
+        'source', 'manual-import',
+        'title', c.model_name,
+        'brand', c.brand_name,
+        'listing_url', c.amazon_url,
+        'image_url', c.image_url
+      )
+    ),
     NOW()
   FROM cleaned c
   JOIN flashlights f ON f.slug = c.model_slug

@@ -27,6 +27,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/compare", s.handleCompare)
 	mux.HandleFunc("/rankings", s.handleRankings)
 	mux.HandleFunc("/finder", s.handleFinder)
+	mux.HandleFunc("/intelligence/recommendations", s.handleIntelligenceRecommendations)
 	mux.HandleFunc("/intelligence/runs", s.handleIntelligenceRuns)
 	mux.HandleFunc("/intelligence/runs/", s.handleIntelligenceRunByID)
 	return mux
@@ -218,6 +219,15 @@ type intelligenceRunResponse struct {
 	TopResults        []intelligenceRunResult `json:"top_results"`
 }
 
+type intelligenceResponse struct {
+	IntendedUse       string                  `json:"intended_use"`
+	BudgetUSD         float64                 `json:"budget_usd"`
+	BatteryPreference string                  `json:"battery_preference"`
+	SizeConstraint    string                  `json:"size_constraint"`
+	AlgorithmVersion  string                  `json:"algorithm_version"`
+	TopResults        []intelligenceRunResult `json:"top_results"`
+}
+
 func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
@@ -334,15 +344,15 @@ func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 
 	useCase := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("use_case")))
 	if useCase == "" {
-		useCase = "tactical"
+		useCase = "overall"
 	}
 	if !validUseCase(useCase) {
-		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid use_case. expected one of tactical, edc, value, throw, flood"})
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid use_case. expected one of overall, tactical, edc, value, throw, flood"})
 		return
 	}
 
 	page := clamp(parseIntDefault(r.URL.Query().Get("page"), 1), 1, 100000)
-	pageSize := clamp(parseIntDefault(r.URL.Query().Get("page_size"), 20), 1, 100)
+	pageSize := clamp(parseIntDefault(r.URL.Query().Get("page_size"), 200), 1, 1000)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -450,6 +460,45 @@ func (s *Server) handleIntelligenceRuns(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+func (s *Server) handleIntelligenceRecommendations(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+
+	var req intelligenceRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json body"})
+		return
+	}
+
+	req.IntendedUse = strings.TrimSpace(strings.ToLower(req.IntendedUse))
+	if req.IntendedUse == "" {
+		req.IntendedUse = "edc"
+	}
+	if req.BudgetUSD <= 0 {
+		req.BudgetUSD = 80
+	}
+	req.BatteryPreference = strings.TrimSpace(strings.ToLower(req.BatteryPreference))
+	if req.BatteryPreference == "" {
+		req.BatteryPreference = "any"
+	}
+	req.SizeConstraint = strings.TrimSpace(strings.ToLower(req.SizeConstraint))
+	if req.SizeConstraint == "" {
+		req.SizeConstraint = "any"
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, err := s.intelligenceRecommendations(ctx, req)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to compute intelligence recommendations"})
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func (s *Server) handleIntelligenceRunByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
@@ -486,7 +535,7 @@ func (s *Server) handleIntelligenceRunByID(w http.ResponseWriter, r *http.Reques
 
 func validUseCase(v string) bool {
 	switch v {
-	case "tactical", "edc", "value", "throw", "flood":
+	case "overall", "tactical", "edc", "value", "throw", "flood":
 		return true
 	default:
 		return false

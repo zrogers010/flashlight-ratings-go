@@ -52,7 +52,6 @@ services:
       - worker.env
     environment:
       DATABASE_URL: postgres://flashlight_app:flashlight_dev@db:5432/flashlight?sslmode=disable
-      AMAZON_SYNC_DRY_RUN: ${AMAZON_SYNC_DRY_RUN:-false}
 
   web:
     build:

@@ -1,211 +1,242 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { AmazonCTA } from "@/components/AmazonCTA";
-import { createIntelligenceRun, fetchIntelligenceRun } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { fetchCompare, fetchFlashlights } from "@/lib/api";
 
-type UseCase = "edc" | "tactical" | "law-enforcement" | "camping" | "search-rescue" | "weapon-mount" | "keychain";
-type BatteryPreference = "any" | "18650" | "21700" | "cr123a" | "proprietary";
-type SizeConstraint = "any" | "pocket" | "compact" | "full-size";
-
-function parseUseCase(input?: string): UseCase {
-  const valid: UseCase[] = ["edc", "tactical", "law-enforcement", "camping", "search-rescue", "weapon-mount", "keychain"];
-  return valid.includes((input || "") as UseCase) ? (input as UseCase) : "edc";
-}
-
-function parseBudget(input?: string): number {
-  const n = Number(input || "80");
-  if (!Number.isFinite(n) || n <= 0) return 80;
-  return Math.round(n * 100) / 100;
-}
-
-function parseBattery(input?: string): BatteryPreference {
-  const valid: BatteryPreference[] = ["any", "18650", "21700", "cr123a", "proprietary"];
-  return valid.includes((input || "") as BatteryPreference) ? (input as BatteryPreference) : "any";
-}
-
-function parseSize(input?: string): SizeConstraint {
-  const valid: SizeConstraint[] = ["any", "pocket", "compact", "full-size"];
-  return valid.includes((input || "") as SizeConstraint) ? (input as SizeConstraint) : "any";
-}
+export const metadata: Metadata = {
+  title: "Compare Flashlights Side by Side — Specs, Scores & Prices",
+  description:
+    "Compare flashlight specs, scores, and prices side by side. Find the best option by comparing lumens, throw, runtime, weight, and more."
+};
 
 function fmt(v?: number, digits = 0) {
-  if (v === undefined || Number.isNaN(v)) return "N/A";
-  return v.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  });
+  if (v === undefined || Number.isNaN(v)) return "—";
+  return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
-function pct(v: number) {
-  return Math.max(0, Math.min(100, Math.round(v)));
+function yesNo(v?: boolean) {
+  if (v === undefined) return "—";
+  return v ? "Yes" : "No";
+}
+
+function topScore(item: { tactical_score?: number; edc_score?: number; value_score?: number; throw_score?: number; flood_score?: number }) {
+  return Math.max(
+    item.tactical_score || 0,
+    item.edc_score || 0,
+    item.value_score || 0,
+    item.throw_score || 0,
+    item.flood_score || 0
+  );
+}
+
+type SpecRow = { label: string; values: string[]; bestIdx?: number; higherIsBetter?: boolean };
+
+function findBestIdx(values: (number | undefined)[], higherIsBetter = true): number | undefined {
+  let bestIdx: number | undefined;
+  let bestVal: number | undefined;
+  values.forEach((v, i) => {
+    if (v === undefined) return;
+    if (bestVal === undefined || (higherIsBetter ? v > bestVal : v < bestVal)) {
+      bestVal = v;
+      bestIdx = i;
+    }
+  });
+  const defined = values.filter((v) => v !== undefined);
+  if (defined.length < 2) return undefined;
+  return bestIdx;
 }
 
 export default async function ComparePage({
   searchParams
 }: {
-  searchParams?: {
-    run_id?: string;
-    use?: string;
-    budget?: string;
-    battery?: string;
-    size?: string;
-  };
+  searchParams?: { ids?: string };
 }) {
-  const useCase = parseUseCase(searchParams?.use);
-  const budget = parseBudget(searchParams?.budget);
-  const battery = parseBattery(searchParams?.battery);
-  const size = parseSize(searchParams?.size);
+  const idStr = searchParams?.ids || "";
+  const ids = idStr.split(",").map((s) => s.trim()).filter(Boolean);
+  const catalog = await fetchFlashlights();
 
-  const run = searchParams?.run_id
-    ? await fetchIntelligenceRun(searchParams.run_id)
-    : await createIntelligenceRun({
-        intended_use: useCase,
-        budget_usd: budget,
-        battery_preference: battery,
-        size_constraint: size
-      });
+  if (ids.length < 2) {
+    return (
+      <section className="grid">
+        <Breadcrumbs items={[{ label: "Compare" }]} />
+        <div className="panel hero" style={{ textAlign: "center" }}>
+          <p className="kicker">Side-by-Side Comparison</p>
+          <h1>Compare Flashlights</h1>
+          <p className="muted" style={{ maxWidth: 480, margin: "0 auto 20px" }}>
+            Select 2 or more flashlights to compare specs, scores, and prices side by side.
+          </p>
+        </div>
+        <div className="panel">
+          <h3 style={{ marginBottom: 16 }}>Pick flashlights to compare</h3>
+          <div className="card-grid">
+            {catalog.items.slice(0, 12).map((item) => (
+              <Link
+                key={item.id}
+                href={`/compare?ids=${item.id}`}
+                className="product-card"
+                style={{ textDecoration: "none" }}
+              >
+                <div className="image-card">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
+                  ) : (
+                    <div className="image-fallback">No image</div>
+                  )}
+                </div>
+                <p className="kicker">{item.brand}</p>
+                <h4>{item.name}</h4>
+                <div className="spec-row">
+                  <span>{fmt(item.max_lumens)} lm</span>
+                  <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "—"}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
-  const shareURL = `/compare?run_id=${run.run_id}`;
+  const compared = await fetchCompare(ids.join(","));
+  const items = compared.items;
+
+  const specs: SpecRow[] = [
+    {
+      label: "Price",
+      values: items.map((i) => i.price_usd !== undefined ? `$${fmt(i.price_usd, 2)}` : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.price_usd), false)
+    },
+    {
+      label: "Score",
+      values: items.map((i) => { const s = topScore(i); return s > 0 ? s.toFixed(1) : "—"; }),
+      bestIdx: findBestIdx(items.map((i) => topScore(i) || undefined))
+    },
+    {
+      label: "Max Lumens",
+      values: items.map((i) => fmt(i.max_lumens)),
+      bestIdx: findBestIdx(items.map((i) => i.max_lumens))
+    },
+    {
+      label: "Max Candela",
+      values: items.map((i) => fmt(i.max_candela)),
+      bestIdx: findBestIdx(items.map((i) => i.max_candela))
+    },
+    {
+      label: "Beam Distance",
+      values: items.map((i) => i.beam_distance_m ? `${fmt(i.beam_distance_m)}m` : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.beam_distance_m))
+    },
+    {
+      label: "Runtime (High)",
+      values: items.map((i) => i.runtime_high_min ? `${fmt(i.runtime_high_min)} min` : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.runtime_high_min))
+    },
+    {
+      label: "IP Rating",
+      values: items.map((i) => i.waterproof_rating || "—")
+    },
+    {
+      label: "Tactical Score",
+      values: items.map((i) => i.tactical_score ? i.tactical_score.toFixed(1) : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.tactical_score))
+    },
+    {
+      label: "EDC Score",
+      values: items.map((i) => i.edc_score ? i.edc_score.toFixed(1) : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.edc_score))
+    },
+    {
+      label: "Value Score",
+      values: items.map((i) => i.value_score ? i.value_score.toFixed(1) : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.value_score))
+    },
+    {
+      label: "Throw Score",
+      values: items.map((i) => i.throw_score ? i.throw_score.toFixed(1) : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.throw_score))
+    },
+    {
+      label: "Flood Score",
+      values: items.map((i) => i.flood_score ? i.flood_score.toFixed(1) : "—"),
+      bestIdx: findBestIdx(items.map((i) => i.flood_score))
+    }
+  ];
+
+  const addableItems = catalog.items.filter((c) => !ids.includes(String(c.id))).slice(0, 6);
 
   return (
     <section className="grid">
+      <Breadcrumbs items={[{ label: "Compare" }]} />
+
       <div className="panel hero">
-        <p className="kicker">Flashlight Intelligence Platform</p>
-        <h1>Algorithmic Flashlight Ratings</h1>
+        <p className="kicker">Side-by-Side Comparison</p>
+        <h1>Compare {items.length} Flashlights</h1>
         <p className="muted">
-          Runs are now persisted in the database. You can share or revisit a specific run via `run_id`.
+          Specs, scores, and prices compared. Best value in each row is highlighted.
         </p>
-        <div className="spec-row">
-          <span>Run ID: {run.run_id}</span>
-          <span>Algorithm: {run.algorithm_version}</span>
-          <span>Created: {new Date(run.created_at).toLocaleString()}</span>
-        </div>
-        <div className="cta-row">
-          <Link href={shareURL} className="button-link button-secondary">
-            Permalink
-          </Link>
+      </div>
+
+      <div className="panel panel-flush">
+        <div className="table-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th className="compare-row-label">Spec</th>
+                {items.map((item) => (
+                  <th key={item.id} className="compare-model-head">
+                    <div style={{ padding: "4px 0" }}>
+                      {item.image_url && (
+                        <img src={item.image_url} alt={`${item.brand} ${item.name}`} className="compare-model-image" loading="lazy" />
+                      )}
+                      <h4>
+                        <Link href={`/flashlights/${item.id}`}>
+                          {item.brand} {item.name}
+                        </Link>
+                      </h4>
+                      <AmazonCTA href={item.amazon_url} price={item.price_usd} />
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {specs.map((row) => (
+                <tr key={row.label}>
+                  <td className="compare-row-label">{row.label}</td>
+                  {row.values.map((val, i) => (
+                    <td
+                      key={i}
+                      className={row.bestIdx === i ? "compare-best" : ""}
+                      style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}
+                    >
+                      {val}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <form method="get" className="panel intelligence-form">
-        <h3>Finder Inputs</h3>
-        <div className="intelligence-grid">
-          <label>
-            Intended Use
-            <select name="use" defaultValue={run.intended_use}>
-              <option value="edc">EDC</option>
-              <option value="tactical">Tactical</option>
-              <option value="law-enforcement">Law Enforcement</option>
-              <option value="camping">Camping</option>
-              <option value="search-rescue">Search & Rescue</option>
-              <option value="weapon-mount">Weapon Mount</option>
-              <option value="keychain">Keychain</option>
-            </select>
-          </label>
-          <label>
-            Budget (USD)
-            <input name="budget" type="number" min="10" step="1" defaultValue={run.budget_usd} />
-          </label>
-          <label>
-            Battery Preference
-            <select name="battery" defaultValue={run.battery_preference}>
-              <option value="any">Any</option>
-              <option value="18650">18650</option>
-              <option value="21700">21700</option>
-              <option value="cr123a">CR123A</option>
-              <option value="proprietary">Proprietary</option>
-            </select>
-          </label>
-          <label>
-            Size Constraint
-            <select name="size" defaultValue={run.size_constraint}>
-              <option value="any">Any</option>
-              <option value="pocket">Pocket</option>
-              <option value="compact">Compact</option>
-              <option value="full-size">Full-Size</option>
-            </select>
-          </label>
+      {addableItems.length > 0 && (
+        <div className="panel">
+          <h3 style={{ marginBottom: 12 }}>Add another to the comparison</h3>
+          <div className="spec-row">
+            {addableItems.map((item) => (
+              <Link
+                key={item.id}
+                href={`/compare?ids=${ids.join(",")},${item.id}`}
+                className="chip"
+              >
+                + {item.brand} {item.name}
+              </Link>
+            ))}
+          </div>
         </div>
-        <button className="button-link" type="submit">
-          Run Rating Algorithm
-        </button>
-      </form>
-
-      <div className="panel">
-        <h2>Top 5 Ranked Results</h2>
-        <p className="muted">
-          Weighted score = Use Case (55%) + Budget Fit (20%) + Battery Match (15%) + Size Fit (10%)
-        </p>
-        <div className="card-grid">
-          {run.top_results.map((entry, idx) => (
-            <article key={entry.model_id} className="panel product-card">
-              <div className="image-card">
-                {entry.image_url ? (
-                  <img src={entry.image_url} alt={`${entry.brand} ${entry.name}`} loading="lazy" />
-                ) : (
-                  <div className="image-fallback">No image</div>
-                )}
-              </div>
-              <p className="kicker">Rank #{idx + 1}</p>
-              <h3>
-                {entry.brand} {entry.name}
-              </h3>
-              <div className="spec-row">
-                <span>{entry.category}</span>
-                <span>{entry.price_usd !== undefined ? `$${fmt(entry.price_usd, 2)}` : "N/A"}</span>
-                <span>{fmt(entry.max_lumens)} lm</span>
-                <span>{fmt(entry.beam_distance_m)} m</span>
-              </div>
-              <div className="score-stack">
-                <div>
-                  <span>Overall</span>
-                  <strong>{entry.overall_score.toFixed(1)}</strong>
-                </div>
-                <div>
-                  <span>Use Case</span>
-                  <strong>{entry.use_case_score.toFixed(1)}</strong>
-                </div>
-                <div>
-                  <span>Budget Fit</span>
-                  <strong>{entry.budget_score.toFixed(1)}</strong>
-                </div>
-                <div>
-                  <span>Battery Match</span>
-                  <strong>{entry.battery_match_score.toFixed(1)}</strong>
-                </div>
-                <div>
-                  <span>Size Fit</span>
-                  <strong>{entry.size_fit_score.toFixed(1)}</strong>
-                </div>
-              </div>
-              <div className="score-bars">
-                <div className="bar-row">
-                  <label>Use</label>
-                  <div><span style={{ width: `${pct(entry.use_case_score)}%` }} /></div>
-                </div>
-                <div className="bar-row">
-                  <label>Budget</label>
-                  <div><span style={{ width: `${pct(entry.budget_score)}%` }} /></div>
-                </div>
-                <div className="bar-row">
-                  <label>Battery</label>
-                  <div><span style={{ width: `${pct(entry.battery_match_score)}%` }} /></div>
-                </div>
-                <div className="bar-row">
-                  <label>Size</label>
-                  <div><span style={{ width: `${pct(entry.size_fit_score)}%` }} /></div>
-                </div>
-              </div>
-              <div className="cta-row">
-                <Link href={`/flashlights/${entry.model_id}`} className="button-link button-secondary">
-                  Detail
-                </Link>
-                <AmazonCTA href={entry.amazon_url} />
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
+      )}
 
       <AmazonDisclosure />
     </section>

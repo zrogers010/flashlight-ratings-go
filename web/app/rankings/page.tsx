@@ -1,9 +1,43 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RankingsTable } from "@/components/RankingsTable";
 import { fetchRankings } from "@/lib/api";
-import Link from "next/link";
 
-const useCases = ["tactical", "edc", "value", "throw", "flood"] as const;
+const useCases = ["overall", "tactical", "edc", "value", "throw", "flood"] as const;
+const useCaseLabel: Record<(typeof useCases)[number], string> = {
+  overall: "Overall",
+  tactical: "Tactical",
+  edc: "EDC",
+  value: "Value",
+  throw: "Throw",
+  flood: "Flood"
+};
+
+const useCaseDesc: Record<(typeof useCases)[number], string> = {
+  overall: "All flashlights ranked by composite performance across every scoring dimension.",
+  tactical: "Ranked by candela, runtime, durability, and throw — optimized for law enforcement and defense.",
+  edc: "Ranked by runtime, flood, price, and size — optimized for everyday pocket carry.",
+  value: "Ranked by performance-per-dollar — the best specs for the lowest price.",
+  throw: "Ranked by candela and beam distance — the farthest-reaching flashlights.",
+  flood: "Ranked by lumen output and coverage — the brightest, widest beams."
+};
+
+export async function generateMetadata({
+  searchParams
+}: {
+  searchParams?: { use_case?: string };
+}): Promise<Metadata> {
+  const selected = useCases.includes((searchParams?.use_case || "") as (typeof useCases)[number])
+    ? (searchParams!.use_case as (typeof useCases)[number])
+    : "overall";
+
+  return {
+    title: `${useCaseLabel[selected]} Flashlight Rankings — Top Flashlights Ranked by Score`,
+    description: useCaseDesc[selected]
+  };
+}
 
 export default async function RankingsPage({
   searchParams
@@ -13,15 +47,19 @@ export default async function RankingsPage({
   const sp = searchParams || {};
   const selected = useCases.includes((sp.use_case || "") as (typeof useCases)[number])
     ? (sp.use_case as (typeof useCases)[number])
-    : "tactical";
-  const data = await fetchRankings(selected);
+    : "overall";
+  const data = await fetchRankings(selected, 500);
 
   return (
     <section className="grid">
-      <div className="panel">
-        <p className="kicker">Rankings</p>
-        <h1>Flashlight Rankings</h1>
-        <p className="muted">Live leaderboard from latest scoring batch.</p>
+      <Breadcrumbs items={[{ label: "Rankings" }]} />
+
+      <div className="panel hero">
+        <p className="kicker">Algorithmic Rankings</p>
+        <h1>{useCaseLabel[selected]} Flashlight Rankings</h1>
+        <p className="muted" style={{ maxWidth: 620, marginBottom: 16 }}>
+          {useCaseDesc[selected]}
+        </p>
         <div className="filters">
           {useCases.map((u) => (
             <Link
@@ -29,12 +67,16 @@ export default async function RankingsPage({
               href={`/rankings?use_case=${u}`}
               className={u === selected ? "active" : ""}
             >
-              {u.toUpperCase()}
+              {useCaseLabel[u]}
             </Link>
           ))}
         </div>
       </div>
-      <RankingsTable items={data.items} />
+
+      <div className="panel panel-flush">
+        <RankingsTable items={data.items} />
+      </div>
+
       <AmazonDisclosure />
     </section>
   );
