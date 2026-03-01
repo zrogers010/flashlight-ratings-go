@@ -219,8 +219,15 @@ do_deploy() {
     'until docker inspect --format="{{.State.Health.Status}}" flashlight-db 2>/dev/null | grep -q healthy; do sleep 2; done' \
     || echo "WARNING: DB health check timed out"
 
-  # ── Import catalog ──────────────────────────────────────────────
-  echo "→ Importing catalog from data/catalog.yaml..."
+  # ── Refresh & import catalog ────────────────────────────────────
+  echo "→ Refreshing catalog (validating ASINs, scraping manufacturer images)..."
+  ${COMPOSE} --profile tools build catalog-refresh 2>/dev/null || true
+  ${COMPOSE} --profile tools run --rm catalog-refresh \
+    -f /app/data/catalog.yaml -o /app/data/catalog.yaml -c 2 -delay 1200ms 2>&1 || {
+    echo "  ⚠ catalog-refresh failed — using catalog as-is"
+  }
+
+  echo "→ Loading catalog into database..."
   ${COMPOSE} --profile tools build catalog-build 2>/dev/null || true
   ${COMPOSE} --profile tools run --rm catalog-build 2>&1 || {
     echo "  ⚠ catalog-build failed — falling back to CSV import"

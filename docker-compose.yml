@@ -73,6 +73,19 @@ services:
       - ./data:/app/data:ro
     profiles: ["tools"]
 
+  catalog-refresh:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        TARGET: catalog-refresh
+    container_name: flashlight-catalog-refresh
+    environment:
+      AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-flashlightrat-20}
+    volumes:
+      - ./data:/app/data
+    profiles: ["tools"]
+
   web:
     build:
       context: .
