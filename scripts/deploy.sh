@@ -219,9 +219,13 @@ do_deploy() {
     'until docker inspect --format="{{.State.Health.Status}}" flashlight-db 2>/dev/null | grep -q healthy; do sleep 2; done' \
     || echo "WARNING: DB health check timed out"
 
-  # ── Import data ──────────────────────────────────────────────────
-  echo "→ Importing catalog..."
-  bash scripts/import-manual-catalog.sh data/manual_catalog.csv
+  # ── Import catalog ──────────────────────────────────────────────
+  echo "→ Importing catalog from data/catalog.yaml..."
+  ${COMPOSE} --profile tools build catalog-build 2>/dev/null || true
+  ${COMPOSE} --profile tools run --rm catalog-build 2>&1 || {
+    echo "  ⚠ catalog-build failed — falling back to CSV import"
+    bash scripts/import-manual-catalog.sh data/manual_catalog.csv
+  }
 
   echo "→ Restarting worker (triggers scoring)..."
   ${COMPOSE} restart worker

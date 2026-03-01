@@ -25,13 +25,19 @@ type Product struct {
 	ASIN          string
 	Title         string
 	Brand         string
+	Manufacturer  string
+	ModelNumber   string
 	Seller        string
 	DetailPageURL string
 	ImageURL      string
+	VariantImages []string
+	Features      []string
 	RatingCount   *int
 	AverageRating *float64
 	OfferPrice    *float64
 	CurrencyCode  string
+	IsPrime       bool
+	Availability  string
 	RawPayload    []byte
 }
 
@@ -291,23 +297,17 @@ WHERE flashlight_id = $1
 		return err
 	}
 
-	if strings.TrimSpace(p.Title) != "" {
-		const upsertDesc = `
-UPDATE flashlights
-SET description = $2,
-	updated_at = NOW()
-WHERE id = $1
-  AND (description IS NULL OR description = '')
-`
-		if _, err := tx.ExecContext(ctx, upsertDesc, flashlightID, p.Title); err != nil {
-			return err
-		}
-	}
-
+	allImages := make([]string, 0, 1+len(p.VariantImages))
 	if strings.TrimSpace(p.ImageURL) != "" {
+		allImages = append(allImages, p.ImageURL)
+	}
+	allImages = append(allImages, p.VariantImages...)
+
+	for _, imgURL := range allImages {
 		const upsertMedia = `
 INSERT INTO flashlight_media (flashlight_id, media_type, url, alt_text, sort_order)
-SELECT $1, 'image', $2, $3, 1
+SELECT $1, 'image', $2, $3,
+	COALESCE((SELECT MAX(sort_order) FROM flashlight_media WHERE flashlight_id = $1), 0) + 1
 WHERE NOT EXISTS (
 	SELECT 1
 	FROM flashlight_media fm
@@ -316,7 +316,24 @@ WHERE NOT EXISTS (
 	  AND fm.url = $2
 )
 `
-		if _, err := tx.ExecContext(ctx, upsertMedia, flashlightID, p.ImageURL, p.Title); err != nil {
+		if _, err := tx.ExecContext(ctx, upsertMedia, flashlightID, imgURL, p.Title); err != nil {
+			return err
+		}
+	}
+
+	if len(p.Features) > 0 {
+		featureText := strings.Join(p.Features, "\n\n")
+		const upsertFeatures = `
+UPDATE flashlights
+SET description = CASE
+	WHEN description IS NULL OR description = '' THEN $2
+	WHEN length(description) < 200 THEN $2
+	ELSE description
+END,
+updated_at = NOW()
+WHERE id = $1
+`
+		if _, err := tx.ExecContext(ctx, upsertFeatures, flashlightID, featureText); err != nil {
 			return err
 		}
 	}
