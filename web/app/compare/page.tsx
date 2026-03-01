@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { AmazonCTA } from "@/components/AmazonCTA";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchCompare, fetchFlashlights } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -75,11 +76,7 @@ export default async function ComparePage({
               <article key={item.id} className="product-card">
                 <Link href={`/flashlights/${item.id}`} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
                 <div className="image-card">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
-                  ) : (
-                    <div className="image-fallback">No image</div>
-                  )}
+                  <ImageWithFallback src={item.image_url} alt={`${item.brand} ${item.name}`} />
                 </div>
                 <p className="kicker">{item.brand}</p>
                 <h4>{item.name}</h4>
@@ -189,7 +186,7 @@ export default async function ComparePage({
                   <th key={item.id} className="compare-model-head">
                     <div style={{ padding: "4px 0" }}>
                       {item.image_url && (
-                        <img src={item.image_url} alt={`${item.brand} ${item.name}`} className="compare-model-image" loading="lazy" />
+                        <ImageWithFallback src={item.image_url} alt={`${item.brand} ${item.name}`} />
                       )}
                       <h4>
                         <Link href={`/flashlights/${item.id}`}>

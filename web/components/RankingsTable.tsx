@@ -6,6 +6,7 @@ import type { RankingItem } from "@/lib/api";
 import Link from "next/link";
 import { AmazonCTA } from "@/components/AmazonCTA";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 type SortKey = "rank" | "score" | "brand" | "name";
 
@@ -103,11 +104,7 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                 <ScoreBadge score={item.score} size="sm" />
               </td>
               <td className="hide-mobile">
-                {item.flashlight.image_url ? (
-                  <img className="table-thumb" src={item.flashlight.image_url} alt={item.flashlight.name} />
-                ) : (
-                  <span className="badge">—</span>
-                )}
+                <ImageWithFallback src={item.flashlight.image_url} alt={item.flashlight.name} />
               </td>
               <td className="hide-mobile" style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
                 {item.flashlight.brand}
