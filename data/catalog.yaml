@@ -1,4 +1,1287 @@
 products:
+    - brand: Fenix
+      brand_slug: fenix
+      brand_country: CN
+      brand_website: https://www.fenixlighting.com
+      name: PD36R Pro
+      slug: fenix-pd36r-pro
+      code: PD36R-PRO
+      description: The best-selling flashlight in the Fenix lineup and a perennial top-10 seller on Amazon. The PD36R Pro delivers 2,800 lumens through a Luminus SFT70 LED with a 380-meter throw, making it equally capable lighting up a backyard or reaching across a field. Dual tactical tail switches give you instant turbo and strobe without fumbling through modes, while USB-C fast charging tops off the included 5000mAh 21700 battery in about 3 hours. IP68 rated and built from hardened 6061-T6 aluminum, this is the flashlight that earns its place in your EDC rotation.
+      release_year: 2023
+      msrp_usd: 119.95
+      asin: B0BGMZ4YNC
+      price_usd: 119.95
+      rating_count: 3200
+      average_rating: 4.7
+      manufacturer_url: https://www.fenixlighting.com/products/fenix-pd36r-pro-rechargeable-flashlight
+      images:
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-PD36R-PRO-Flashlight-spec-chart.png?v=1664291906
+          alt: Fenix PD36R PRO Rechargeable Flashlight specs chart
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-PD36R-PRO-Flashlight-runtime-chart.png?v=1664291905
+          alt: Fenix PD36R PRO Rechargeable Flashlight runtime chart
+        - url: http://www.fenixlighting.com/cdn/shop/files/PD36RPRO_E03R-Gray_1200x1200.jpg?v=1759355843
+          alt: Fenix PD36R Pro product photo
+      specs:
+        max_lumens: 2800
+        sustained_lumens: 0
+        max_candela: 36100
+        beam_distance_m: 380
+        runtime_high_min: 205
+        runtime_500_min: 0
+        turbo_stepdown_sec: 120
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 169
+        length_mm: 145.8
+        head_diameter_mm: 26.5
+        body_diameter_mm: 25.7
+        switch_type: dual
+        waterproof_rating: IP68
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: Luminus SFT70
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+        - edc
+        - throw
+    - brand: Fenix
+      brand_slug: fenix
+      brand_country: CN
+      brand_website: https://www.fenixlighting.com
+      name: E35 V3.0
+      slug: fenix-e35-v3
+      code: E35V3
+      description: A compact everyday carry flashlight that punches well above its size class. The Fenix E35 V3 pushes 3,000 lumens from a Luminus SST70 LED in a body just over 4.5 inches long, with a 240-meter beam distance that covers most practical scenarios. The single side switch keeps operation simple, and the included 5000mAh 21700 battery charges via USB-C. With IP68 waterproofing and impact resistance to 1 meter, the E35 V3 handles daily abuse without complaint.
+      release_year: 2022
+      msrp_usd: 79.95
+      asin: B096JQH2RC
+      price_usd: 69.95
+      rating_count: 1500
+      average_rating: 4.6
+      manufacturer_url: https://www.fenixlighting.com/products/fenix-e35-v3-flashlight
+      images:
+        - url: https://www.fenixlighting.com/cdn/shop/products/Fenix-E35-V3-Flashlight_19330f0b-081c-42b8-86c1-8b0f9d838b9c-753981_1200x1200.jpg?v=1690844054
+          alt: Fenix E35 V3 flashlight
+        - url: https://www.fenixlighting.com/cdn/shop/files/E35-V3-flashlight-spec-chart.webp?v=1650396562
+          alt: Fenix E35 V3 spec chart
+        - url: https://www.fenixlighting.com/cdn/shop/files/E35-V3-flashlight-runtime-chart.webp?v=1650396561
+          alt: Fenix E35 V3.0 Flashlight - DISCONTINUED runtime chart
+        - url: http://www.fenixlighting.com/cdn/shop/products/Fenix-E35-V3-Flashlight_19330f0b-081c-42b8-86c1-8b0f9d838b9c-753981_1200x1200.jpg?v=1690844054
+          alt: Fenix E35 V3.0 product photo
+      specs:
+        max_lumens: 3000
+        sustained_lumens: 0
+        max_candela: 14400
+        beam_distance_m: 240
+        runtime_high_min: 220
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: hybrid
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 127
+        length_mm: 118.2
+        head_diameter_mm: 26.5
+        body_diameter_mm: 25.4
+        switch_type: side
+        waterproof_rating: IP68
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Luminus SST70
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - camping
+        - flood
+    - brand: Fenix
+      brand_slug: fenix
+      brand_country: CN
+      brand_website: https://www.fenixlighting.com
+      name: TK20R V2.0
+      slug: fenix-tk20r-v2
+      code: TK20R-V2
+      description: A professional-grade duty light built for law enforcement and security. The TK20R V2 delivers 3,000 lumens with a purpose-built deep reflector that throws a focused beam out to 475 meters. The instant-access tactical tail switch provides momentary-on for room clearing, while the side switch handles mode selection. Built from aircraft-grade aluminum with a hardcoat anodized finish, it's rated IP68 and survives 2-meter drops. USB-C charging makes it easy to top off between shifts.
+      release_year: 2022
+      msrp_usd: 129.95
+      asin: B09WT6DQSL
+      price_usd: 129.95
+      rating_count: 900
+      average_rating: 4.7
+      manufacturer_url: https://www.fenixlighting.com/products/fenix-tk20r-v2-rechargeable-tac-flashlight
+      images:
+        - url: https://www.fenixlighting.com/cdn/shop/files/TK20R-v2_T5-Pen_1200x1200.jpg?v=1762967527
+          alt: Fenix TK20R V2 tactical flashlight
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-tk20rv2-rechargeable-tactical-flashlight-spec-chart.png?v=1649973449
+          alt: Fenix TK20R V2 spec chart
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-tk20rv2-rechargeable-tactical-flashlight-runtime-chart.png?v=1649973466
+          alt: Fenix TK20R V2.0 Rechargeable Tac Flashlight with T5 Pen runtime chart
+        - url: http://www.fenixlighting.com/cdn/shop/files/TK20R-v2_T5-Pen_1200x1200.jpg?v=1762967527
+          alt: Fenix TK20R V2.0 product photo
+      specs:
+        max_lumens: 3000
+        sustained_lumens: 0
+        max_candela: 56400
+        beam_distance_m: 475
+        runtime_high_min: 225
+        runtime_500_min: 0
+        turbo_stepdown_sec: 180
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 184
+        length_mm: 148
+        head_diameter_mm: 42
+        body_diameter_mm: 25.4
+        switch_type: dual
+        waterproof_rating: IP68
+        impact_resistance_m: 2
+        body_material: Aluminum
+        led_model: Luminus SFT70
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+        - throw
+        - search-rescue
+    - brand: Fenix
+      brand_slug: fenix
+      brand_country: CN
+      brand_website: https://www.fenixlighting.com
+      name: LD30R
+      slug: fenix-ld30r
+      code: LD30R
+      description: A premium compact EDC flashlight with a focus on balanced performance. The LD30R puts out 1,600 lumens from a Luminus SST40 LED with excellent color temperature, reaching 261 meters. What sets it apart is the e-switch with lockout functionality that prevents accidental activation in your pocket, plus an all-metal body that feels substantial without being heavy. USB-C rechargeable with a single 18650 battery, it's sized for comfortable all-day pocket carry.
+      release_year: 2023
+      msrp_usd: 79.95
+      asin: B0CL57DZ91
+      price_usd: 79.95
+      rating_count: 800
+      average_rating: 4.7
+      manufacturer_url: https://www.fenixlighting.com/products/fenix-ld30r-rechargeable-flashlight
+      images:
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight_1200x1200.jpg?v=1770054676
+          alt: Fenix LD30R rechargeable flashlight
+        - url: https://cdn.shopify.com/s/files/1/0553/8172/1142/files/ld30r-ld30-comparison.jpg?v=1697651667
+          alt: Fenix LD30R size comparison
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight-spec-chart_2349c772-f033-416e-acd1-11240225442e.png?v=1760649750
+          alt: Fenix LD30R spec chart
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight-runtime-chart.png?v=1697494774
+          alt: Fenix LD30R Rechargeable Flashlight runtime chart
+        - url: http://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight_1200x1200.jpg?v=1770054676
+          alt: Fenix LD30R product photo
+      specs:
+        max_lumens: 1600
+        sustained_lumens: 0
+        max_candela: 17030
+        beam_distance_m: 261
+        runtime_high_min: 180
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: hybrid
+        battery_type: "18650"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 97
+        length_mm: 113.2
+        head_diameter_mm: 24.4
+        body_diameter_mm: 22
+        switch_type: side
+        waterproof_rating: IP68
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Luminus SST40
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - camping
+    - brand: Fenix
+      brand_slug: fenix
+      brand_country: CN
+      brand_website: https://www.fenixlighting.com
+      name: E09R
+      slug: fenix-e09r
+      code: E09R
+      description: A rechargeable keychain flashlight that's small enough to forget you're carrying it until you need it. The E09R delivers 600 lumens from a body the size of your thumb, with a 124-meter throw that's surprisingly useful for its size. Built-in USB-C charging eliminates the need for external chargers, and the stainless steel body survives keychain life. At under $35, it's an impulse buy that becomes an everyday essential.
+      release_year: 2022
+      msrp_usd: 34.95
+      asin: B096W9LVYF
+      price_usd: 34.95
+      rating_count: 1100
+      average_rating: 4.5
+      manufacturer_url: https://www.fenixlighting.com/products/fenix-e09r-rechargeable-edc-flashlight
+      images:
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-rechargeable-flashlight_f0458914-071d-40ca-bfc3-d89619669dd7_1200x1200.jpg?v=1756130601
+          alt: Fenix E09R rechargeable keychain flashlight
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-flashlight-spec-chart.png?v=1760649329
+          alt: Fenix E09R spec chart
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-flashlight-runtime.webp?v=1650062780
+          alt: Fenix E09R Rechargeable EDC Flashlight runtime chart
+        - url: http://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-rechargeable-flashlight_f0458914-071d-40ca-bfc3-d89619669dd7_1200x1200.jpg?v=1756130601
+          alt: Fenix E09R product photo
+      specs:
+        max_lumens: 600
+        sustained_lumens: 0
+        max_candela: 3850
+        beam_distance_m: 124
+        runtime_high_min: 68
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: Built-in
+        recharge_type: usb-c
+        battery_replaceable: false
+        weight_g: 26
+        length_mm: 64.4
+        head_diameter_mm: 15.6
+        body_diameter_mm: 15.6
+        switch_type: side
+        waterproof_rating: IP66
+        impact_resistance_m: 1
+        body_material: Stainless Steel
+        led_model: Luminus SST20
+        cri: 0
+        has_strobe: false
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: false
+      use_cases:
+        - edc
+        - keychain
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: Warrior 3S
+      slug: olight-warrior-3s
+      code: Warrior-3S
+      description: Olight's flagship tactical flashlight and one of the most popular flashlights on the market. The Warrior 3S delivers 2,300 lumens with a TIR optic lens that produces a smooth, focused beam reaching 300 meters. The signature dual-switch design lets you access turbo or strobe instantly via the tactical tail switch, while the side switch handles everyday mode selection with LED brightness and battery indicators. A built-in proximity sensor prevents overheating against surfaces. Magnetic charging through the tailcap keeps things simple.
+      release_year: 2023
+      msrp_usd: 119.95
+      asin: B09WYCPC1N
+      price_usd: 119.95
+      rating_count: 2800
+      average_rating: 4.8
+      manufacturer_url: https://www.olight.com/warrior-3s-high-beam-tactical-flashlight
+      images:
+        - url: https://us.olicdn.com/image/1-owbbqv.jpg
+          alt: Olight Warrior 3S tactical flashlight
+        - url: https://us.olicdn.com/image/pc-w3s-xivttc.jpg
+          alt: Olight Warrior 3S product photo
+        - url: https://us.olicdn.com/image/3in1-warrior-3s-jll-003-xz1y0j.jpg
+          alt: ""
+        - url: https://cdn.olightstore.com/image/warrior-3s-csdbt-1920x850-pcd-ptjb4o.jpg
+          alt: ""
+      specs:
+        max_lumens: 2300
+        sustained_lumens: 0
+        max_candela: 23000
+        beam_distance_m: 300
+        runtime_high_min: 166
+        runtime_500_min: 0
+        turbo_stepdown_sec: 150
+        beam_pattern: ""
+        battery_type: "21700"
+        recharge_type: magnetic
+        battery_replaceable: false
+        weight_g: 176
+        length_mm: 139
+        head_diameter_mm: 29
+        body_diameter_mm: 26.2
+        switch_type: dual
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: true
+        has_magnetic_tailcap: true
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+        - edc
+        - throw
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: Warrior X 4
+      slug: olight-warrior-x-4
+      code: Warrior-X-4
+      description: A purpose-built long-throw tactical flashlight designed for search operations and perimeter security. The Warrior X 4 pushes 2,600 lumens through a precision reflector for a 630-meter throw that reaches farther than most lights in its class. The full-size grip provides confident handling even with gloves, and the dual-switch interface gives you instant access to turbo mode via the tail switch. USB-C and magnetic charging options keep it topped off. Built for professionals who need to reach out and touch a target with light.
+      release_year: 2024
+      msrp_usd: 129.99
+      asin: B0D7MTKD13
+      price_usd: 129.99
+      rating_count: 550
+      average_rating: 4.8
+      manufacturer_url: https://www.olight.com/warrior-x-4-tactical-flashlight
+      images:
+        - url: https://cdn.olightstore.com/image/06-3ijsvw.jpg
+          alt: Olight Warrior X 4 tactical flashlight
+        - url: https://cdn.olightstore.com/image/06-ellkal.jpg
+          alt: Olight Warrior X 4 beam shot
+        - url: https://cdn.olightstore.com/image/06-ellkal.jpg@600w_600h_90q.webp
+          alt: Olight Warrior X 4 photo 2
+      specs:
+        max_lumens: 2600
+        sustained_lumens: 0
+        max_candela: 99000
+        beam_distance_m: 630
+        runtime_high_min: 150
+        runtime_500_min: 0
+        turbo_stepdown_sec: 120
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: false
+        weight_g: 249
+        length_mm: 170
+        head_diameter_mm: 50
+        body_diameter_mm: 26
+        switch_type: dual
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: false
+      use_cases:
+        - tactical
+        - throw
+        - search-rescue
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: Warrior Mini 3
+      slug: olight-warrior-mini-3
+      code: Warrior-Mini-3
+      description: The sweet spot between tactical capability and everyday portability. The Warrior Mini 3 packs 1,750 lumens into a compact body that disappears in your pocket, with a 240-meter beam distance that handles most real-world scenarios. The dual-switch design carries over from the full-size Warriors, giving you instant turbo from the tail switch and mode cycling from the side switch. Magnetic charging and a magnetic tailcap for hands-free use make this a practical daily carry that's always ready when you need it.
+      release_year: 2023
+      msrp_usd: 89.99
+      asin: B0C4H77WKB
+      price_usd: 89.99
+      rating_count: 430
+      average_rating: 4.8
+      manufacturer_url: https://www.olight.com/warrior-mini-3-portable-flashlight
+      images:
+        - url: https://cdn.olightstore.com/image/4-ap99lf.jpg
+          alt: Olight Warrior Mini 3 portable tactical flashlight
+        - url: https://cdn.olightstore.com/image/4-0go4fn.jpg
+          alt: Olight Warrior Mini 3 detail
+        - url: https://cdn.olightstore.com/image/4-0go4fn.jpg@600w_600h_90q.webp
+          alt: Olight Warrior Mini 3 photo 2
+      specs:
+        max_lumens: 1750
+        sustained_lumens: 0
+        max_candela: 14400
+        beam_distance_m: 240
+        runtime_high_min: 120
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: "18650"
+        recharge_type: magnetic
+        battery_replaceable: false
+        weight_g: 120
+        length_mm: 111
+        head_diameter_mm: 26
+        body_diameter_mm: 22.5
+        switch_type: dual
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: true
+        has_magnetic_tailcap: true
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - tactical
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: Baton 4
+      slug: olight-baton-4
+      code: Baton-4
+      description: Olight's best-selling everyday carry flashlight, refined to its fourth generation. The Baton 4 delivers 1,300 lumens from a body shorter than your index finger, with a 170-meter beam distance that handles walking the dog, checking the basement, or navigating a parking garage. The metal side switch with battery indicator gives you a quick glance at remaining power, and the magnetic tailcap lets you stick it to any ferrous surface for hands-free light. The optional wireless charging case turns it into a self-contained system with up to 190 days of total runtime.
+      release_year: 2023
+      msrp_usd: 79.99
+      asin: B0CHFM3GXB
+      price_usd: 79.99
+      rating_count: 1200
+      average_rating: 4.8
+      manufacturer_url: https://www.olight.com/store/baton-4-powerful-edc-flashlight
+      images:
+        - url: https://cdn.olightstore.com/image/baton-zwyl-adyp8x.png
+          alt: Olight Baton 4 product photo
+        - url: https://cdn.olightstore.com/image/hs-fo5txg-gp26eu.jpg@600w_600h_90q.webp
+          alt: Olight Black Baton 4 Premium flashlight in open wireless charging case with digital display for portable EDC.
+        - url: https://cdn.olightstore.com/image/if-3-ptatsx.jpg
+          alt: corner-mark-img
+      specs:
+        max_lumens: 1300
+        sustained_lumens: 0
+        max_candela: 7225
+        beam_distance_m: 170
+        runtime_high_min: 100
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: "18350"
+        recharge_type: magnetic
+        battery_replaceable: false
+        weight_g: 67
+        length_mm: 82
+        head_diameter_mm: 22
+        body_diameter_mm: 22
+        switch_type: side
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: true
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - camping
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: i5T EOS
+      slug: olight-i5t-eos
+      code: i5T-EOS
+      description: A simple, reliable AA-powered flashlight that makes an excellent gift or first quality flashlight. The i5T EOS delivers 300 lumens with a two-mode interface — just click for low, double-click for high. No complicated mode menus, no charging cables, just drop in a AA battery and go. The slim tailcap switch and pocket clip make it easy to carry, and the aluminum body with a knurled grip feels solid in hand. At under $30, this is the entry point to quality flashlights that keeps people coming back.
+      release_year: 2021
+      msrp_usd: 29.99
+      asin: B0833Q8BSP
+      price_usd: 29.99
+      rating_count: 5500
+      average_rating: 4.6
+      manufacturer_url: https://www.olightstore.com/i5t-eos-edc-flashlight
+      images:
+        - url: https://cdn.olightstore.com/image/arkprohj-1920x960-3-03djwc.jpg
+          alt: Olight i5T EOS photo 1
+        - url: https://cdn.olightstore.com/image/pl-x-1920x960-1-xx-4jwt96.jpg
+          alt: Olight i5T EOS photo 2
+        - url: https://cdn.olightstore.com/image/osight-xr-a-1920x960-05ld95.jpg
+          alt: Olight i5T EOS photo 3
+      specs:
+        max_lumens: 300
+        sustained_lumens: 0
+        max_candela: 1980
+        beam_distance_m: 89
+        runtime_high_min: 40
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: AA
+        recharge_type: none
+        battery_replaceable: true
+        weight_g: 60
+        length_mm: 95
+        head_diameter_mm: 18
+        body_diameter_mm: 18
+        switch_type: tail
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: false
+        has_lockout: false
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - value
+    - brand: Olight
+      brand_slug: olight
+      brand_country: CN
+      brand_website: https://www.olight.com
+      name: Seeker 4 Pro
+      slug: olight-seeker-4-pro
+      code: Seeker-4-Pro
+      description: A premium high-output flashlight for those who want the brightest beam in a pocketable package. The Seeker 4 Pro delivers a staggering 4,600 lumens with a 260-meter throw, producing a massive wall of light that turns night into day. The side switch with OLED display shows real-time brightness, battery percentage, and runtime remaining. USB-C fast charging gets you back to full power quickly, and the magnetic tailcap provides hands-free versatility. This is the light you grab when you need to illuminate everything.
+      release_year: 2023
+      msrp_usd: 149.99
+      asin: B0C9Q3Q62Q
+      price_usd: 149.99
+      rating_count: 700
+      average_rating: 4.7
+      manufacturer_url: https://www.olight.com/store/seeker-4-pro-high-power-flashlight
+      images:
+        - url: https://cdn.olightstore.com/image/3-c2fkie-wedz5w-0dbjt6.jpg
+          alt: Olight Seeker 4 Pro product photo
+        - url: https://cdn.olightstore.com/image/1-cwxind.jpg@600w_600h_90q.webp
+          alt: Olight Black Seeker 4 Pro flashlight side view with blue bezel and textured grip for powerful illumination.
+      specs:
+        max_lumens: 4600
+        sustained_lumens: 0
+        max_candela: 16900
+        beam_distance_m: 260
+        runtime_high_min: 100
+        runtime_500_min: 0
+        turbo_stepdown_sec: 90
+        beam_pattern: flood
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: false
+        weight_g: 214
+        length_mm: 134.5
+        head_diameter_mm: 35
+        body_diameter_mm: 28
+        switch_type: side
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: true
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - camping
+        - flood
+    - brand: Streamlight
+      brand_slug: streamlight
+      brand_country: US
+      brand_website: https://www.streamlight.com
+      name: ProTac HL-X
+      slug: streamlight-protac-hl-x
+      code: "88065"
+      description: One of the best-selling tactical flashlights on Amazon, the ProTac HL-X is the workhorse that law enforcement officers and military personnel actually carry. It delivers 1,000 lumens with a deep parabolic reflector that produces a tight hotspot with useful spill, reaching out to 330 meters. Streamlight's TEN-TAP programmable switch lets you choose between high-only, low-high-strobe, or high-low-strobe sequences. Dual-fuel capability accepts either the included rechargeable 18650 battery or CR123A lithium cells for maximum flexibility in the field.
+      release_year: 2020
+      msrp_usd: 99.99
+      asin: B07B5CS8CG
+      price_usd: 89.99
+      rating_count: 9500
+      average_rating: 4.7
+      manufacturer_url: https://www.streamlight.com/products/detail/protac-hl-x
+      images:
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_1.jpg?Status=Master&sfvrsn=2338e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_2.jpg?Status=Master&sfvrsn=2038e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_3.jpg?Status=Master&sfvrsn=3538e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_7.jpg?Status=Master&sfvrsn=a38e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_6.jpg?Status=Master&sfvrsn=b38e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_4.jpg?Status=Master&sfvrsn=638e4f3_23
+          alt: ProTac HL-X
+        - url: https://www.streamlight.com/images/default-source/product-large-images/protac-hl-x/protac-hl-x_5.jpg?Status=Master&sfvrsn=138e4f3_23
+          alt: ProTac HL-X
+      specs:
+        max_lumens: 1000
+        sustained_lumens: 0
+        max_candela: 27100
+        beam_distance_m: 330
+        runtime_high_min: 135
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: throw
+        battery_type: "18650"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 195
+        length_mm: 144.8
+        head_diameter_mm: 36
+        body_diameter_mm: 25.4
+        switch_type: tail
+        waterproof_rating: IPX7
+        impact_resistance_m: 2
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+        - throw
+    - brand: Streamlight
+      brand_slug: streamlight
+      brand_country: US
+      brand_website: https://www.streamlight.com
+      name: Wedge
+      slug: streamlight-wedge
+      code: "88810"
+      description: A revolutionary slim-profile EDC flashlight that fits flat in your pocket like a folding knife. The Wedge delivers 1,000 lumens from a Cree LED with a 182-meter throw, impressive for its ultra-thin form factor. The unique rotating thumbscrew at the tail provides secure lockout for pocket carry. USB-C charging through a weather-sealed port keeps it topped off, and the glass-reinforced nylon body is surprisingly durable. This is the flashlight for people who hate carrying flashlights — you'll forget it's there until you need it.
+      release_year: 2021
+      msrp_usd: 89.99
+      asin: B08XMG5TMW
+      price_usd: 79.99
+      rating_count: 3200
+      average_rating: 4.5
+      manufacturer_url: https://www.streamlight.com/products/detail/wedge
+      images:
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_1.jpg?Status=Master&sfvrsn=9a61f9f3_24
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_11.jpg?Status=Master&sfvrsn=561f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_6.jpg?Status=Master&sfvrsn=5561f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_10.jpg?Status=Master&sfvrsn=1b61f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_4.jpg?Status=Master&sfvrsn=4c61f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_8.jpg?Status=Master&sfvrsn=5261f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_3.jpg?Status=Master&sfvrsn=7061f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_9.jpg?Status=Master&sfvrsn=261f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_7.jpg?Status=Master&sfvrsn=3261f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_5.jpg?Status=Master&sfvrsn=5861f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_14.jpg?Status=Master&sfvrsn=f262f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_13.jpg?Status=Master&sfvrsn=f462f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_12.jpg?Status=Master&sfvrsn=e962f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_17.jpg?Status=Master&sfvrsn=d562f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_16.jpg?Status=Master&sfvrsn=f562f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_24.jpg?Status=Master&sfvrsn=8662f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_23.jpg?Status=Master&sfvrsn=f062f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_22.jpg?Status=Master&sfvrsn=a062f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_20.jpg?Status=Master&sfvrsn=d362f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_18.jpg?Status=Master&sfvrsn=d462f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_25.jpg?Status=Master&sfvrsn=a362f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_21.jpg?Status=Master&sfvrsn=e462f9f3_23
+          alt: Wedge
+        - url: https://www.streamlight.com/images/default-source/product-large-images/wedge/wedge_26.jpg?Status=Master&sfvrsn=d162f9f3_24
+          alt: Wedge
+      specs:
+        max_lumens: 1000
+        sustained_lumens: 0
+        max_candela: 8300
+        beam_distance_m: 182
+        runtime_high_min: 60
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: Built-in
+        recharge_type: usb-c
+        battery_replaceable: false
+        weight_g: 63
+        length_mm: 103
+        head_diameter_mm: 22
+        body_diameter_mm: 13
+        switch_type: side
+        waterproof_rating: IPX7
+        impact_resistance_m: 1
+        body_material: Polymer
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - value
+    - brand: Streamlight
+      brand_slug: streamlight
+      brand_country: US
+      brand_website: https://www.streamlight.com
+      name: TLR-1 HL
+      slug: streamlight-tlr-1-hl
+      code: "69260"
+      description: The most popular weapon-mounted light on Amazon and the industry standard for law enforcement duty pistols. The TLR-1 HL delivers 1,000 lumens through a wide beam optimized for CQB and room clearing, mounting to any standard Picatinny or Glock-style rail. The ambidextrous momentary/constant switch is operable without shifting your grip, and the rail clamp secures with no tools required. CR123A batteries provide reliable power with a long shelf life. If you carry a duty pistol, this is the light most people put on it.
+      release_year: 2018
+      msrp_usd: 172.49
+      asin: B00B8Q31UQ
+      price_usd: 129.99
+      rating_count: 12000
+      average_rating: 4.8
+      manufacturer_url: https://www.streamlight.com/products/detail/tlr-1-hl
+      images:
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr-1-hl_black-new.jpg?Status=Master&sfvrsn=2b2bbcf0_42
+          alt: TLR-1 HL
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr1-hl_horizon2.jpg?Status=Master&sfvrsn=bfb3a5f0_21
+          alt: tlr1-hl_horizon2
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr1-hl_switch-end.jpg?Status=Master&sfvrsn=40b3a5f0_21
+          alt: tlr1-hl_switch-end
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr1-hl_flatdarkearth.jpg?Status=Master&sfvrsn=eeb3a5f0_21
+          alt: Streamlight TLR-1 HL photo 4
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr1-hl_flatdarkearthbrown.jpg?Status=Master&sfvrsn=c8b3a5f0_21
+          alt: tlr1-hl_flatdarkearthbrown
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr-1-hl-blk_beretta.jpg?Status=Master&sfvrsn=999dbdf0_10
+          alt: TLR-1-HL-Blk_Beretta
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr-1-hl-blk_le.jpg?Status=Master&sfvrsn=bb9dbdf0_10
+          alt: TLR-1-HL-Blk_LE
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr-1-hl_military.jpg?Status=Master&sfvrsn=ffa703f3_23
+          alt: TLR-1-HL_Military
+        - url: https://www.streamlight.com/images/default-source/product-large-images/tlr-1-hl-fde_sg.jpg?Status=Master&sfvrsn=889dbdf0_10
+          alt: TLR-1-HL-FDE_SG
+      specs:
+        max_lumens: 1000
+        sustained_lumens: 0
+        max_candela: 20000
+        beam_distance_m: 283
+        runtime_high_min: 90
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: flood
+        battery_type: CR123A
+        recharge_type: none
+        battery_replaceable: true
+        weight_g: 136
+        length_mm: 86
+        head_diameter_mm: 30
+        body_diameter_mm: 30
+        switch_type: side
+        waterproof_rating: IPX7
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: false
+        has_lockout: false
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: false
+      use_cases:
+        - tactical
+        - weapon-mount
+    - brand: ThruNite
+      brand_slug: thrunite
+      brand_country: CN
+      brand_website: https://www.thrunite.com
+      name: Catapult V6
+      slug: thrunite-catapult-v6
+      code: Catapult-V6
+      description: A dedicated thrower that reaches out to 700 meters at a price point that makes competitors nervous. The Catapult V6 uses a large deep reflector with a Luminus SFT70 LED to produce a tightly focused beam with 116,000 candela, visible as a defined hotspot at extreme distances. Despite the throw-focused design, it still provides useful spill light for navigation. USB-C charging and a 21700 battery keep runtime practical. At around $50, this is one of the best performance-per-dollar throwers you can buy.
+      release_year: 2021
+      msrp_usd: 55.99
+      asin: B08V4Z7X6N
+      price_usd: 49.95
+      rating_count: 4200
+      average_rating: 4.6
+      manufacturer_url: https://www.thrunite.com/catapult-v6-mini-thrower-flashlight/
+      images:
+        - url: https://cdn11.bigcommerce.com/s-9sfgjx/images/stencil/500x659/products/467/4332/1__65976.1677744850.jpg
+          alt: ThruNite Catapult V6 thrower flashlight
+      specs:
+        max_lumens: 2836
+        sustained_lumens: 1000
+        max_candela: 116000
+        beam_distance_m: 700
+        runtime_high_min: 152
+        runtime_500_min: 0
+        turbo_stepdown_sec: 60
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 245
+        length_mm: 151
+        head_diameter_mm: 50
+        body_diameter_mm: 27
+        switch_type: side
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: Luminus SFT70
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: false
+      use_cases:
+        - throw
+        - search-rescue
+        - tactical
+    - brand: ThruNite
+      brand_slug: thrunite
+      brand_country: CN
+      brand_website: https://www.thrunite.com
+      name: TC20 V2
+      slug: thrunite-tc20-v2
+      code: TC20V2
+      description: A high-output EDC flashlight that delivers flagship brightness at a mid-range price. The TC20 V2 pushes 4,068 lumens from four LEDs, creating an incredibly wide and bright beam ideal for outdoor activities and emergency situations. USB-C rechargeable with a 26650 battery for extended runtime, it provides up to 27 hours on medium mode. The solid build quality with aggressive knurling and IPX8 waterproofing makes it suitable for harsh conditions while remaining comfortable to carry daily.
+      release_year: 2022
+      msrp_usd: 55.99
+      asin: B0BLSDL8QH
+      price_usd: 49.95
+      rating_count: 2800
+      average_rating: 4.5
+      manufacturer_url: https://thrunite.com/tc20-v2-desert-tan/
+      images:
+        - url: https://cdn11.bigcommerce.com/s-9sfgjx/images/stencil/1280x1280/products/479/4511/1__66778.1635490198.jpg
+          alt: ThruNite TC20 V2 flashlight
+        - url: https://cdn11.bigcommerce.com/s-9sfgjx/images/stencil/1280x1280/products/479/4512/5__79625.1621387291.jpg
+          alt: ThruNite TC20 V2 beam detail
+      specs:
+        max_lumens: 4068
+        sustained_lumens: 0
+        max_candela: 12200
+        beam_distance_m: 220
+        runtime_high_min: 195
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: flood
+        battery_type: "26650"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 216
+        length_mm: 145.6
+        head_diameter_mm: 39.5
+        body_diameter_mm: 30.7
+        switch_type: side
+        waterproof_rating: IPX8
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: false
+      use_cases:
+        - flood
+        - camping
+        - value
+    - brand: Wurkkos
+      brand_slug: wurkkos
+      brand_country: CN
+      brand_website: https://www.wurkkos.com
+      name: FC11
+      slug: wurkkos-fc11
+      code: FC11
+      description: The budget flashlight that flashlight enthusiasts actually recommend. The Wurkkos FC11 delivers 1,300 lumens with a high-CRI (90+) Samsung LH351D LED that renders colors accurately — you'll see true reds and greens, not the washed-out bluish tint of cheap lights. USB-C charging, a 18650 battery, magnetic tailcap, and a pocket clip come standard at a price under $30. This is the flashlight that convinced thousands of people on Reddit's r/flashlight community that you don't need to spend $100+ for a great light.
+      release_year: 2021
+      msrp_usd: 29.99
+      asin: B08JCM95X6
+      price_usd: 26.98
+      rating_count: 7500
+      average_rating: 4.5
+      manufacturer_url: https://www.wurkkos.com/products/wurkkos-fc11-1300lumen-flashlight-with-90-cri-usb-c-rechargeable-18650-led-flashlight-samsung-lh351d-ip67-waterproof-magnetic-tailcap-2-ui
+      images:
+        - url: https://ueeshop.ly200-cdn.com/u_file/UPAU/UPAU502/2602/23/products/06f9c2c357.jpg
+          alt: Wurkkos FC11 EDC flashlight
+      specs:
+        max_lumens: 1300
+        sustained_lumens: 0
+        max_candela: 9560
+        beam_distance_m: 196
+        runtime_high_min: 90
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: hybrid
+        battery_type: "18650"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 93
+        length_mm: 108
+        head_diameter_mm: 25
+        body_diameter_mm: 23
+        switch_type: side
+        waterproof_rating: IP67
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Samsung LH351D
+        cri: 90
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: true
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - value
+        - camping
+    - brand: Sofirn
+      brand_slug: sofirn
+      brand_country: CN
+      brand_website: https://www.sofirnlight.com
+      name: SP35
+      slug: sofirn-sp35
+      code: SP35
+      description: An exceptional value EDC flashlight with features that punch well above its $30 price tag. The Sofirn SP35 delivers 2,000 lumens with a Cree XHP50.2 LED and an advanced buck driver that maintains consistent brightness as the battery depletes — a feature usually found on lights costing 3-4x more. USB-C charging, ATR temperature regulation, and a 21700 battery provide practical everyday performance. The build quality is solid with clean anodizing and smooth threads. This is the light that makes expensive EDC flashlights hard to justify.
+      release_year: 2021
+      msrp_usd: 37.99
+      asin: B08Y2BC53Q
+      price_usd: 29.99
+      rating_count: 4100
+      average_rating: 4.5
+      manufacturer_url: https://www.sofirnlight.com/products/sofirn-sp35-rechargeable-flashlight-with-atr-and-buck-driver
+      images:
+        - url: https://img.staticdj.com/3a18c01a34369a351f8fc582c8a1bf70_750x.jpg
+          alt: Sofirn SP35 rechargeable flashlight
+      specs:
+        max_lumens: 2000
+        sustained_lumens: 0
+        max_candela: 16500
+        beam_distance_m: 257
+        runtime_high_min: 120
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: hybrid
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 136
+        length_mm: 126
+        head_diameter_mm: 27
+        body_diameter_mm: 26
+        switch_type: side
+        waterproof_rating: IP68
+        impact_resistance_m: 1.5
+        body_material: Aluminum
+        led_model: Cree XHP50.2
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - value
+        - camping
+    - brand: Sofirn
+      brand_slug: sofirn
+      brand_country: CN
+      brand_website: https://www.sofirnlight.com
+      name: IF22A
+      slug: sofirn-if22a
+      code: IF22A
+      description: A compact pocket thrower that reaches impressively far for its size. The Sofirn IF22A uses a Luminus SFT40 LED with a TIR optic to throw a focused beam over 680 meters from a light that fits comfortably in your hand. The beam is pencil-tight at distance with enough spill for close-range navigation. USB-C rechargeable with power bank functionality to charge your phone in a pinch. At around $30, this is the go-to recommendation for anyone asking "what's the farthest-reaching flashlight I can get for cheap?"
+      release_year: 2022
+      msrp_usd: 34.99
+      asin: B09SV4Q4PF
+      price_usd: 29.99
+      rating_count: 3800
+      average_rating: 4.5
+      manufacturer_url: https://www.sofirnlight.com/products/sofirn-if22a-thrower-flashlight-2100-lumens
+      images:
+        - url: https://img.staticdj.com/b49d831280430ab9e00f532b558bb8dd_750x.jpg
+          alt: Sofirn IF22A thrower flashlight
+      specs:
+        max_lumens: 2100
+        sustained_lumens: 0
+        max_candela: 116000
+        beam_distance_m: 680
+        runtime_high_min: 120
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 155
+        length_mm: 129
+        head_diameter_mm: 36
+        body_diameter_mm: 26
+        switch_type: side
+        waterproof_rating: IPX8
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Luminus SFT40
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - throw
+        - value
+    - brand: Nitecore
+      brand_slug: nitecore
+      brand_country: CN
+      brand_website: https://www.nitecore.com
+      name: MH12 Pro
+      slug: nitecore-mh12-pro
+      code: MH12-Pro
+      description: A tactical EDC flashlight that balances throw, brightness, and runtime in a package purpose-built for law enforcement and daily carry. The MH12 Pro delivers 3,300 lumens with a precision deep reflector that produces a tight hotspot and reaches 505 meters. The tail switch provides instant momentary-on for tactical use, while the side switch handles daily mode selection. USB-C fast charging and the included 21700 battery keep you powered through extended shifts. Nitecore's build quality is among the best in the industry.
+      release_year: 2023
+      msrp_usd: 89.95
+      asin: B0CJB1PLW9
+      price_usd: 79.95
+      rating_count: 1200
+      average_rating: 4.6
+      manufacturer_url: https://flashlight.nitecore.com/product/mh12pro
+      images:
+        - url: https://images-na.ssl-images-amazon.com/images/P/B0CJB1PLW9.01._SCLZZZZZZZ_SX500_.jpg
+          alt: Nitecore MH12 Pro
+      specs:
+        max_lumens: 3300
+        sustained_lumens: 0
+        max_candela: 63800
+        beam_distance_m: 505
+        runtime_high_min: 140
+        runtime_500_min: 0
+        turbo_stepdown_sec: 120
+        beam_pattern: throw
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 168
+        length_mm: 142
+        head_diameter_mm: 34
+        body_diameter_mm: 25.4
+        switch_type: dual
+        waterproof_rating: IP68
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Luminus SFT70
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+        - throw
+        - edc
+    - brand: Nitecore
+      brand_slug: nitecore
+      brand_country: CN
+      brand_website: https://www.nitecore.com
+      name: E4K
+      slug: nitecore-e4k
+      code: E4K
+      description: A compact powerhouse that fits 4,400 lumens into a package small enough for everyday pocket carry. The E4K uses four CREE XP-L2 V6 LEDs behind a quad-reflector to produce a massive flood of light with a 211-meter throw. The single side switch handles all operations including lockout, and USB-C charging means you can top off from any cable. The aggressive knurling and HA-III hard-anodized finish give it a tactical feel without the tactical size. If you want maximum brightness in minimum space, this is the one.
+      release_year: 2023
+      msrp_usd: 69.95
+      asin: B0CGGPY1SX
+      price_usd: 59.95
+      rating_count: 1800
+      average_rating: 4.5
+      manufacturer_url: https://flashlight.nitecore.com/product/e4k
+      images:
+        - url: https://images-na.ssl-images-amazon.com/images/P/B0CGGPY1SX.01._SCLZZZZZZZ_SX500_.jpg
+          alt: Nitecore E4K
+      specs:
+        max_lumens: 4400
+        sustained_lumens: 0
+        max_candela: 11100
+        beam_distance_m: 211
+        runtime_high_min: 150
+        runtime_500_min: 0
+        turbo_stepdown_sec: 45
+        beam_pattern: flood
+        battery_type: "21700"
+        recharge_type: usb-c
+        battery_replaceable: true
+        weight_g: 138
+        length_mm: 118.7
+        head_diameter_mm: 26
+        body_diameter_mm: 25.4
+        switch_type: side
+        waterproof_rating: IP68
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: Cree XP-L2 V6
+        cri: 0
+        has_strobe: true
+        has_memory_mode: true
+        has_lockout: true
+        has_moonlight_mode: true
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
+        - flood
+        - value
+    - brand: SureFire
+      brand_slug: surefire
+      brand_country: US
+      brand_website: https://www.surefire.com
+      name: G2X Tactical
+      slug: surefire-g2x-tactical
+      code: G2X-C-BK
+      description: The entry point to the SureFire ecosystem and a proven tactical flashlight trusted by military and law enforcement worldwide. The G2X Tactical delivers 600 lumens through SureFire's precision TIR lens for a tight, penetrating beam. The click-type tailcap switch provides both momentary and constant-on activation — the same interface that made SureFire the standard for tactical lights. The Nitrolon polymer body is lightweight and virtually indestructible, shrugging off drops, impacts, and weather. SureFire's legendary reliability means this light works when your life depends on it.
+      release_year: 2019
+      msrp_usd: 75
+      asin: B07KH4CCKM
+      price_usd: 64.95
+      rating_count: 6500
+      average_rating: 4.7
+      manufacturer_url: https://www.surefire.com/g2x-tactical/
+      images:
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/products/520/images/1001/G2X-C-BK-front-isoL__63287.1677224871.500.750.jpg?c=2
+          alt: SureFire G2X Tactical product photo
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/839/1000/G2X-D-BK-front-isoL__40374.1677224505.jpg?c=2
+          alt: G2X Pro
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/525/1002/G2XLE-BK-front-isoL__33056.1677224991.jpg?c=2
+          alt: G2X Law Enforcement Edition
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/131/478/6PX-C-BK-isoL__41539.1631577708.jpg?c=2
+          alt: 6PX Tactical
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/518/438/fury-dft-isol__56566.1589233715.jpg?c=2
+          alt: FURY Dual Fuel Tactical
+      specs:
+        max_lumens: 600
+        sustained_lumens: 0
+        max_candela: 16000
+        beam_distance_m: 253
+        runtime_high_min: 90
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: throw
+        battery_type: CR123A
+        recharge_type: none
+        battery_replaceable: true
+        weight_g: 122
+        length_mm: 132
+        head_diameter_mm: 28
+        body_diameter_mm: 25
+        switch_type: tail
+        waterproof_rating: IPX7
+        impact_resistance_m: 1
+        body_material: Polymer
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: false
+        has_lockout: false
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - tactical
+    - brand: SureFire
+      brand_slug: surefire
+      brand_country: US
+      brand_website: https://www.surefire.com
+      name: Stiletto Pro
+      slug: surefire-stiletto-pro
+      code: PLR-B
+      description: SureFire's answer to the modern EDC flashlight, designed to carry like a folding knife. The Stiletto Pro delivers 1,000 lumens from a flat, pocket-friendly body that clips neatly to the edge of your pocket. The primary switch provides tactile momentary-on with 650 lumens — no clicking required — while the secondary switch cycles through low and medium modes for everyday tasks. USB-C rechargeable with an aluminum body and SureFire's signature build quality, this is premium EDC done right.
+      release_year: 2020
+      msrp_usd: 149
+      asin: B0818HTLVF
+      price_usd: 134.95
+      rating_count: 2100
+      average_rating: 4.6
+      manufacturer_url: https://www.surefire.com/stiletto-pro
+      images:
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/products/937/images/753/Stiletto-Pro_Angle_FL__41209.1683925040.500.750.jpg?c=2
+          alt: SureFire Stiletto Pro EDC flashlight
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1072/1664/PLR-C-isoL__48434.1707758082.jpg?c=2
+          alt: Stiletto Pro II
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/210/1673/PLR-A-isoL-updated__01254.1708024306.jpg?c=2
+          alt: Stiletto
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1027/932/M640DFT-BK-PRO_mount_isoL__70094.1725473811.jpg?c=2
+          alt: M640DFT-PRO Turbo Scout Light Pro
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1026/933/M340DFT-BK-PRO_mount_isoL__98068.1647298893.jpg?c=2
+          alt: M340DFT-PRO Turbo Mini Scout Light Pro
+        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/132/806/6PX-D-BK-front-isoL__36465.1587158731.jpg?c=2
+          alt: 6PX Pro
+      specs:
+        max_lumens: 1000
+        sustained_lumens: 0
+        max_candela: 11300
+        beam_distance_m: 213
+        runtime_high_min: 105
+        runtime_500_min: 0
+        turbo_stepdown_sec: 0
+        beam_pattern: ""
+        battery_type: Built-in
+        recharge_type: usb-c
+        battery_replaceable: false
+        weight_g: 105
+        length_mm: 117
+        head_diameter_mm: 22
+        body_diameter_mm: 16
+        switch_type: side
+        waterproof_rating: IPX7
+        impact_resistance_m: 1
+        body_material: Aluminum
+        led_model: ""
+        cri: 0
+        has_strobe: false
+        has_memory_mode: true
+        has_lockout: false
+        has_moonlight_mode: false
+        has_magnetic_tailcap: false
+        has_pocket_clip: true
+      use_cases:
+        - edc
     - brand: ACEBEAM
       brand_slug: acebeam
       brand_country: CN
@@ -6,7 +1289,7 @@ products:
       name: E75
       slug: acebeam-e75
       code: E75
-      description: The Acebeam E75 is a high-output EDC flashlight featuring four Nichia 519A high-CRI emitters for accurate color rendition, making it a favorite among flashlight enthusiasts. Its 21700 battery with USB-C charging provides long runtime, while the magnetic tailcap enables hands-free use. Thermal regulation keeps the light operating safely even at sustained high output, and the IP68 rating means it handles submersion without issue.
+      description: The enthusiast's choice for a high-CRI EDC flashlight. The Acebeam E75 uses four Nichia 519A emitters — prized for their 90+ CRI color rendering — to produce light that shows true colors rather than the bluish tint of cheaper LEDs. This matters when you're identifying objects, reading maps, or evaluating materials in the field. Output reaches 4,500 lumens with a 260-meter throw, powered by a single 21700 battery with USB-C charging. The magnetic tailcap, thermal regulation, and IP68 rating round out a flashlight that earns its cult following in the r/flashlight community.
       release_year: 2023
       msrp_usd: 99.9
       asin: B0CC1K16SW
@@ -17,12 +1300,10 @@ products:
       images:
         - url: https://www.acebeam.com/images/thumbs/008/0089814_e75-high-performance-quad-core-edc-flashlight_600.jpeg
           alt: Acebeam E75 front angle
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CC1K16SW.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Acebeam E75 Amazon listing
         - url: https://www.acebeam.com/images/thumbs/008/0089790_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Picture of E75 High-performance Quad-core EDC Flashlight
+          alt: Acebeam E75 side view
         - url: https://www.acebeam.com/images/thumbs/008/0089723_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Picture of E75 High-performance Quad-core EDC Flashlight
+          alt: Acebeam E75 beam detail
         - url: https://www.acebeam.com/images/thumbs/008/0089767_e75-high-performance-quad-core-edc-flashlight_600.jpeg
           alt: Picture of E75 High-performance Quad-core EDC Flashlight
         - url: https://www.acebeam.com/images/thumbs/008/0088181_e75-high-performance-quad-core-edc-flashlight_600.jpeg
@@ -30,12 +1311,12 @@ products:
         - url: https://www.acebeam.com/images/thumbs/008/0089659_e75-high-performance-quad-core-edc-flashlight_600.jpeg
           alt: Picture of E75 High-performance Quad-core EDC Flashlight
       specs:
-        max_lumens: 3000
+        max_lumens: 4500
         sustained_lumens: 1000
         max_candela: 17000
         beam_distance_m: 260
         runtime_high_min: 100
-        runtime_500_min: 160
+        runtime_500_min: 0
         turbo_stepdown_sec: 75
         beam_pattern: flood
         battery_type: "21700"
@@ -58,2000 +1339,9 @@ products:
         has_magnetic_tailcap: true
         has_pocket_clip: true
       use_cases:
-        - camping
-        - edc
-        - flood
-    - brand: Armytek
-      brand_slug: armytek
-      brand_country: CA
-      brand_website: https://www.armytek.com
-      name: Wizard C2 Pro Nichia
-      slug: armytek-wizard-c2-pro
-      code: WIZC2PN
-      description: The Armytek Wizard C2 Pro Nichia is a right-angle headlamp and EDC light with a high-CRI Nichia emitter for accurate color rendition in outdoor and professional settings. Rated IP68 to 10 meters of submersion and built to withstand extreme cold down to -25°C, it handles the harshest conditions. USB-C magnetic charging keeps it topped up, and the included headband converts it from pocket carry to a capable hands-free headlamp in seconds.
-      release_year: 2022
-      msrp_usd: 79.99
-      asin: B096VS3RJY
-      price_usd: 72.99
-      rating_count: 950
-      average_rating: 4.5
-      manufacturer_url: https://www.armytek.com/wizard-c2-pro-nichia
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B096VS3RJY.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Armytek Wizard C2 Pro Nichia
-      specs:
-        max_lumens: 1600
-        sustained_lumens: 700
-        max_candela: 6200
-        beam_distance_m: 157
-        runtime_high_min: 90
-        runtime_500_min: 130
-        turbo_stepdown_sec: 55
-        beam_pattern: flood
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 65
-        length_mm: 108
-        head_diameter_mm: 27
-        body_diameter_mm: 24
-        switch_type: side
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: Nichia B35AM
-        cri: 90
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - survival
-        - value
-        - headlamp
-    - brand: Armytek
-      brand_slug: armytek
-      brand_country: CA
-      brand_website: https://www.armytek.com
-      name: Dobermann Pro
-      slug: armytek-dobermann-pro
-      code: DOBPRO
-      description: The Armytek Dobermann Pro is a long-range tactical flashlight with aggressive throw optimized for law enforcement and search applications. Rated IP68 to 10 meters and tested for impact resistance at 2 meters, it is built for extreme durability. USB-C charging and an 18650 battery keep it field-ready, while the tail switch provides instant tactical activation for duty carry.
-      release_year: 2021
-      msrp_usd: 89.99
-      asin: B09F9BT4VP
-      price_usd: 79.99
-      rating_count: 680
-      average_rating: 4.4
-      manufacturer_url: https://www.armytek.com/dobermann-pro
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09F9BT4VP.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Armytek Dobermann Pro
-      specs:
-        max_lumens: 1700
-        sustained_lumens: 750
-        max_candela: 39000
-        beam_distance_m: 395
-        runtime_high_min: 90
-        runtime_500_min: 120
-        turbo_stepdown_sec: 50
-        beam_pattern: throw
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 134
-        length_mm: 143
-        head_diameter_mm: 28.5
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - search-rescue
-    - brand: Cloud Defensive
-      brand_slug: cloud-defensive
-      brand_country: US
-      brand_website: https://www.clouddefensive.com
-      name: REIN 2.0
-      slug: cloud-defensive-rein-2
-      code: REIN2
-      description: The Cloud Defensive REIN 2.0 is a US-made weapon light delivering 71,000 candela for a 533-meter throw with potted electronics that survive extreme recoil and impact. The complete kit includes a remote switch, mount, and battery, ready for professional deployment out of the box. Designed in Texas and built to withstand the most demanding tactical environments, it has become a top choice for military and law enforcement operators.
-      release_year: 2022
-      msrp_usd: 349
-      asin: B0B17P63J8
-      price_usd: 349
-      rating_count: 800
-      average_rating: 4.7
-      manufacturer_url: https://www.clouddefensive.com/rein-2-0
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0B17P63J8.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Cloud Defensive REIN 2.0
-      specs:
-        max_lumens: 1100
-        sustained_lumens: 600
-        max_candela: 71000
-        beam_distance_m: 533
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 30
-        beam_pattern: throw
-        battery_type: "18650"
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 196
-        length_mm: 152
-        head_diameter_mm: 28
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - weapon-mount
-        - tactical
-        - law-enforcement
-    - brand: Cloud Defensive
-      brand_slug: cloud-defensive
-      brand_country: US
-      brand_website: https://www.clouddefensive.com
-      name: MCH EDC
-      slug: cloud-defensive-mch-edc
-      code: MCHEDC
-      description: The Cloud Defensive MCH EDC is a full-size US-made handheld flashlight with potted-electronics durability typically found only in weapon lights. Five programmable modes and dual-fuel compatibility (18650 or CR123A) provide versatile operation for both duty and everyday carry. Its 40,000 candela beam reaches 400 meters, backed by the same rugged construction that defines the REIN weapon light series.
-      release_year: 2023
-      msrp_usd: 329
-      asin: B0C1RCLLBB
-      price_usd: 329
-      rating_count: 200
-      average_rating: 4.7
-      manufacturer_url: https://www.clouddefensive.com/mch
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0C1RCLLBB.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Cloud Defensive MCH EDC
-      specs:
-        max_lumens: 1700
-        sustained_lumens: 700
-        max_candela: 40000
-        beam_distance_m: 400
-        runtime_high_min: 70
-        runtime_500_min: 0
-        turbo_stepdown_sec: 45
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 162
-        length_mm: 131
-        head_diameter_mm: 30
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - edc
-    - brand: Elzetta
-      brand_slug: elzetta
-      brand_country: US
-      brand_website: https://www.elzetta.com
-      name: Charlie
-      slug: elzetta-charlie
-      code: C133
-      description: The Elzetta Charlie is a three-cell US-made modular flashlight milled from bar-stock aluminum with fully potted electronics and a lifetime guarantee. Its modular design allows swapping bezels and tail caps to customize the light for different missions. Rated IPX8 with 3 meters of impact resistance, it is built to survive conditions that would destroy lesser lights, making it a trusted choice for military and tactical professionals.
-      release_year: 2020
-      msrp_usd: 249
-      asin: B091RHZQ66
-      price_usd: 249
-      rating_count: 150
-      average_rating: 4.7
-      manufacturer_url: https://www.elzetta.com/product/charlie
-      images:
-        - url: https://elzetta.com/wp-content/uploads/2024/03/Charlie_on_Wood_01.webp
-          alt: Elzetta Charlie on wood surface
-        - url: https://images-na.ssl-images-amazon.com/images/P/B091RHZQ66.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Elzetta Charlie Amazon listing
-        - url: https://elzetta.com/wp-content/uploads/2024/12/3-Cell_Holster_01.png
-          alt: Elzetta Charlie product photo
-        - url: https://elzetta.com/wp-content/uploads/2024/12/3-Cell_Holster_01.webp
-          alt: Charlie 3-Cell flashlight holster on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/3-Cell_Holster_04.webp
-          alt: Charlie 3-Cell flashlight holster laying on the side, showing belt slots the back, on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/3-Cell_Holster_02.webp
-          alt: Charlie 3-Cell Flashlight holster with flashlight in it laying on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/3-Cell_Holster_03.webp
-          alt: Charlie 3-Cell Flashlight holster with flashlight in it laying on white background
-      specs:
-        max_lumens: 1350
-        sustained_lumens: 650
-        max_candela: 26000
-        beam_distance_m: 322
-        runtime_high_min: 90
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 210
-        length_mm: 178
-        head_diameter_mm: 35
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 3
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - tactical
-        - law-enforcement
-        - survival
-    - brand: Elzetta
-      brand_slug: elzetta
-      brand_country: US
-      brand_website: https://www.elzetta.com
-      name: Bravo
-      slug: elzetta-bravo
-      code: B452
-      description: The Elzetta Bravo is a two-cell US-made tactical light with extended runtime from dual CR123A cells. Like all Elzetta lights, it features bomb-proof potted electronics construction and a lifetime guarantee. The compact form factor and proven reliability make it popular with law enforcement and military users who demand absolute dependability in the field.
-      release_year: 2020
-      msrp_usd: 259
-      asin: B09MMMXFY6
-      price_usd: 239
-      rating_count: 120
-      average_rating: 4.7
-      manufacturer_url: https://www.elzetta.com/product/bravo
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09MMMXFY6.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Elzetta Bravo
-        - url: https://elzetta.com/wp-content/uploads/2024/12/2-Cell_Holster_01.png
-          alt: Elzetta Bravo product photo
-        - url: https://elzetta.com/wp-content/uploads/2024/12/2-Cell_Holster_01.webp
-          alt: Bravo 2-Cell falshlight holster on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/2-Cell_Holster_04.webp
-          alt: Bravo 2-Cell flashlight holster laying on its side showing belt slots on the back on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/2-Cell_Holster_03.webp
-          alt: Bravo 2-Cell Flashlight holster with flashlight in it laying on white background
-        - url: https://elzetta.com/wp-content/uploads/2024/12/2-Cell_Holster_02.webp
-          alt: 2-Cell Bravo holster with flashlight in it laying on white background
-      specs:
-        max_lumens: 850
-        sustained_lumens: 400
-        max_candela: 12500
-        beam_distance_m: 224
-        runtime_high_min: 200
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 198
-        length_mm: 142
-        head_diameter_mm: 35
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 3
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - tactical
-        - law-enforcement
-        - survival
-    - brand: Energizer
-      brand_slug: energizer
-      brand_country: US
-      brand_website: https://www.energizer.com
-      name: TAC 1200
-      slug: energizer-tac-1200
-      code: ENPMHT61
-      description: The Energizer TAC 1200 is a budget-friendly tactical flashlight delivering 1,200 lumens with IPX7 water resistance and 1-meter impact resistance. Its wide availability at retail stores and low price point make it an excellent entry-level option for those seeking a capable flashlight without a premium price tag. Powered by CR123A batteries, it provides reliable operation for home, automotive, and outdoor use.
-      release_year: 2020
-      msrp_usd: 29.99
-      asin: B0B61FY6DB
-      price_usd: 24.99
-      rating_count: 5800
-      average_rating: 4.3
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0B61FY6DB.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Energizer TAC 1200
-      specs:
-        max_lumens: 1200
-        sustained_lumens: 400
-        max_candela: 7200
-        beam_distance_m: 170
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 170
-        length_mm: 170
-        head_diameter_mm: 38
-        body_diameter_mm: 33
-        switch_type: tail
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - value
-        - camping
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: PD36R Pro
-      slug: fenix-pd36r-pro
-      code: PD36RPRO
-      description: The Fenix PD36R Pro delivers 2,800 lumens via a Luminus SFT70 LED with a 380-meter throw, making it one of the best all-around tactical EDC lights on the market. Dual rear switches provide instant tactical activation and brightness cycling, while USB-C charging keeps the included 21700 battery topped up. IP68 waterproofing, 1.5m impact resistance, and a two-way pocket clip round out a feature set that appeals to both duty officers and outdoor enthusiasts.
-      release_year: 2022
-      msrp_usd: 119.95
-      asin: B0BGMZ4YNC
-      price_usd: 104.95
-      rating_count: 2340
-      average_rating: 4.7
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-pd36r-pro
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BGMZ4YNC.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix PD36R Pro
-      specs:
-        max_lumens: 2800
-        sustained_lumens: 1000
-        max_candela: 36000
-        beam_distance_m: 380
-        runtime_high_min: 180
-        runtime_500_min: 220
-        turbo_stepdown_sec: 120
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 169
-        length_mm: 145
-        head_diameter_mm: 27
-        body_diameter_mm: 27
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Luminus SFT70
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - camping
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: PD36R V2.0
-      slug: fenix-pd36r-v2
-      code: PD36RV2
-      description: The Fenix PD36R V2.0 is a compact rechargeable tactical flashlight delivering 1,700 lumens with a 396-meter beam throw via a Luminus SFT40 LED. Its dual-switch operation combines a tactical tail switch for instant activation with a side switch for brightness selection. The USB Type-C port supports 18W fast charging, and the included 5,000mAh 21700 battery provides extended runtime across five brightness levels plus strobe.
-      release_year: 2024
-      msrp_usd: 99.95
-      asin: B0CJL9Y2GL
-      price_usd: 99.95
-      rating_count: 150
-      average_rating: 4.6
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-pd36r-v2-0
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CJL9Y2GL.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix PD36R V2.0
-      specs:
-        max_lumens: 1700
-        sustained_lumens: 800
-        max_candela: 39240
-        beam_distance_m: 396
-        runtime_high_min: 150
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 167
-        length_mm: 140.7
-        head_diameter_mm: 26.5
-        body_diameter_mm: 25.5
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Luminus SFT40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - tactical
-        - law-enforcement
-        - camping
-        - throw
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: E35 V3.0
-      slug: fenix-e35-v3
-      code: E35V3
-      description: The Fenix E35 V3.0 is a compact 3,000-lumen EDC flashlight powered by a 21700 battery with USB-C charging. Its side switch provides quick access to six brightness modes, including turbo and strobe for emergencies. IP68 rated and built from aerospace-grade aluminum, it handles rain, dust, and drops without issue. An excellent balance of output, size, and price for everyday carry and camping.
-      release_year: 2022
-      msrp_usd: 89.95
-      asin: B096JQH2RC
-      price_usd: 79.95
-      rating_count: 600
-      average_rating: 4.6
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-e35-v3-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B096JQH2RC.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix E35 V3.0
-        - url: http://www.fenixlighting.com/cdn/shop/products/Fenix-E35-V3-Flashlight_19330f0b-081c-42b8-86c1-8b0f9d838b9c-753981_1200x1200.jpg?v=1690844054
-          alt: Fenix E35 V3.0 product photo
-        - url: https://www.fenixlighting.com/cdn/shop/files/E35-V3-flashlight-spec-chart.webp?v=1650396562
-          alt: Fenix E35 V3.0 Flashlight - DISCONTINUED specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/E35-V3-flashlight-runtime-chart.webp?v=1650396561
-          alt: Fenix E35 V3.0 Flashlight - DISCONTINUED runtime chart
-      specs:
-        max_lumens: 3000
-        sustained_lumens: 1000
-        max_candela: 18000
-        beam_distance_m: 268
-        runtime_high_min: 90
-        runtime_500_min: 0
-        turbo_stepdown_sec: 60
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 114
-        length_mm: 122
-        head_diameter_mm: 28
-        body_diameter_mm: 25.4
-        switch_type: side
-        waterproof_rating: IP68
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
         - edc
         - camping
         - flood
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: TK20R V2.0
-      slug: fenix-tk20r-v2
-      code: TK20RV2
-      description: The Fenix TK20R V2.0 delivers 3,000 lumens with an impressive 475-meter throw using a Luminus SFT70 LED. Dual tactical tail switches provide glove-friendly operation with instant activation and strobe access. A hidden USB Type-C charging port protected by a screw-on cover maintains IP68 waterproof integrity. The internal dual-spring design ensures stable operation even under severe impact.
-      release_year: 2022
-      msrp_usd: 129.95
-      asin: B09WT6DQSL
-      price_usd: 129.95
-      rating_count: 200
-      average_rating: 4.6
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-tk20r-v2-rechargeable-tac-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09WT6DQSL.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix TK20R V2.0
-        - url: http://www.fenixlighting.com/cdn/shop/files/TK20R-v2_T5-Pen_1200x1200.jpg?v=1762967527
-          alt: Fenix TK20R V2.0 product photo
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-tk20rv2-rechargeable-tactical-flashlight-spec-chart.png?v=1649973449
-          alt: Fenix TK20R V2.0 Rechargeable Tac Flashlight with T5 Pen specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-tk20rv2-rechargeable-tactical-flashlight-runtime-chart.png?v=1649973466
-          alt: Fenix TK20R V2.0 Rechargeable Tac Flashlight with T5 Pen runtime chart
-      specs:
-        max_lumens: 3000
-        sustained_lumens: 1000
-        max_candela: 56600
-        beam_distance_m: 475
-        runtime_high_min: 165
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 204
-        length_mm: 153
-        head_diameter_mm: 34
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Luminus SFT70
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - search-rescue
-        - throw
-        - camping
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: TK16 V2.0
-      slug: fenix-tk16-v2
-      code: TK16V2
-      description: The Fenix TK16 V2.0 is a tactical flashlight producing 3,100 lumens with a 380-meter throw via the Luminus SST70 LED. Dual tactical tail switches provide instant activation and strobe access, and a stainless steel strike bezel with tungsten tips adds emergency utility. At only 112g without battery, it offers an outstanding power-to-weight ratio with 1.5m impact resistance.
-      release_year: 2021
-      msrp_usd: 99.95
-      asin: B08V8H75Q7
-      price_usd: 99.95
-      rating_count: 100
-      average_rating: 4.5
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-tk16-v2-tactical-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08V8H75Q7.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix TK16 V2.0
-        - url: http://www.fenixlighting.com/cdn/shop/files/fenix-TK16_V2.0-tactical-flashlight_1200x1200.jpg?v=1759965100
-          alt: Fenix TK16 V2.0 product photo
-        - url: https://www.fenixlighting.com/cdn/shop/files/tk16v2-ansichart.png?v=1660596403
-          alt: Fenix TK16 V2.0 Tactical Flashlight specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/TK16_V2-Runtime.webp?v=1651249519
-          alt: Fenix TK16 V2.0 Tactical Flashlight runtime chart
-      specs:
-        max_lumens: 3100
-        sustained_lumens: 1000
-        max_candela: 36100
-        beam_distance_m: 380
-        runtime_high_min: 170
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 175
-        length_mm: 143
-        head_diameter_mm: 34
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Luminus SST70
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - throw
-        - survival
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: LD30R
-      slug: fenix-ld30r
-      code: LD30R
-      description: The Fenix LD30R is a compact, lightweight EDC flashlight delivering 1,700 lumens from its Luminus SST40 LED with a 257-meter beam distance. Seven lighting modes include a 1-lumen moonlight for close-up tasks and SOS/strobe for emergencies. Its 18650 battery with CR123A backup, two-way body clip, USB-C charging, and 129.7mm length make it one of the most versatile compact carry lights in the Fenix lineup.
-      release_year: 2023
-      msrp_usd: 79.95
-      asin: B0CL57DZ91
-      price_usd: 79.95
-      rating_count: 100
-      average_rating: 4.6
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-ld30r-rechargeable-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CL57DZ91.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix LD30R
-        - url: http://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight_1200x1200.jpg?v=1770054676
-          alt: Fenix LD30R product photo
-        - url: https://cdn.shopify.com/s/files/1/0553/8172/1142/files/ld30r-ld30-comparison.jpg?v=1697651667
-          alt: ""
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight-spec-chart_2349c772-f033-416e-acd1-11240225442e.png?v=1760649750
-          alt: Fenix LD30R Rechargeable Flashlight specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight-runtime-chart.png?v=1697494774
-          alt: Fenix LD30R Rechargeable Flashlight runtime chart
-      specs:
-        max_lumens: 1700
-        sustained_lumens: 600
-        max_candela: 18037
-        beam_distance_m: 257
-        runtime_high_min: 150
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 132
-        length_mm: 129.7
-        head_diameter_mm: 26.5
-        body_diameter_mm: 22.6
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Luminus SST40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - value
-        - survival
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: E09R
-      slug: fenix-e09r
-      code: E09R
-      description: The Fenix E09R is a remarkably compact rechargeable flashlight measuring only 79mm long and weighing 45g, ideal for keychain carry. Despite its tiny size, it delivers up to 600 lumens via Instant Burst mode using a Luminus SST20 LED. The built-in Li-polymer battery charges via a hidden USB Type-C port beneath the head that maintains IP68 waterproof integrity when closed.
-      release_year: 2021
-      msrp_usd: 39.95
-      asin: B096W9LVYF
-      price_usd: 39.95
-      rating_count: 200
-      average_rating: 4.5
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-e09r-rechargeable-edc-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B096W9LVYF.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix E09R
-        - url: http://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-rechargeable-flashlight_f0458914-071d-40ca-bfc3-d89619669dd7_1200x1200.jpg?v=1756130601
-          alt: Fenix E09R product photo
-        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-flashlight-spec-chart.png?v=1760649329
-          alt: Fenix E09R Rechargeable EDC Flashlight specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-flashlight-runtime.webp?v=1650062780
-          alt: Fenix E09R Rechargeable EDC Flashlight runtime chart
-      specs:
-        max_lumens: 600
-        sustained_lumens: 200
-        max_candela: 3970
-        beam_distance_m: 124
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 45
-        length_mm: 79
-        head_diameter_mm: 19.3
-        body_diameter_mm: 18.4
-        switch_type: side
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Luminus SST20
-        cri: 0
-        has_strobe: false
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - keychain
-        - edc
-        - value
-    - brand: Fenix
-      brand_slug: fenix
-      brand_country: CN
-      brand_website: https://www.fenixlighting.com
-      name: HM65R-DT
-      slug: fenix-hm65r-dt
-      code: HM65RDT
-      description: The Fenix HM65R-DT is a dual-spotlight trail running headlamp featuring a cool white LED for long-distance illumination and a warm white LED for superior performance in fog and poor weather. Its magnesium alloy body is 30% lighter than comparable aluminum headlamps at only 91g without battery. The SPORT headband system allows single-handed adjustment, while dual top switches provide independent control of each light source.
-      release_year: 2023
-      msrp_usd: 99.95
-      asin: B0C75MYPWW
-      price_usd: 99.95
-      rating_count: 200
-      average_rating: 4.5
-      manufacturer_url: https://www.fenixlighting.com/products/fenix-hm65rdt-dual-spotlight-headlamp
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0C75MYPWW.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Fenix HM65R-DT headlamp
-        - url: http://www.fenixlighting.com/cdn/shop/files/fenix-hm65r-dt-headlamp-black_1200x1200.jpg?v=1685545922
-          alt: Fenix HM65R-DT product photo
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-hm65r-dt-headlamp-spec-chart_e064fa7e-428d-4c2a-86f2-323a31ab88d2.png?v=1685649668
-          alt: Fenix HM65R-DT Dual Spotlight Headlamp - DISCONTINUED specs chart
-        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-hm65r-dt-headlamp-runtime-chart.png?v=1685546277
-          alt: Fenix HM65R-DT Dual Spotlight Headlamp - DISCONTINUED runtime chart
-      specs:
-        max_lumens: 1500
-        sustained_lumens: 400
-        max_candela: 7225
-        beam_distance_m: 170
-        runtime_high_min: 180
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 91
-        length_mm: 80
-        head_diameter_mm: 47
-        body_diameter_mm: 39
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Magnesium alloy
-        led_model: Luminus SST40 + SST20
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - headlamp
-        - camping
-        - survival
-        - search-rescue
-    - brand: IMALENT
-      brand_slug: imalent
-      brand_country: CN
-      brand_website: https://www.imalent.com
-      name: MS18
-      slug: imalent-ms18
-      code: MS18
-      description: The IMALENT MS18 is the world's brightest production flashlight, delivering a staggering 100,000 lumens from 18 Cree XHP70.2 LEDs. A built-in cooling fan and massive heat sink manage the extreme thermal output, while an OLED display shows real-time output, temperature, and battery status. Powered by a built-in 21700 battery pack with USB-C charging, it turns night into day for search and rescue, large-area illumination, and extreme flood applications.
-      release_year: 2019
-      msrp_usd: 669.95
-      asin: B07RSRXDLX
-      price_usd: 669.95
-      rating_count: 1100
-      average_rating: 4.3
-      manufacturer_url: https://www.imalent.com/product/ms18
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B07RSRXDLX.01._SCLZZZZZZZ_SX500_.jpg
-          alt: IMALENT MS18
-      specs:
-        max_lumens: 100000
-        sustained_lumens: 25000
-        max_candela: 164000
-        beam_distance_m: 1350
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 15
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 1900
-        length_mm: 265
-        head_diameter_mm: 78
-        body_diameter_mm: 78
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Cree XHP70.2
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - search-rescue
-        - flood
-    - brand: Klarus
-      brand_slug: klarus
-      brand_country: CN
-      brand_website: https://www.klaruslight.com
-      name: XT21X Pro
-      slug: klarus-xt21x-pro
-      code: XT21XPRO
-      description: The Klarus XT21X Pro is a high-output tactical flashlight delivering 4,400 lumens with a dual-switch design for instant turbo and strobe access. USB-C rechargeable and powered by a 21700 battery, it provides ample runtime for extended duty shifts and outdoor excursions. The aggressive crenulated bezel and robust construction make it suitable for law enforcement and tactical applications.
-      release_year: 2023
-      msrp_usd: 109.95
-      asin: B09PTYKPKQ
-      price_usd: 99.95
-      rating_count: 520
-      average_rating: 4.5
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09PTYKPKQ.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Klarus XT21X Pro
-      specs:
-        max_lumens: 4400
-        sustained_lumens: 1400
-        max_candela: 19500
-        beam_distance_m: 336
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 60
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 172
-        length_mm: 153
-        head_diameter_mm: 40
-        body_diameter_mm: 27
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - camping
-    - brand: Klarus
-      brand_slug: klarus
-      brand_country: CN
-      brand_website: https://www.klaruslight.com
-      name: XT2CR Pro
-      slug: klarus-xt2cr-pro
-      code: XT2CRPRO
-      description: The Klarus XT2CR Pro is a compact tactical EDC with a programmable side switch and tactical tail switch. USB-C rechargeable and powered by an 18650, it delivers 2,100 lumens and 335 meters of throw in a compact package. The lockout mode prevents accidental activation during pocket carry, and the dual-switch interface adapts to both tactical and everyday use patterns.
-      release_year: 2022
-      msrp_usd: 84.95
-      asin: B0B38H5F73
-      price_usd: 74.95
-      rating_count: 340
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0B38H5F73.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Klarus XT2CR Pro
-      specs:
-        max_lumens: 2100
-        sustained_lumens: 900
-        max_candela: 28000
-        beam_distance_m: 335
-        runtime_high_min: 100
-        runtime_500_min: 0
-        turbo_stepdown_sec: 65
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 118
-        length_mm: 138
-        head_diameter_mm: 25.4
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - edc
-        - law-enforcement
-    - brand: MagLite
-      brand_slug: maglite
-      brand_country: US
-      brand_website: https://www.maglite.com
-      name: ML300L 3D
-      slug: maglite-ml300l-3d
-      code: ML300L3D
-      description: The MagLite ML300L 3D is the modern evolution of the iconic MagLite full-size flashlight, made in the USA in Ontario, California. Its three D-cell design provides extended runtime of up to 79 hours on low, and multiple programmable function sets let users customize its behavior. While not the brightest modern option, its legendary build quality, reasonable price, and universal availability at retail stores make it a dependable household staple.
-      release_year: 2016
-      msrp_usd: 39.99
-      asin: B00MOL86QI
-      price_usd: 29.99
-      rating_count: 3400
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B00MOL86QI.01._SCLZZZZZZZ_SX500_.jpg
-          alt: MagLite ML300L 4D
-      specs:
-        max_lumens: 524
-        sustained_lumens: 300
-        max_candela: 3600
-        beam_distance_m: 120
-        runtime_high_min: 79
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 492
-        length_mm: 318
-        head_diameter_mm: 47
-        body_diameter_mm: 47
-        switch_type: side
-        waterproof_rating: IPX4
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - camping
-        - survival
-        - value
-    - brand: NITECORE
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: MH12 Pro
-      slug: nitecore-mh12-pro
-      code: MH12PRO
-      description: The Nitecore MH12 Pro is a compact tactical EDC with a NiteLab UHi 40 LED delivering 3,300 lumens and 505 meters of throw in a sub-155mm package. USB-C charging and a 21700 battery provide fast recharging and extended runtime. Dual switches with switchable Tactical and Daily modes let it adapt to both professional and civilian use, while IP68 submersibility handles the harshest field conditions.
-      release_year: 2024
-      msrp_usd: 89.95
-      asin: B0CJB1PLW9
-      price_usd: 89.95
-      rating_count: 890
-      average_rating: 4.5
-      manufacturer_url: https://www.nitecore.com/product/mh12-pro
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CJB1PLW9.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore MH12 Pro
-      specs:
-        max_lumens: 3300
-        sustained_lumens: 1100
-        max_candela: 63000
-        beam_distance_m: 505
-        runtime_high_min: 140
-        runtime_500_min: 190
-        turbo_stepdown_sec: 80
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 121
-        length_mm: 155
-        head_diameter_mm: 25.4
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: NiteLab UHi 40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - edc
-        - search-rescue
-    - brand: NITECORE
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: P20iX
-      slug: nitecore-p20ix
-      code: P20IX
-      description: The Nitecore P20iX is an extreme-performance tactical flashlight pushing 4,000 lumens from four CREE XP-L2 V6 LEDs in a compact body. Dual tail switches provide intuitive tactical control with STROBE READY technology for instant access to a disorienting strobe. Switchable between Tactical and Daily modes, it adapts to both duty and everyday use with IP68 submersibility and 2-meter impact resistance.
-      release_year: 2022
-      msrp_usd: 140
-      asin: B0BHF5ZR75
-      price_usd: 132.91
-      rating_count: 150
-      average_rating: 4.5
-      manufacturer_url: https://www.nitecore.com/product/p20ix
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BHF5ZR75.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore P20iX
-        - url: https://www.nitecore.com/storage/images/products/p20ix/2026021210562517811_s.png
-          alt: P20iX
-      specs:
-        max_lumens: 4000
-        sustained_lumens: 1700
-        max_candela: 12200
-        beam_distance_m: 221
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 116
-        length_mm: 141.5
-        head_diameter_mm: 31.8
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: Cree XP-L2 V6
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - edc
-        - flood
-    - brand: NITECORE
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: E4K
-      slug: nitecore-e4k
-      code: E4K
-      description: The Nitecore E4K packs an extraordinary 4,400 lumens into a palm-sized body weighing just 80 grams, making it one of the most powerful compact EDC lights available. Its quad CREE XP-L2 V6 LED array delivers a broad flood beam with 211 meters of throw. The included 21700 battery with USB-C charging keeps it always ready, and CR123A battery compatibility adds field flexibility. An outstanding value for the lumens-per-dollar ratio.
-      release_year: 2023
-      msrp_usd: 89.95
-      asin: B0CGGPY1SX
-      price_usd: 89.95
-      rating_count: 300
-      average_rating: 4.5
-      manufacturer_url: https://www.nitecore.com/product/e4k
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CGGPY1SX.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore E4K
-      specs:
-        max_lumens: 4400
-        sustained_lumens: 1000
-        max_candela: 11100
-        beam_distance_m: 211
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 80
-        length_mm: 117.6
-        head_diameter_mm: 28.6
-        body_diameter_mm: 25.4
-        switch_type: side
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: Cree XP-L2 V6
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - value
-        - flood
-        - camping
-    - brand: NITECORE
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: TM9K Pro
-      slug: nitecore-tm9k-pro
-      code: TM9KPRO
-      description: The Nitecore TM9K Pro is a pocket-sized searchlight producing 9,900 lumens with 65,400 candela, delivering a beam that reaches 510 meters. Three NiteLab UHi 40 MAX LEDs represent cutting-edge emitter technology, while the built-in 5,000mAh battery with USB-C fast charging keeps downtime minimal. A proximity sensor prevents overheating and accidental blinding reflections, and the LUMIN SHIELD strobe mode adds a self-defense capability.
-      release_year: 2024
-      msrp_usd: 169.95
-      asin: B0D6XCYN7H
-      price_usd: 159
-      rating_count: 100
-      average_rating: 4.6
-      manufacturer_url: https://www.nitecore.com/product/tm9k-pro
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0D6XCYN7H.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore TM9K Pro
-      specs:
-        max_lumens: 9900
-        sustained_lumens: 3000
-        max_candela: 65400
-        beam_distance_m: 510
-        runtime_high_min: 65
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 227
-        length_mm: 133
-        head_diameter_mm: 40
-        body_diameter_mm: 28
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: NiteLab UHi 40 MAX
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - search-rescue
-        - tactical
-        - throw
-        - law-enforcement
-        - flood
-    - brand: NITECORE
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: MH25 V2
-      slug: nitecore-mh25-v2
-      code: MH25V2
-      description: The Nitecore MH25 V2 is a purpose-built throw machine delivering 57,000 candela for an extraordinary 475-meter beam distance from 1,300 lumens, thanks to its optimized 40mm reflector. Quad-fuel compatibility (21700, 18650, CR123A, RCR123) ensures power availability in any situation. Dual-switch operation with switchable Tactical and Daily modes accommodates both professional and civilian users.
-      release_year: 2022
-      msrp_usd: 108
-      asin: B0BNZ7C71Z
-      price_usd: 79.95
-      rating_count: 200
-      average_rating: 4.5
-      manufacturer_url: https://www.nitecore.com/product/mh25-v2
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BNZ7C71Z.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore MH25 V2
-      specs:
-        max_lumens: 1300
-        sustained_lumens: 500
-        max_candela: 57000
-        beam_distance_m: 475
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 137
-        length_mm: 157.2
-        head_diameter_mm: 40
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - throw
-        - search-rescue
-        - tactical
-        - law-enforcement
-        - camping
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Warrior 3S
-      slug: olight-warrior-3s
-      code: WARRIOR3S
-      description: The Olight Warrior 3S is a dual-switch tactical light with a proximity sensor that automatically dims when obstructions are detected near the lens. Its 2,300 lumens from an Olight customized battery system provide strong output, while magnetic charging ensures convenient power management. The dual-switch design gives users a side switch for everyday brightness cycling and a tail switch for instant tactical activation.
-      release_year: 2022
-      msrp_usd: 119.99
-      asin: B09WYCPC1N
-      price_usd: 95.96
-      rating_count: 3200
-      average_rating: 4.7
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09WYCPC1N.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Warrior 3S
-      specs:
-        max_lumens: 2300
-        sustained_lumens: 800
-        max_candela: 23000
-        beam_distance_m: 300
-        runtime_high_min: 130
-        runtime_500_min: 0
-        turbo_stepdown_sec: 90
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: magnetic
-        battery_replaceable: false
-        weight_g: 176
-        length_mm: 139
-        head_diameter_mm: 29
-        body_diameter_mm: 27
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - edc
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Warrior X 4
-      slug: olight-warrior-x-4
-      code: WX4
-      description: The Olight Warrior X 4 is a next-generation long-range tactical flashlight delivering 2,600 lumens with 99,310 candela for a 630-meter throw, making it one of the farthest-reaching duty lights in its class. Dual recharging via USB-C and MCC3 magnetic charger offers maximum flexibility, while the three-color battery indicator with vibration prompt keeps operators informed in the field. A Cerakote-coated aluminum body and IPX8 waterproofing ensure durability.
-      release_year: 2024
-      msrp_usd: 129.99
-      asin: B0D7MTKD13
-      price_usd: 129.99
-      rating_count: 469
-      average_rating: 4.6
-      manufacturer_url: https://www.olight.com/warrior-x-4-tactical-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0D7MTKD13.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Warrior X 4
-        - url: https://cdn.olightstore.com/image/06-3ijsvw.jpg
-          alt: Olight Warrior X 4 product photo
-        - url: https://cdn.olightstore.com/image/06-ellkal.jpg@600w_600h_90q.webp
-          alt: Olight Warrior X 4 photo 2
-      specs:
-        max_lumens: 2600
-        sustained_lumens: 1000
-        max_candela: 99310
-        beam_distance_m: 630
-        runtime_high_min: 100
-        runtime_500_min: 0
-        turbo_stepdown_sec: 60
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 249
-        length_mm: 149
-        head_diameter_mm: 45
-        body_diameter_mm: 27
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 3
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - search-rescue
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Baton 4
-      slug: olight-baton-4
-      code: BATON4
-      description: The Olight Baton 4 is a remarkably compact EDC flashlight barely longer than an index finger, yet delivering 1,300 lumens and a 170-meter beam. Laser-microperforated indicators display brightness level and battery status at a glance. The Premium Edition includes a 5,000mAh USB-C charging case that extends total runtime up to 190 days. Magnetic charging, IPX8 waterproofing, and a robust metal side switch make it one of the most refined pocket lights available.
-      release_year: 2023
-      msrp_usd: 94.99
-      asin: B0CHFM3GXB
-      price_usd: 94.99
-      rating_count: 2800
-      average_rating: 4.9
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CHFM3GXB.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Baton 4
-      specs:
-        max_lumens: 1300
-        sustained_lumens: 300
-        max_candela: 7225
-        beam_distance_m: 170
-        runtime_high_min: 55
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: magnetic
-        battery_replaceable: false
-        weight_g: 52.5
-        length_mm: 63
-        head_diameter_mm: 21
-        body_diameter_mm: 21
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Luminus SST-40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - value
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Baton 3 Pro Max
-      slug: olight-baton-3-pro-max
-      code: B3PMAX
-      description: The Baton 3 Pro Max packs 2,500 lumens into a pocketable form factor powered by a 5,000mAh 21700 battery with up to 60 days of runtime on moonlight. An upgraded proximity sensor automatically dims the light when obstructions are detected, preventing overheating. A shake-to-activate battery indicator and six brightness levels plus strobe provide versatile operation for everyday carry and outdoor use.
-      release_year: 2022
-      msrp_usd: 89.99
-      asin: B0BK9LR9BT
-      price_usd: 89.99
-      rating_count: 1200
-      average_rating: 4.7
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BK9LR9BT.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Baton 3 Pro Max
-      specs:
-        max_lumens: 2500
-        sustained_lumens: 500
-        max_candela: 5256
-        beam_distance_m: 145
-        runtime_high_min: 180
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: magnetic
-        battery_replaceable: false
-        weight_g: 148
-        length_mm: 114
-        head_diameter_mm: 28
-        body_diameter_mm: 25.4
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Cree XHP50.3
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - survival
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Warrior Mini 3
-      slug: olight-warrior-mini-3
-      code: WMINI3
-      description: The Olight Warrior Mini 3 bridges the gap between EDC and tactical, delivering 1,750 lumens and a 240-meter throw in a compact pocket-friendly package. Its dual-switch design provides a side switch for everyday brightness cycling and a tail switch for instant tactical activation. MCC3 magnetic charging ensures quick recharging, while the proximity sensor automatically dims the light when obstructions are detected near the lens.
-      release_year: 2024
-      msrp_usd: 89.99
-      asin: B0C4H77WKB
-      price_usd: 89.99
-      rating_count: 469
-      average_rating: 4.6
-      manufacturer_url: https://www.olight.com/warrior-mini-3-portable-flashlight
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0C4H77WKB.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Warrior Mini 3
-        - url: https://cdn.olightstore.com/image/4-ap99lf.jpg
-          alt: Olight Warrior Mini 3 product photo
-        - url: https://cdn.olightstore.com/image/4-0go4fn.jpg@600w_600h_90q.webp
-          alt: Olight Warrior Mini 3 photo 2
-      specs:
-        max_lumens: 1750
-        sustained_lumens: 500
-        max_candela: 14400
-        beam_distance_m: 240
-        runtime_high_min: 100
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: magnetic
-        battery_replaceable: false
-        weight_g: 122
-        length_mm: 111
-        head_diameter_mm: 25
-        body_diameter_mm: 23
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - tactical
-        - camping
-        - law-enforcement
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Marauder 2
-      slug: olight-marauder-2
-      code: MAR2
-      description: The Marauder 2 is a powerhouse search light delivering 14,000 lumens in flood mode or an 800-meter spotlight beam, toggled via a dedicated switch. Its innovative dual-emitter design uses a single Osram KW CULPM1.TG for throw and twelve Osram P9 LEDs for wall-of-light flood. The built-in battery charges via USB-C at 30W and can reverse-charge other devices as a power bank.
-      release_year: 2021
-      msrp_usd: 299.95
-      asin: B08MCH2MN3
-      price_usd: 299.95
-      rating_count: 800
-      average_rating: 4.7
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08MCH2MN3.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Marauder 2
-      specs:
-        max_lumens: 14000
-        sustained_lumens: 3000
-        max_candela: 160000
-        beam_distance_m: 800
-        runtime_high_min: 10
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 750
-        length_mm: 140
-        head_diameter_mm: 79
-        body_diameter_mm: 55
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Osram KW CULPM1.TG + Osram P9
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - search-rescue
-        - flood
-        - throw
-        - camping
-        - survival
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Seeker 4 Pro
-      slug: olight-seeker-4-pro
-      code: S4PRO
-      description: The Seeker 4 Pro delivers 4,600 lumens from four OSRAM P9 LEDs with a 260-meter throw, featuring laser microperforation technology creating 1,200 hidden indicator holes while maintaining IPX8 waterproofing. Its enlarged metal side switch supports stepless rotary dimming operable with heavy gloves. The included holster provides USB-C charging, automatic brightness reduction when holstered, and multiple carry options.
-      release_year: 2023
-      msrp_usd: 139.99
-      asin: B0C9Q3Q62Q
-      price_usd: 139.99
-      rating_count: 2100
-      average_rating: 4.8
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0C9Q3Q62Q.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Seeker 4 Pro
-      specs:
-        max_lumens: 4600
-        sustained_lumens: 1200
-        max_candela: 16895
-        beam_distance_m: 260
-        runtime_high_min: 122
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 205
-        length_mm: 133
-        head_diameter_mm: 35
-        body_diameter_mm: 28
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: OSRAM P9
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - camping
-        - search-rescue
-        - flood
-        - survival
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: Perun 2 Mini
-      slug: olight-perun-2-mini
-      code: P2MINI
-      description: The Perun 2 Mini is an ultra-compact right-angle headlamp weighing just 54 grams and delivering 1,100 lumens with a 150-meter beam. It features both white and red LEDs for versatile illumination and night vision preservation. The 180-degree rotating head enables multi-angle lighting as a headlamp with the included headband, or as a handheld EDC with its pocket clip and magnetic base.
-      release_year: 2022
-      msrp_usd: 58.99
-      asin: B0BFZLHRTS
-      price_usd: 58.99
-      rating_count: 800
-      average_rating: 4.8
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BFZLHRTS.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight Perun 2 Mini
-      specs:
-        max_lumens: 1100
-        sustained_lumens: 250
-        max_candela: 5950
-        beam_distance_m: 150
-        runtime_high_min: 85
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: magnetic
-        battery_replaceable: false
-        weight_g: 54
-        length_mm: 64
-        head_diameter_mm: 22
-        body_diameter_mm: 21
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - headlamp
-        - edc
-        - camping
-        - value
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: i5T EOS
-      slug: olight-i5t-eos
-      code: I5TEOS
-      description: The Olight i5T EOS is a no-nonsense slim EDC flashlight powered by a single AA battery, making it universally accessible with no charging required. Its tail switch provides simple two-mode operation at 300 and 15 lumens, and the double-helix knurled body provides excellent grip. The PMMA TIR lens produces a well-balanced beam, and a dual-direction pocket clip allows bezel-up or down carry.
-      release_year: 2021
-      msrp_usd: 29.95
-      asin: B0833Q8BSP
-      price_usd: 29.95
-      rating_count: 2000
-      average_rating: 4.6
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0833Q8BSP.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight i5T EOS
-      specs:
-        max_lumens: 300
-        sustained_lumens: 300
-        max_candela: 910
-        beam_distance_m: 60
-        runtime_high_min: 150
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 65
-        length_mm: 95
-        head_diameter_mm: 20
-        body_diameter_mm: 17.8
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: OSRAM P9
-        cri: 0
-        has_strobe: false
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - value
-        - camping
-    - brand: Olight
-      brand_slug: olight
-      brand_country: CN
-      brand_website: https://www.olightstore.com
-      name: i3T 2 EOS
-      slug: olight-i3t-2-eos
-      code: I3T2EOS
-      description: The Olight i3T 2 EOS is a tiny keychain-sized EDC flashlight running on a single AAA battery, delivering 200 lumens with an optional 300-lumen mode using a 10440 lithium-ion cell. Its redesigned clip provides secure, deep-pocket carry, and it achieves 31% more battery life than the original i3T. At under $20, it is one of the best value flashlights available for everyday pocket carry.
-      release_year: 2024
-      msrp_usd: 19.99
-      asin: B0CPL2F46H
-      price_usd: 19.99
-      rating_count: 2900
-      average_rating: 4.9
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CPL2F46H.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Olight i3T 2 EOS
-      specs:
-        max_lumens: 200
-        sustained_lumens: 100
-        max_candela: 961
-        beam_distance_m: 62
-        runtime_high_min: 35
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 42
-        length_mm: 87
-        head_diameter_mm: 15
-        body_diameter_mm: 15
-        switch_type: tail
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - keychain
-        - value
-    - brand: Pelican
-      brand_slug: pelican
-      brand_country: US
-      brand_website: https://www.pelican.com
-      name: "7600"
-      slug: pelican-7600
-      code: "7600"
-      description: The Pelican 7600 is a tactical duty light with three LED colors (white, red, and green) for versatile operational use. USB rechargeable and LAPD approved, it carries Pelican's unconditional lifetime guarantee. The multi-color LED system allows maintaining night vision with red light or using green for map reading, while the white LED delivers 944 lumens for primary illumination.
-      release_year: 2017
-      msrp_usd: 99.95
-      asin: B01KU1SYK6
-      price_usd: 84.95
-      rating_count: 1650
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B01KU1SYK6.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Pelican 7600
-      specs:
-        max_lumens: 944
-        sustained_lumens: 450
-        max_candela: 13000
-        beam_distance_m: 228
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 163
-        length_mm: 160
-        head_diameter_mm: 25.4
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - law-enforcement
-        - tactical
-        - edc
-    - brand: Pelican
-      brand_slug: pelican
-      brand_country: US
-      brand_website: https://www.pelican.com
-      name: "7620"
-      slug: pelican-7620
-      code: "7620"
-      description: The Pelican 7620 is a high-output tactical duty flashlight with USB charging, multiple brightness modes, and strobe. Widely issued to law enforcement agencies, it features Pelican's lifetime guarantee and robust IPX8 waterproofing. Its 1,124 lumens and 283-meter throw make it suitable for patrol and perimeter security operations.
-      release_year: 2019
-      msrp_usd: 114.95
-      asin: B07CN7FKQX
-      price_usd: 87.51
-      rating_count: 920
-      average_rating: 4.3
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B07CN7FKQX.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Pelican 7620
-      specs:
-        max_lumens: 1124
-        sustained_lumens: 550
-        max_candela: 20000
-        beam_distance_m: 283
-        runtime_high_min: 100
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 177
-        length_mm: 164
-        head_diameter_mm: 28
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - law-enforcement
-        - tactical
-    - brand: Princeton Tec
-      brand_slug: princeton-tec
-      brand_country: US
-      brand_website: https://www.princetontec.com
-      name: Apex
-      slug: princeton-tec-apex
-      code: APEX
-      description: The Princeton Tec Apex is a dimmable 550-lumen headlamp with IPX7 water resistance designed for camping, backpacking, caving, and professional use. Its long runtime of up to 720 minutes on low makes it ideal for multi-day backcountry trips. USB-C rechargeable and built in the USA, it has been a favorite among outdoor professionals for over two decades.
-      release_year: 2023
-      msrp_usd: 149.99
-      asin: B0CK9XNTP6
-      price_usd: 129.99
-      rating_count: 400
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CK9XNTP6.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Princeton Tec Apex
-      specs:
-        max_lumens: 550
-        sustained_lumens: 300
-        max_candela: 3200
-        beam_distance_m: 113
-        runtime_high_min: 720
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 107
-        length_mm: 70
-        head_diameter_mm: 70
-        body_diameter_mm: 70
-        switch_type: side
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Polymer
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - camping
-        - survival
-        - headlamp
-        - value
-    - brand: RovyVon
-      brand_slug: rovyvon
-      brand_country: CN
-      brand_website: https://www.rovyvon.com
-      name: Aurora A33
-      slug: rovyvon-aurora-a33
-      code: A33
-      description: The RovyVon Aurora A33 is a sleek penlight-style EDC light with a slim aluminum body, USB-C rechargeable battery, and 650-lumen maximum output. Its pocket-friendly pen form factor and secondary UV/red light make it an ideal everyday carry companion for quick tasks, inspections, and emergencies.
-      release_year: 2021
-      msrp_usd: 39.95
-      asin: B08RZ9Y7QT
-      price_usd: 29.95
-      rating_count: 780
-      average_rating: 4.3
-      manufacturer_url: ""
-      images:
-        - url: https://www.rovyvon.com/cdn/shop/files/0a6ecdb1c861ca5fc1a7cad95a43294d.jpg?v=1697451941
-          alt: RovyVon Aurora A3
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08RZ9Y7QT.01._SCLZZZZZZZ_SX500_.jpg
-          alt: RovyVon Aurora A3 Amazon listing
-      specs:
-        max_lumens: 650
-        sustained_lumens: 250
-        max_candela: 1200
-        beam_distance_m: 70
-        runtime_high_min: 55
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 21
-        length_mm: 60
-        head_diameter_mm: 15
-        body_diameter_mm: 15
-        switch_type: side
-        waterproof_rating: IP66
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - keychain
-        - edc
-        - value
     - brand: Skilhunt
       brand_slug: skilhunt
       brand_country: CN
@@ -2059,834 +1349,38 @@ products:
       name: M200 V3
       slug: skilhunt-m200-v3
       code: M200V3
-      description: The Skilhunt M200 V3 is a compact enthusiast EDC light with magnetic charging and an optional high-CRI Nichia 519A emitter for accurate color rendition. At under $50, it offers excellent value with features typically found in lights costing twice as much. Its 18650 battery, magnetic tailcap for hands-free use, and IPX8 waterproofing make it a versatile everyday companion.
-      release_year: 2022
-      msrp_usd: 64.9
+      description: A hidden gem in the budget flashlight space. The Skilhunt M200 V3 delivers 1,100 lumens with a high-CRI Samsung LH351D LED from a compact body that runs on 18650 or 18350 cells. The smooth ramping Anduril firmware gives you infinite brightness adjustment — ramp up from moonlight to turbo in a single press-and-hold. USB-C magnetic charging, IP68 waterproofing, and a thoughtful pocket clip make it a daily driver that punches above its weight. Popular on flashlight forums as the best sub-$30 EDC light available.
+      release_year: 2024
+      msrp_usd: 34.99
       asin: B0DQW5Z7NY
-      price_usd: 49.9
-      rating_count: 410
-      average_rating: 4.4
-      manufacturer_url: ""
+      price_usd: 29.99
+      rating_count: 350
+      average_rating: 4.5
+      manufacturer_url: https://www.skilhunt.com/product/m200-v3-usb-c-magnetic-rechargeable-flashlight/
       images:
         - url: https://www.skilhunt.com/wp-content/uploads/2024/11/1.jpg
-          alt: Skilhunt M200 V3
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0DQW5Z7NY.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Skilhunt M200 V3 Amazon listing
-      specs:
-        max_lumens: 1200
-        sustained_lumens: 500
-        max_candela: 8500
-        beam_distance_m: 184
-        runtime_high_min: 110
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: magnetic
-        battery_replaceable: true
-        weight_g: 87
-        length_mm: 104
-        head_diameter_mm: 24
-        body_diameter_mm: 24
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: true
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - value
-    - brand: Sofirn
-      brand_slug: sofirn
-      brand_country: CN
-      brand_website: https://www.sofirnlight.com
-      name: IF22A
-      slug: sofirn-if22a
-      code: IF22A
-      description: The Sofirn IF22A is a compact throw-focused flashlight with an SFT-40 LED and TIR optic delivering outstanding throw for its size at 680 meters. Running on a 21700 battery with USB-C charging, it offers one of the best throw-per-dollar values in its class. The TIR lens produces a clean, artifact-free beam that is well-suited for search and identification tasks at range.
-      release_year: 2022
-      msrp_usd: 69.99
-      asin: B09SV4Q4PF
-      price_usd: 48.99
-      rating_count: 1420
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B09SV4Q4PF.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Sofirn IF22A
-      specs:
-        max_lumens: 2100
-        sustained_lumens: 950
-        max_candela: 85000
-        beam_distance_m: 680
-        runtime_high_min: 75
-        runtime_500_min: 0
-        turbo_stepdown_sec: 45
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 126
-        length_mm: 127
-        head_diameter_mm: 42
-        body_diameter_mm: 27
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: SFT-40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - throw
-        - search-rescue
-        - tactical
-    - brand: Sofirn
-      brand_slug: sofirn
-      brand_country: CN
-      brand_website: https://www.sofirnlight.com
-      name: SP35
-      slug: sofirn-sp35
-      code: SP35
-      description: The Sofirn SP35 is a budget-friendly 21700 EDC with an SST-40 LED and ATR thermal regulation that adjusts output based on temperature. USB-C rechargeable with six brightness modes, it delivers 2,000 lumens and 220 meters of throw at a price point that makes premium flashlight features accessible to everyone. Its excellent performance-per-dollar ratio has made it one of the most recommended budget lights in enthusiast communities.
-      release_year: 2021
-      msrp_usd: 42.99
-      asin: B08Y2BC53Q
-      price_usd: 31.99
-      rating_count: 2800
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08Y2BC53Q.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Sofirn SP35
-      specs:
-        max_lumens: 2000
-        sustained_lumens: 800
-        max_candela: 12000
-        beam_distance_m: 220
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 60
-        beam_pattern: hybrid
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 130
-        length_mm: 126
-        head_diameter_mm: 28
-        body_diameter_mm: 26
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: SST-40
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - camping
-        - value
-    - brand: Streamlight
-      brand_slug: streamlight
-      brand_country: US
-      brand_website: https://www.streamlight.com
-      name: ProTac HL-X
-      slug: streamlight-protac-hl-x
-      code: "88066"
-      description: The Streamlight ProTac HL-X is a widely used dual-fuel tactical light with Ten-TAP programmable interface offering three selectable programs. Standard issue for many law enforcement agencies, it delivers 1,000 lumens and 330 meters of throw from CR123A or 18650 batteries. Its proven reliability, competitive price, and extensive aftermarket support have made it one of the best-selling tactical flashlights in the US market.
-      release_year: 2017
-      msrp_usd: 89.99
-      asin: B07B5CS8CG
-      price_usd: 69.99
-      rating_count: 5600
-      average_rating: 4.6
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B07B5CS8CG.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Streamlight ProTac HL-X
-      specs:
-        max_lumens: 1000
-        sustained_lumens: 500
-        max_candela: 27000
-        beam_distance_m: 330
-        runtime_high_min: 90
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 218
-        length_mm: 140
-        head_diameter_mm: 39
-        body_diameter_mm: 39
-        switch_type: tail
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: C4 LED
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - law-enforcement
-        - tactical
-        - camping
-    - brand: Streamlight
-      brand_slug: streamlight
-      brand_country: US
-      brand_website: https://www.streamlight.com
-      name: Stinger 2020
-      slug: streamlight-stinger-2020
-      code: "78100"
-      description: The Streamlight Stinger 2020 is a duty-grade rechargeable flashlight delivering 2,000 lumens with a 315-meter throw, the latest evolution of the legendary Stinger series trusted by law enforcement for decades. Its ergonomic anti-roll body features rubberized comfort panels and dual independent switches for versatile activation. Powered by two SL-B26 rechargeable packs with multiple charging options, it provides up to 24 hours of runtime on low.
-      release_year: 2020
-      msrp_usd: 268
-      asin: B08FVKHMDS
-      price_usd: 195
-      rating_count: 500
-      average_rating: 4.6
-      manufacturer_url: https://www.streamlight.com/products/stinger-2020
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08FVKHMDS.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Streamlight Stinger 2020
-      specs:
-        max_lumens: 2000
-        sustained_lumens: 850
-        max_candela: 25000
-        beam_distance_m: 315
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: throw
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 350
-        length_mm: 194.8
-        head_diameter_mm: 41.1
-        body_diameter_mm: 41.1
-        switch_type: dual
-        waterproof_rating: IPX7
-        impact_resistance_m: 2
-        body_material: Aluminum
-        led_model: C4 LED
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - tactical
-        - law-enforcement
-        - search-rescue
-        - throw
-    - brand: Streamlight
-      brand_slug: streamlight
-      brand_country: US
-      brand_website: https://www.streamlight.com
-      name: MacroStream USB
-      slug: streamlight-macrostream-usb
-      code: "66320"
-      description: The Streamlight MacroStream USB is a pocket-sized rechargeable flashlight delivering 500 lumens in a featherweight 62-gram package. Its micro-USB rechargeable battery provides 2 hours on high, and the removable multi-directional clip attaches to hat brims, pockets, or visors for versatile hands-free use. Simple two-mode operation keeps things intuitive, making it an excellent EDC companion.
-      release_year: 2020
-      msrp_usd: 74
-      asin: B084SW1465
-      price_usd: 60
-      rating_count: 300
-      average_rating: 4.5
-      manufacturer_url: https://www.streamlight.com/products/macrostream-usb
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B084SW1465.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Streamlight MacroStream USB
-      specs:
-        max_lumens: 500
-        sustained_lumens: 50
-        max_candela: 2000
-        beam_distance_m: 90
-        runtime_high_min: 120
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: false
-        weight_g: 62.4
-        length_mm: 114.3
-        head_diameter_mm: 21.1
-        body_diameter_mm: 21.1
-        switch_type: tail
-        waterproof_rating: IPX4
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - value
-    - brand: Streamlight
-      brand_slug: streamlight
-      brand_country: US
-      brand_website: https://www.streamlight.com
-      name: TLR-1 HL
-      slug: streamlight-tlr-1-hl
-      code: "69260"
-      description: The Streamlight TLR-1 HL is one of the most popular weapon-mounted lights on the market, delivering 1,000 lumens with a wide beam pattern ideal for target identification. It mounts securely to Glock, Picatinny, and Beretta rails via a tool-free rail clamp system and fits most light-bearing holsters. The ambidextrous toggle switch provides instant activation without altering grip, and its compact 3.39-inch profile has made it the benchmark for handgun weapon lights.
-      release_year: 2016
-      msrp_usd: 165
-      asin: B00B8Q31UQ
-      price_usd: 150
-      rating_count: 4000
-      average_rating: 4.7
-      manufacturer_url: https://www.streamlight.com/products/tlr-1-hl
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B00B8Q31UQ.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Streamlight TLR-1 HL
-      specs:
-        max_lumens: 1000
-        sustained_lumens: 1000
-        max_candela: 20000
-        beam_distance_m: 283
-        runtime_high_min: 90
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 122.5
-        length_mm: 86.1
-        head_diameter_mm: 37.3
-        body_diameter_mm: 36.5
-        switch_type: side
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: C4 LED
-        cri: 0
-        has_strobe: true
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - weapon-mount
-        - tactical
-        - law-enforcement
-    - brand: Streamlight
-      brand_slug: streamlight
-      brand_country: US
-      brand_website: https://www.streamlight.com
-      name: Wedge
-      slug: streamlight-wedge
-      code: "88810"
-      description: The Streamlight Wedge is an ultra-slim EDC flashlight with a distinctive flat profile measuring just 15.2mm wide, virtually disappearing in a pocket. Its innovative rotating thumb switch provides 300 lumens constant, while a THRO mode delivers a 1,000-lumen burst for temporary maximum output. USB-C rechargeable with 3 hours of constant runtime, it has become one of the most popular pocket flashlights on the market.
-      release_year: 2021
-      msrp_usd: 100
-      asin: B08XMG5TMW
-      price_usd: 90
-      rating_count: 1500
-      average_rating: 4.4
-      manufacturer_url: https://www.streamlight.com/products/wedge
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08XMG5TMW.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Streamlight Wedge
-      specs:
-        max_lumens: 1000
-        sustained_lumens: 300
-        max_candela: 3000
-        beam_distance_m: 110
-        runtime_high_min: 180
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 93.5
-        length_mm: 138.7
-        head_diameter_mm: 25.4
-        body_diameter_mm: 15.2
-        switch_type: side
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - value
-    - brand: SureFire
-      brand_slug: surefire
-      brand_country: US
-      brand_website: https://www.surefire.com
-      name: G2X Tactical
-      slug: surefire-g2x-tactical
-      code: G2X-C
-      description: The SureFire G2X Tactical is the most affordable entry into the SureFire ecosystem. Its Nitrolon polymer body keeps weight down while maintaining durability, and the single-output tail-click activation provides dead-simple operation. It has become a go-to backup duty light for agencies that trust the SureFire name but need a budget-conscious option for widespread deployment.
-      release_year: 2014
-      msrp_usd: 79
-      asin: B07KH4CCKM
-      price_usd: 99
-      rating_count: 4200
-      average_rating: 4.5
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B07KH4CCKM.01._SCLZZZZZZZ_SX500_.jpg
-          alt: SureFire G2X Tactical
-      specs:
-        max_lumens: 600
-        sustained_lumens: 320
-        max_candela: 8700
-        beam_distance_m: 179
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 122
-        length_mm: 132
-        head_diameter_mm: 25.4
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Polymer
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - law-enforcement
-        - value
-    - brand: SureFire
-      brand_slug: surefire
-      brand_country: US
-      brand_website: https://www.surefire.com
-      name: M600DF
-      slug: surefire-m600df
-      code: M600DF
-      description: The SureFire M600DF is a scout-style weapon light with dual fuel capability, delivering 1,500 lumens on 18650. Its TIR lens produces a smooth beam for target identification, and the scout mounting interface is compatible with a vast ecosystem of aftermarket mounts and switches. Standard issue for many military and law enforcement units worldwide.
-      release_year: 2019
-      msrp_usd: 329
-      asin: B076ZYWS1D
-      price_usd: 329
-      rating_count: 2800
-      average_rating: 4.6
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B076ZYWS1D.01._SCLZZZZZZZ_SX500_.jpg
-          alt: SureFire M600DF
-      specs:
-        max_lumens: 1500
-        sustained_lumens: 600
-        max_candela: 16000
-        beam_distance_m: 250
-        runtime_high_min: 90
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: hybrid
-        battery_type: "18650"
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 184
-        length_mm: 155
-        head_diameter_mm: 25.4
-        body_diameter_mm: 25.4
-        switch_type: tail
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - weapon-mount
-        - tactical
-        - law-enforcement
-    - brand: SureFire
-      brand_slug: surefire
-      brand_country: US
-      brand_website: https://www.surefire.com
-      name: Stiletto Pro
-      slug: surefire-stiletto-pro
-      code: STILPRO
-      description: The SureFire Stiletto Pro is a sleek, flat-profile rechargeable flashlight delivering 1,000 lumens through SureFire's MaxVision Beam reflector for smooth, shadow-filling illumination. Three programmable output levels cover everything from full-power tactical use to discreet low-output tasks. The tactical tail switch provides instant high-output activation, while the primary switch cycles through programmed modes. Its slim aerospace aluminum body makes it one of the most refined EDC lights available.
-      release_year: 2020
-      msrp_usd: 259
-      asin: B0818HTLVF
-      price_usd: 230
-      rating_count: 600
-      average_rating: 4.5
-      manufacturer_url: https://www.surefire.com/stiletto-pro
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0818HTLVF.01._SCLZZZZZZZ_SX500_.jpg
-          alt: SureFire Stiletto Pro
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/products/937/images/753/Stiletto-Pro_Angle_FL__41209.1683925040.500.750.jpg?c=2
-          alt: SureFire Stiletto Pro product photo
-        - url: https://www.surefire.com/R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
-          alt: Stiletto Pro
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1072/1664/PLR-C-isoL__48434.1707758082.jpg?c=2
-          alt: Stiletto Pro II
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/210/1673/PLR-A-isoL-updated__01254.1708024306.jpg?c=2
-          alt: Stiletto
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1027/932/M640DFT-BK-PRO_mount_isoL__70094.1725473811.jpg?c=2
-          alt: M640DFT-PRO Turbo Scout Light Pro
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1026/933/M340DFT-BK-PRO_mount_isoL__98068.1647298893.jpg?c=2
-          alt: M340DFT-PRO Turbo Mini Scout Light Pro
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/132/806/6PX-D-BK-front-isoL__36465.1587158731.jpg?c=2
-          alt: 6PX Pro
-      specs:
-        max_lumens: 1000
-        sustained_lumens: 300
-        max_candela: 5100
-        beam_distance_m: 142
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: usb-c
-        battery_replaceable: false
-        weight_g: 113
-        length_mm: 114
-        head_diameter_mm: 22
-        body_diameter_mm: 20
-        switch_type: dual
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - tactical
-    - brand: SureFire
-      brand_slug: surefire
-      brand_country: US
-      brand_website: https://www.surefire.com
-      name: X300U-A
-      slug: surefire-x300u-a
-      code: X300UA
-      description: The SureFire X300U-A is the gold standard in handgun weapon lights, delivering 1,000 lumens through a precision TIR lens for far-reaching identification with a wide center spot. Its Rail-Lock system provides rock-solid attachment to Universal and Picatinny rails, and ambidextrous switching enables one-finger activation without altering grip. Trusted by law enforcement and military operators worldwide, it is the benchmark against which all weapon lights are measured.
-      release_year: 2022
-      msrp_usd: 379
-      asin: B0BLKZ2VXQ
-      price_usd: 299
-      rating_count: 3000
-      average_rating: 4.8
-      manufacturer_url: https://www.surefire.com/x300u-a
-      images:
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/1280x1280/products/907/841/X300U-A-front-isoL__24322.1616780748.jpg
-          alt: SureFire X300U-A front angle
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/1280x1280/products/907/1242/X300U-A-profileL2__03289.1684167316.jpg
-          alt: SureFire X300U-A side profile
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BLKZ2VXQ.01._SCLZZZZZZZ_SX500_.jpg
-          alt: SureFire X300U-A Amazon listing
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/products/907/images/841/X300U-A-front-isoL__24322.1616780748.500.750.jpg?c=2
-          alt: SureFire X300U-A product photo
-        - url: https://www.surefire.com/R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/841/X300U-A-front-isoL__24322.1616780748.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/1242/X300U-A-profileL2__03289.1684167316.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/1243/X300U-A-rear-isoR2__60362.1684167330.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/1244/X300U-A-rear-isoL2__49801.1684167332.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/1245/X300U-A-profileR2__90260.1684167337.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/907/1246/X300U-A-isoR2__45901.1684167344.jpg?c=2
-          alt: X300U-A WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/908/692/X300U-B-isoL__55140.1616780742.jpg?c=2
-          alt: X300U-B WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/310/671/XVL2-isoL__50084.1588607452.jpg?c=2
-          alt: XVL2 WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1081/1843/XC3-A-isoL__03781.1736361660.jpg?c=2
-          alt: XC3 WeaponLight
-        - url: https://cdn11.bigcommerce.com/s-fecqh2764q/images/stencil/80w/products/1043/953/X400T_isoL__58865.1648153883.jpg?c=2
-          alt: X400T-A WeaponLight
-      specs:
-        max_lumens: 1000
-        sustained_lumens: 1000
-        max_candela: 11300
-        beam_distance_m: 213
-        runtime_high_min: 75
-        runtime_500_min: 0
-        turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: CR123A
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 113
-        length_mm: 95.5
-        head_diameter_mm: 29
-        body_diameter_mm: 33
-        switch_type: side
-        waterproof_rating: IPX7
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - weapon-mount
-        - tactical
-        - law-enforcement
-    - brand: ThruNite
-      brand_slug: thrunite
-      brand_country: CN
-      brand_website: https://thrunite.com
-      name: TC20 V2
-      slug: thrunite-tc20-v2
-      code: TC20V2
-      description: The ThruNite TC20 V2 is a high-output 26650 flashlight with an XHP70.2 LED delivering 4,068 lumens in a relatively compact form factor. USB-C rechargeable with a firefly mode for close-up tasks, it provides versatile output from moonlight to floodlight. Its 26650 battery enables longer runtime than comparable 21700 lights, making it excellent for camping and extended outdoor use.
-      release_year: 2021
-      msrp_usd: 89.95
-      asin: B0BLSDL8QH
-      price_usd: 59.95
-      rating_count: 1250
-      average_rating: 4.5
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0BLSDL8QH.01._SCLZZZZZZZ_SX500_.jpg
-          alt: ThruNite TC20 V2
-      specs:
-        max_lumens: 4068
-        sustained_lumens: 1200
-        max_candela: 12000
-        beam_distance_m: 220
-        runtime_high_min: 150
-        runtime_500_min: 0
-        turbo_stepdown_sec: 120
-        beam_pattern: flood
-        battery_type: "26650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 152
-        length_mm: 119
-        head_diameter_mm: 42
-        body_diameter_mm: 33
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: XHP70.2
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - camping
-        - flood
-        - value
-    - brand: ThruNite
-      brand_slug: thrunite
-      brand_country: CN
-      brand_website: https://thrunite.com
-      name: Catapult V6
-      slug: thrunite-catapult-v6
-      code: CATV6
-      description: The ThruNite Catapult V6 is a compact dedicated thrower with a Luminus SST-70 LED delivering 692 meters of throw in a mid-size package. USB-C charging and a 26650 battery provide convenient power management, while the smooth reflector produces a tightly focused beam for long-range identification. It is one of the best values in the dedicated thrower category, offering performance that rivals lights costing twice as much.
-      release_year: 2021
-      msrp_usd: 79.95
-      asin: B08V4Z7X6N
-      price_usd: 74.95
-      rating_count: 1600
-      average_rating: 4.5
-      manufacturer_url: ""
-      images:
-        - url: https://cdn11.bigcommerce.com/s-9sfgjx/images/stencil/500x659/products/467/4332/1__65976.1677744850.jpg
-          alt: ThruNite Catapult V6
-        - url: https://images-na.ssl-images-amazon.com/images/P/B08V4Z7X6N.01._SCLZZZZZZZ_SX500_.jpg
-          alt: ThruNite Catapult V6 Amazon listing
-      specs:
-        max_lumens: 2836
-        sustained_lumens: 1000
-        max_candela: 120000
-        beam_distance_m: 692
-        runtime_high_min: 60
-        runtime_500_min: 0
-        turbo_stepdown_sec: 30
-        beam_pattern: throw
-        battery_type: "26650"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 230
-        length_mm: 145
-        head_diameter_mm: 55
-        body_diameter_mm: 35
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 1.5
-        body_material: Aluminum
-        led_model: Luminus SST-70
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - throw
-        - search-rescue
-        - tactical
-    - brand: Underwater Kinetics
-      brand_slug: underwater-kinetics
-      brand_country: US
-      brand_website: https://uwk.com
-      name: Light Cannon eLED
-      slug: underwater-kinetics-light-cannon
-      code: LCEL1
-      description: The UK Light Cannon eLED is a professional dive light rated for extreme depths, built in the USA for commercial diving and search-and-rescue operations. Its NiMH rechargeable battery with pistol grip ergonomics provides comfortable operation during extended underwater work. The 1,100-lumen output and robust IPX8 construction make it reliable in the most demanding subsurface environments.
-      release_year: 2018
-      msrp_usd: 330
-      asin: B07F6VZ3LS
-      price_usd: 330
-      rating_count: 120
-      average_rating: 4.4
-      manufacturer_url: ""
-      images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B07F6VZ3LS.01._SCLZZZZZZZ_SX500_.jpg
-          alt: UK Light Cannon eLED
+          alt: Skilhunt M200 V3 flashlight
       specs:
         max_lumens: 1100
-        sustained_lumens: 600
-        max_candela: 8500
-        beam_distance_m: 184
-        runtime_high_min: 240
+        sustained_lumens: 0
+        max_candela: 8800
+        beam_distance_m: 188
+        runtime_high_min: 90
         runtime_500_min: 0
         turbo_stepdown_sec: 0
-        beam_pattern: flood
-        battery_type: ""
-        recharge_type: none
-        battery_replaceable: true
-        weight_g: 907
-        length_mm: 267
-        head_diameter_mm: 89
-        body_diameter_mm: 89
-        switch_type: side
-        waterproof_rating: IPX8
-        impact_resistance_m: 2
-        body_material: Polymer
-        led_model: ""
-        cri: 0
-        has_strobe: false
-        has_memory_mode: false
-        has_lockout: false
-        has_moonlight_mode: false
-        has_magnetic_tailcap: false
-        has_pocket_clip: false
-      use_cases:
-        - search-rescue
-        - diving
-        - survival
-    - brand: Wurkkos
-      brand_slug: wurkkos
-      brand_country: CN
-      brand_website: https://wurkkos.com
-      name: FC11C
-      slug: wurkkos-fc11c
-      code: FC11C
-      description: The Wurkkos FC11C is a balanced EDC light with USB-C charging, a simple UI, and a Nichia 519A high-CRI emitter that renders colors accurately. At under $30 with a magnetic tailcap, 18650 battery, and IPX8 waterproofing, it is widely regarded as the best starter flashlight for anyone entering the hobby. Its gentle ramp UI and solid build quality punch well above its price point.
-      release_year: 2024
-      msrp_usd: 29.99
-      asin: B0D311QCJM
-      price_usd: 29.99
-      rating_count: 1850
-      average_rating: 4.5
-      manufacturer_url: ""
-      images:
-        - url: https://ueeshop.ly200-cdn.com/u_file/UPAU/UPAU502/2602/23/products/06f9c2c357.jpg
-          alt: Wurkkos FC11C
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0D311QCJM.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Wurkkos FC11C Amazon listing
-      specs:
-        max_lumens: 1200
-        sustained_lumens: 650
-        max_candela: 6100
-        beam_distance_m: 156
-        runtime_high_min: 95
-        runtime_500_min: 0
-        turbo_stepdown_sec: 65
         beam_pattern: hybrid
         battery_type: "18650"
         recharge_type: usb-c
         battery_replaceable: true
-        weight_g: 112
-        length_mm: 116
-        head_diameter_mm: 24
-        body_diameter_mm: 24
+        weight_g: 72
+        length_mm: 106
+        head_diameter_mm: 23.5
+        body_diameter_mm: 22
         switch_type: side
-        waterproof_rating: IPX8
+        waterproof_rating: IP68
         impact_resistance_m: 1.5
         body_material: Aluminum
-        led_model: Nichia 519A
+        led_model: Samsung LH351D
         cri: 90
         has_strobe: true
         has_memory_mode: true
@@ -2896,5 +1390,4 @@ products:
         has_pocket_clip: true
       use_cases:
         - edc
-        - camping
         - value
