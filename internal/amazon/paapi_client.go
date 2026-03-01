@@ -126,13 +126,20 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 		"PartnerType": c.partnerType,
 		"Marketplace": c.marketplace,
 		"Resources": []string{
+			"Images.Primary.Large",
+			"Images.Variants.Large",
 			"ItemInfo.Title",
 			"ItemInfo.ByLineInfo",
+			"ItemInfo.Features",
+			"ItemInfo.TechnicalInfo",
+			"ItemInfo.ManufactureInfo",
+			"ItemInfo.ProductInfo",
 			"CustomerReviews.Count",
 			"CustomerReviews.StarRating",
 			"Offers.Listings.Price",
 			"Offers.Listings.MerchantInfo",
-			"Images.Primary.Large",
+			"Offers.Listings.Availability.Type",
+			"Offers.Listings.DeliveryInfo.IsPrimeEligible",
 		},
 	}
 
@@ -224,10 +231,18 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 			CurrencyCode:  "USD",
 			Title:         item.ItemInfo.Title.DisplayValue,
 			Brand:         item.ItemInfo.ByLineInfo.Brand.DisplayValue,
+			Manufacturer:  item.ItemInfo.ByLineInfo.Manufacturer.DisplayValue,
+			ModelNumber:    item.ItemInfo.ManufactureInfo.Model.DisplayValue,
 			DetailPageURL: item.DetailPageURL,
+			Features:      item.ItemInfo.Features.DisplayValues,
 		}
 		if item.Images.Primary.Large.URL != "" {
 			p.ImageURL = item.Images.Primary.Large.URL
+		}
+		for _, v := range item.Images.Variants {
+			if v.Large.URL != "" {
+				p.VariantImages = append(p.VariantImages, v.Large.URL)
+			}
 		}
 		if item.CustomerReviews.Count != nil {
 			v := *item.CustomerReviews.Count
@@ -237,13 +252,20 @@ func (c *PAAPIClient) LookupItems(ctx context.Context, asins []string) ([]Produc
 			v := *item.CustomerReviews.StarRating
 			p.AverageRating = &v
 		}
-		if len(item.Offers.Listings) > 0 && item.Offers.Listings[0].Price.Amount != nil {
-			v := *item.Offers.Listings[0].Price.Amount
-			p.OfferPrice = &v
-			if item.Offers.Listings[0].Price.Currency != "" {
-				p.CurrencyCode = item.Offers.Listings[0].Price.Currency
+		if len(item.Offers.Listings) > 0 {
+			listing := item.Offers.Listings[0]
+			if listing.Price.Amount != nil {
+				v := *listing.Price.Amount
+				p.OfferPrice = &v
+				if listing.Price.Currency != "" {
+					p.CurrencyCode = listing.Price.Currency
+				}
 			}
-			p.Seller = item.Offers.Listings[0].MerchantInfo.Name
+			p.Seller = listing.MerchantInfo.Name
+			p.Availability = listing.Availability.Type
+			if listing.DeliveryInfo.IsPrimeEligible != nil {
+				p.IsPrime = *listing.DeliveryInfo.IsPrimeEligible
+			}
 		}
 		raw, _ := json.Marshal(item)
 		p.RawPayload = raw
@@ -291,14 +313,62 @@ type paapiItem struct {
 			Brand struct {
 				DisplayValue string `json:"DisplayValue"`
 			} `json:"Brand"`
+			Manufacturer struct {
+				DisplayValue string `json:"DisplayValue"`
+			} `json:"Manufacturer"`
 		} `json:"ByLineInfo"`
+		Features struct {
+			DisplayValues []string `json:"DisplayValues"`
+		} `json:"Features"`
+		TechnicalInfo struct {
+			Formats struct {
+				DisplayValues []string `json:"DisplayValues"`
+			} `json:"Formats"`
+		} `json:"TechnicalInfo"`
+		ManufactureInfo struct {
+			ItemPartNumber struct {
+				DisplayValue string `json:"DisplayValue"`
+			} `json:"ItemPartNumber"`
+			Model struct {
+				DisplayValue string `json:"DisplayValue"`
+			} `json:"Model"`
+		} `json:"ManufactureInfo"`
+		ProductInfo struct {
+			ItemDimensions struct {
+				Height struct {
+					DisplayValue float64 `json:"DisplayValue"`
+					Unit         string  `json:"Unit"`
+				} `json:"Height"`
+				Length struct {
+					DisplayValue float64 `json:"DisplayValue"`
+					Unit         string  `json:"Unit"`
+				} `json:"Length"`
+				Weight struct {
+					DisplayValue float64 `json:"DisplayValue"`
+					Unit         string  `json:"Unit"`
+				} `json:"Weight"`
+				Width struct {
+					DisplayValue float64 `json:"DisplayValue"`
+					Unit         string  `json:"Unit"`
+				} `json:"Width"`
+			} `json:"ItemDimensions"`
+		} `json:"ProductInfo"`
 	} `json:"ItemInfo"`
 	Images struct {
 		Primary struct {
 			Large struct {
-				URL string `json:"URL"`
+				URL    string `json:"URL"`
+				Height int    `json:"Height"`
+				Width  int    `json:"Width"`
 			} `json:"Large"`
 		} `json:"Primary"`
+		Variants []struct {
+			Large struct {
+				URL    string `json:"URL"`
+				Height int    `json:"Height"`
+				Width  int    `json:"Width"`
+			} `json:"Large"`
+		} `json:"Variants"`
 	} `json:"Images"`
 	CustomerReviews struct {
 		Count      *int     `json:"Count"`
@@ -313,6 +383,12 @@ type paapiItem struct {
 			MerchantInfo struct {
 				Name string `json:"Name"`
 			} `json:"MerchantInfo"`
+			Availability struct {
+				Type string `json:"Type"`
+			} `json:"Availability"`
+			DeliveryInfo struct {
+				IsPrimeEligible *bool `json:"IsPrimeEligible"`
+			} `json:"DeliveryInfo"`
 		} `json:"Listings"`
 	} `json:"Offers"`
 }

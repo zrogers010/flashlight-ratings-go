@@ -56,6 +56,23 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-flashlight_app}:${POSTGRES_PASSWORD:-flashlight_dev}@db:5432/${POSTGRES_DB:-flashlight}?sslmode=disable
     restart: unless-stopped
 
+  catalog-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        TARGET: catalog-build
+    container_name: flashlight-catalog-build
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-flashlight_app}:${POSTGRES_PASSWORD:-flashlight_dev}@db:5432/${POSTGRES_DB:-flashlight}?sslmode=disable
+      AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-flashlightrat-20}
+    volumes:
+      - ./data:/app/data:ro
+    profiles: ["tools"]
+
   web:
     build:
       context: .
