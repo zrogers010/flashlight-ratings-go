@@ -255,7 +255,7 @@ products:
         runtime_500_min: 0
         turbo_stepdown_sec: 0
         beam_pattern: ""
-        battery_type: Built-in
+        battery_type: BUILTIN
         recharge_type: usb-c
         battery_replaceable: false
         weight_g: 26
@@ -730,7 +730,7 @@ products:
         runtime_500_min: 0
         turbo_stepdown_sec: 0
         beam_pattern: ""
-        battery_type: Built-in
+        battery_type: BUILTIN
         recharge_type: usb-c
         battery_replaceable: false
         weight_g: 63
@@ -1261,7 +1261,7 @@ products:
         runtime_500_min: 0
         turbo_stepdown_sec: 0
         beam_pattern: ""
-        battery_type: Built-in
+        battery_type: BUILTIN
         recharge_type: usb-c
         battery_replaceable: false
         weight_g: 105
