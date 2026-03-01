@@ -98,10 +98,14 @@ func Refresh(cat *Catalog, cfg RefreshConfig) (*Catalog, *RefreshReport) {
 				time.Sleep(cfg.RequestDelay)
 				ok, err := checkASIN(client, prod.ASIN)
 				if err != nil {
-					res.warning = fmt.Sprintf("%s %s: ASIN check error: %v", prod.Brand, prod.Name, err)
+					// Network/rate-limit errors are not the product's fault
+					mu.Lock()
+					report.ValidASIN++
+					report.Warnings = append(report.Warnings, fmt.Sprintf("%s %s: ASIN check inconclusive: %v", prod.Brand, prod.Name, err))
+					mu.Unlock()
 				} else if !ok {
 					res.valid = false
-					res.warning = fmt.Sprintf("%s %s: ASIN %s not found on Amazon", prod.Brand, prod.Name, prod.ASIN)
+					res.warning = fmt.Sprintf("%s %s: ASIN %s returned 404 on Amazon", prod.Brand, prod.Name, prod.ASIN)
 					mu.Lock()
 					report.InvalidASIN++
 					mu.Unlock()
@@ -205,18 +209,20 @@ func checkASIN(client *http.Client, asin string) (bool, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, err
+		// Network errors from EC2 are common (Amazon blocks datacenter IPs);
+		// don't treat as invalid — the ASIN is probably fine.
+		return false, fmt.Errorf("network error: %w", err)
 	}
 	defer resp.Body.Close()
 	io.Copy(io.Discard, resp.Body)
 
+	// Only a clear 404 means the ASIN doesn't exist.
+	// Amazon returns 503, 429, 403, CAPTCHAs from datacenter IPs —
+	// all of those mean "we blocked you", not "this product doesn't exist".
 	if resp.StatusCode == 404 {
 		return false, nil
 	}
-	if resp.StatusCode == 503 || resp.StatusCode == 429 {
-		return false, fmt.Errorf("rate limited (status %d)", resp.StatusCode)
-	}
-	return resp.StatusCode == 200 || resp.StatusCode == 301 || resp.StatusCode == 302, nil
+	return true, nil
 }
 
 func checkImageURL(client *http.Client, url string) bool {
@@ -352,6 +358,15 @@ func extractBestImageURL(s *goquery.Selection) string {
 }
 
 func isProductImage(url string) bool {
+	if strings.HasPrefix(url, "data:") {
+		return false
+	}
+	if strings.Contains(url, "R0lGODlh") || strings.Contains(url, "iVBORw0KGgo") {
+		return false
+	}
+	if len(url) < 10 || len(url) > 2000 {
+		return false
+	}
 	lower := strings.ToLower(url)
 	skipPatterns := []string{
 		"logo", "icon", "favicon", "banner", "badge",
@@ -361,6 +376,7 @@ func isProductImage(url string) bool {
 		"1x1", "pixel", "tracking", "analytics",
 		"cart", "checkout", "arrow", "close", "search",
 		"menu", "nav", "header", "footer",
+		"base64", "blank.gif", "blank.png", "transparent",
 	}
 	for _, pat := range skipPatterns {
 		if strings.Contains(lower, pat) {
