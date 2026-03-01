@@ -82,7 +82,7 @@ export default async function ComparePage({
                 <h4>{item.name}</h4>
                 <div className="spec-row">
                   <span>{fmt(item.max_lumens)} lm</span>
-                  <span>{item.price_usd !== undefined ? `$${fmt(item.price_usd, 2)}` : "—"}</span>
+                  <span>{fmt(item.beam_distance_m)} m</span>
                 </div>
                 <div className="cta-row">
                   <Link href={`/compare?ids=${ids.length ? ids.join(",") + "," : ""}${item.id}`} className="btn btn-ghost btn-sm">
@@ -102,8 +102,8 @@ export default async function ComparePage({
 
   const specs: SpecRow[] = [
     {
-      label: "Price",
-      values: items.map((i) => i.price_usd !== undefined ? `$${fmt(i.price_usd, 2)}` : "—"),
+      label: "MSRP",
+      values: items.map((i) => i.price_usd !== undefined ? `~$${fmt(i.price_usd, 0)}` : "—"),
       bestIdx: findBestIdx(items.map((i) => i.price_usd), false)
     },
     {
@@ -193,7 +193,7 @@ export default async function ComparePage({
                           {item.brand} {item.name}
                         </Link>
                       </h4>
-                      <AmazonCTA href={item.amazon_url} price={item.price_usd} />
+                      <AmazonCTA href={item.amazon_url} />
                     </div>
                   </th>
                 ))}

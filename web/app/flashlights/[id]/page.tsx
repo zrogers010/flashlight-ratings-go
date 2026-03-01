@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const name = `${data.brand} ${data.name}`;
   const score = topScore(data);
 
-  const desc = `${name} review: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated.${data.price_usd !== undefined ? ` $${fmt(data.price_usd, 2)} on Amazon.` : ""} Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100.`;
+  const desc = `${name} review: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100.`;
 
   return {
     title: `${name} Review — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
@@ -125,7 +125,8 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
     fetchFlashlights()
   ]);
 
-  const images = data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : [];
+  const rawImages = data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : [];
+  const images = [...new Set(rawImages)].filter((u) => !u.includes("._SCLZZZZZZZ_"));
   const alternatives = catalog.items
     .filter((x) => x.id !== data.id)
     .sort((a, b) =>
@@ -181,10 +182,6 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
         </div>
 
         <aside className="buy-box">
-          <p className="kicker">Buy Confidence</p>
-          <p className="price-line">
-            {data.price_usd !== undefined ? `$${fmt(data.price_usd, 2)}` : "Price unavailable"}
-          </p>
           {score > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <ScoreBadge score={score} size="lg" />
@@ -194,10 +191,8 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
               </div>
             </div>
           )}
-          <AmazonCTA href={data.amazon_url} price={data.price_usd} />
+          <AmazonCTA href={data.amazon_url} />
           <div className="buy-meta">
-            <span>Price updated: {toDate(data.price_last_updated_at)}</span>
-            <span>Last sync: {toDate(data.amazon_last_synced_at)}</span>
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
           <div style={{ marginTop: 12 }}>

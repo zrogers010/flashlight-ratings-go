@@ -155,7 +155,7 @@ export default async function FindYoursPage({
 
               <div className="spec-row">
                 <span className="badge badge-teal">{entry.category}</span>
-                <span>{entry.price_usd !== undefined ? `$${fmt(entry.price_usd, 2)}` : "—"}</span>
+                <span>{entry.price_usd !== undefined ? `~$${fmt(entry.price_usd, 0)}` : "—"}</span>
                 <span>{fmt(entry.max_lumens)} lm</span>
                 <span>{fmt(entry.beam_distance_m)} m</span>
               </div>
@@ -180,7 +180,7 @@ export default async function FindYoursPage({
               </div>
 
               <div className="cta-row">
-                <AmazonCTA href={entry.amazon_url} price={entry.price_usd} />
+                <AmazonCTA href={entry.amazon_url} />
               </div>
             </article>
           ))}

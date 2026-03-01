@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 
+function isBrokenPlaceholder(url: string) {
+  return url.includes("._SCLZZZZZZZ_");
+}
+
 export function ImageWithFallback({
   src,
   alt,
@@ -12,8 +16,9 @@ export function ImageWithFallback({
   loading?: "eager" | "lazy";
 }) {
   const [failed, setFailed] = useState(false);
+  const usable = src && !isBrokenPlaceholder(src);
 
-  if (!src || failed) {
+  if (!usable || failed) {
     return <div className="image-fallback">{alt}</div>;
   }
 
@@ -23,6 +28,12 @@ export function ImageWithFallback({
       alt={alt}
       loading={loading ?? "lazy"}
       onError={() => setFailed(true)}
+      onLoad={(e) => {
+        const img = e.currentTarget;
+        if (img.naturalWidth <= 2 || img.naturalHeight <= 2) {
+          setFailed(true);
+        }
+      }}
     />
   );
 }
