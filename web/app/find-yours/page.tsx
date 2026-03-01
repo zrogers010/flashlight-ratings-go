@@ -4,6 +4,7 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { AmazonCTA } from "@/components/AmazonCTA";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchIntelligenceRecommendations } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -139,11 +140,7 @@ export default async function FindYoursPage({
               <Link href={`/flashlights/${entry.model_id}`} className="card-link-overlay" aria-label={`View ${entry.brand} ${entry.name} details`} />
 
               <div className="image-card">
-                {entry.image_url ? (
-                  <img src={entry.image_url} alt={`${entry.brand} ${entry.name}`} loading="lazy" />
-                ) : (
-                  <div className="image-fallback">No image</div>
-                )}
+                <ImageWithFallback src={entry.image_url} alt={`${entry.brand} ${entry.name}`} />
               </div>
 
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>

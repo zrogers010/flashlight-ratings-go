@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FAQ } from "@/components/FAQ";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
 import { FlashlightCard } from "@/components/FlashlightCard";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchFlashlightByID, fetchFlashlights } from "@/lib/api";
 
 function fmt(v?: number, digits = 0) {
@@ -216,7 +217,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
         <div className="image-strip">
           {images.map((src, idx) => (
             <div key={`${src}-${idx}`} className="image-card">
-              <img src={src} alt={`${data.brand} ${data.name} — image ${idx + 1}`} loading={idx === 0 ? "eager" : "lazy"} />
+              <ImageWithFallback src={src} alt={`${data.brand} ${data.name} — image ${idx + 1}`} loading={idx === 0 ? "eager" : "lazy"} />
             </div>
           ))}
         </div>

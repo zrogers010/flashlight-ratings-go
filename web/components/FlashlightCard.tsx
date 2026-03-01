@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AmazonCTA } from "./AmazonCTA";
 import { ScoreBadge } from "./ScoreBadge";
+import { ImageWithFallback } from "./ImageWithFallback";
 import type { FlashlightItem } from "@/lib/api";
 
 function fmt(v?: number, digits = 0) {
@@ -40,11 +41,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       <Link href={href} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
 
       <div className="image-card">
-        {item.image_url ? (
-          <img src={item.image_url} alt={`${item.brand} ${item.name}`} loading="lazy" />
-        ) : (
-          <div className="image-fallback">No image</div>
-        )}
+        <ImageWithFallback src={item.image_url} alt={`${item.brand} ${item.name}`} />
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
