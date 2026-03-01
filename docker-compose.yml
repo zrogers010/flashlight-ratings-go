@@ -80,6 +80,7 @@ services:
       args:
         TARGET: catalog-refresh
     container_name: flashlight-catalog-refresh
+    user: root
     environment:
       AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-flashlightrat-20}
     volumes:
