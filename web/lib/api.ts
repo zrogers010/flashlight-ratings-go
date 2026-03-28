@@ -12,6 +12,7 @@ export type RankingItem = {
     max_lumens?: number;
     beam_distance_m?: number;
     waterproof_rating?: string;
+    price_usd?: number;
   };
 };
 
@@ -181,9 +182,12 @@ export async function fetchCompare(ids: string) {
   return getJSON<{ items: FlashlightItem[] }>(`/compare?ids=${encodeURIComponent(ids)}`);
 }
 
-export async function fetchFlashlights(opts?: { brand?: string; pageSize?: number }) {
+export async function fetchFlashlights(opts?: { brand?: string; maxPrice?: number; sortBy?: string; order?: string; pageSize?: number }) {
   const params = new URLSearchParams({ page: "1", page_size: String(opts?.pageSize ?? 100) });
   if (opts?.brand) params.set("brand", opts.brand);
+  if (opts?.maxPrice) params.set("max_price", String(opts.maxPrice));
+  if (opts?.sortBy) params.set("sort_by", opts.sortBy);
+  if (opts?.order) params.set("order", opts.order);
   return getJSON<FlashlightListResponse>(`/flashlights?${params.toString()}`);
 }
 

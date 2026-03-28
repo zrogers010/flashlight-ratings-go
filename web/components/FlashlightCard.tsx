@@ -65,6 +65,9 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       </div>
 
       <div className="cta-row">
+        {item.price_usd !== undefined && item.price_usd > 0 && (
+          <span className="card-price">${fmt(item.price_usd, 2)}</span>
+        )}
         <AmazonCTA href={item.amazon_url} />
       </div>
     </article>

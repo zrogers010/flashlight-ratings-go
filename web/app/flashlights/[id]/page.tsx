@@ -8,7 +8,7 @@ import { FAQ } from "@/components/FAQ";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
-import { fetchFlashlightByID, fetchFlashlights } from "@/lib/api";
+import { fetchFlashlightByID, fetchFlashlights, fetchRankings } from "@/lib/api";
 
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
@@ -120,10 +120,28 @@ function scoreTier(v: number) {
 }
 
 export default async function FlashlightDetailPage({ params }: { params: { id: string } }) {
-  const [data, catalog] = await Promise.all([
+  const [data, catalog, tacticalRanks, edcRanks, valueRanks, throwRanks, floodRanks] = await Promise.all([
     fetchFlashlightByID(params.id),
-    fetchFlashlights()
+    fetchFlashlights(),
+    fetchRankings("tactical", 3),
+    fetchRankings("edc", 3),
+    fetchRankings("value", 3),
+    fetchRankings("throw", 3),
+    fetchRankings("flood", 3),
   ]);
+
+  const rankBadges: { label: string; rank: number }[] = [];
+  const allRanks = [
+    { label: "Tactical", items: tacticalRanks.items },
+    { label: "EDC", items: edcRanks.items },
+    { label: "Value", items: valueRanks.items },
+    { label: "Throw", items: throwRanks.items },
+    { label: "Flood", items: floodRanks.items },
+  ];
+  for (const cat of allRanks) {
+    const match = cat.items.find((r) => r.flashlight.id === data.id);
+    if (match) rankBadges.push({ label: cat.label, rank: match.rank });
+  }
 
   const rawImages = data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : [];
   const images = [...new Set(rawImages)].filter((u) => !u.includes("._SCLZZZZZZZ_"));
@@ -167,6 +185,15 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
           <p className="muted" style={{ marginBottom: 16 }}>
             {data.description || "Detailed specifications and scoring available below."}
           </p>
+          {rankBadges.length > 0 && (
+            <div className="spec-row" style={{ marginBottom: 8 }}>
+              {rankBadges.map((b) => (
+                <span key={b.label} className="badge badge-gold">
+                  #{b.rank} {b.label}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="spec-row" style={{ marginBottom: 8 }}>
             <span className="badge badge-teal">Best for {bestFor}</span>
             <span>{fmt(data.max_lumens)} lm</span>
@@ -301,6 +328,22 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
             <div><span className="muted">Magnetic Tail</span><strong>{yesNo(data.has_magnetic_tailcap)}</strong></div>
           </div>
         </div>
+      </div>
+
+      {/* ── Bottom CTA ─────────────────────────────── */}
+      <div className="panel" style={{ textAlign: "center", padding: "28px 20px" }}>
+        <p style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 4 }}>
+          Ready to buy the {data.brand} {data.name}?
+        </p>
+        {data.price_usd !== undefined && data.price_usd > 0 && (
+          <p style={{ fontSize: "1.3rem", fontWeight: 700, color: "#22c55e", marginBottom: 12 }}>
+            ${fmt(data.price_usd, 2)}
+          </p>
+        )}
+        <AmazonCTA href={data.amazon_url} />
+        <p className="muted" style={{ fontSize: "0.8rem", marginTop: 10 }}>
+          As an Amazon Associate we earn from qualifying purchases.
+        </p>
       </div>
 
       {/* ── Mode Table ────────────────────────────── */}

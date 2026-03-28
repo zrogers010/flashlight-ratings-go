@@ -58,12 +58,14 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews",
     description:
-      "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing."
+      "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing.",
+    images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "FlashlightRatings — Data-Driven Flashlight Rankings & Reviews" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "Best Flashlights 2026 — FlashlightRatings",
-    description: "Data-driven flashlight rankings & reviews. Compare specs, scores, and prices."
+    description: "Data-driven flashlight rankings & reviews. Compare specs, scores, and prices.",
+    images: [`${SITE_URL}/og-default.png`]
   },
   robots: {
     index: true,
