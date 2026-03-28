@@ -181,8 +181,14 @@ export async function fetchCompare(ids: string) {
   return getJSON<{ items: FlashlightItem[] }>(`/compare?ids=${encodeURIComponent(ids)}`);
 }
 
-export async function fetchFlashlights() {
-  return getJSON<FlashlightListResponse>("/flashlights?page=1&page_size=24");
+export async function fetchFlashlights(opts?: { brand?: string; pageSize?: number }) {
+  const params = new URLSearchParams({ page: "1", page_size: String(opts?.pageSize ?? 100) });
+  if (opts?.brand) params.set("brand", opts.brand);
+  return getJSON<FlashlightListResponse>(`/flashlights?${params.toString()}`);
+}
+
+export async function fetchBrands() {
+  return getJSON<string[]>("/brands");
 }
 
 export async function createIntelligenceRun(input: IntelligenceRunInput) {

@@ -17,6 +17,7 @@ type flashlightFilters struct {
 	MinPrice    *float64
 	MaxPrice    *float64
 	IPRating    string
+	Brand       string
 	SortBy      string
 	Order       string
 	Page        int
@@ -1362,6 +1363,31 @@ func valOrString(v *string, fallback string) string {
 	return *v
 }
 
+func (s *Server) listBrands(ctx context.Context) ([]string, error) {
+	query := `
+SELECT DISTINCT b.name
+FROM brands b
+JOIN flashlights f ON f.brand_id = b.id
+WHERE f.is_active = TRUE
+ORDER BY b.name ASC
+`
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var brands []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		brands = append(brands, name)
+	}
+	return brands, rows.Err()
+}
+
 func round1(v float64) float64 {
 	return math.Round(v*10) / 10
 }
@@ -1397,6 +1423,11 @@ EXISTS (
 	if f.IPRating != "" {
 		clauses = append(clauses, fmt.Sprintf("s.waterproof_rating = $%d", argn))
 		args = append(args, strings.ToUpper(f.IPRating))
+		argn++
+	}
+	if f.Brand != "" {
+		clauses = append(clauses, fmt.Sprintf("LOWER(b.name) = LOWER($%d)", argn))
+		args = append(args, f.Brand)
 		argn++
 	}
 
