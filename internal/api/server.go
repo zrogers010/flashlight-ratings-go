@@ -24,6 +24,7 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/flashlights", s.handleFlashlights)
 	mux.HandleFunc("/flashlights/", s.handleFlashlightByID)
+	mux.HandleFunc("/brands", s.handleBrands)
 	mux.HandleFunc("/compare", s.handleCompare)
 	mux.HandleFunc("/rankings", s.handleRankings)
 	mux.HandleFunc("/finder", s.handleFinder)
@@ -242,6 +243,7 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 	filters := flashlightFilters{
 		BatteryType: strings.TrimSpace(r.URL.Query().Get("battery_type")),
 		IPRating:    strings.TrimSpace(r.URL.Query().Get("ip_rating")),
+		Brand:       strings.TrimSpace(r.URL.Query().Get("brand")),
 		SortBy:      strings.TrimSpace(r.URL.Query().Get("sort_by")),
 		Order:       strings.TrimSpace(r.URL.Query().Get("order")),
 		Page:        page,
@@ -281,6 +283,21 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 		TotalPage: totalPages,
 		Items:     items,
 	})
+}
+
+func (s *Server) handleBrands(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	brands, err := s.listBrands(ctx)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to fetch brands"})
+		return
+	}
+	writeJSON(w, http.StatusOK, brands)
 }
 
 func (s *Server) handleFlashlightByID(w http.ResponseWriter, r *http.Request) {

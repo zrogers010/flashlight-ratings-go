@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { fetchFlashlights } from "@/lib/api";
+import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Best Flashlights 2026 — Expert-Ranked by Category",
@@ -15,43 +15,53 @@ const categories = [
   {
     slug: "tactical",
     label: "Best Tactical",
-    icon: "⚔",
+    icon: "\u2694",
     desc: "High candela, durable, and duty-ready for law enforcement and defense."
   },
   {
     slug: "edc",
     label: "Best EDC",
-    icon: "🔑",
+    icon: "\uD83D\uDD11",
     desc: "Compact, reliable, and pocket-friendly for everyday carry."
   },
   {
     slug: "camping",
     label: "Best for Camping",
-    icon: "⛺",
+    icon: "\u26FA",
     desc: "Long runtime, wide beam, and weather-resistant for the outdoors."
   },
   {
     slug: "value",
     label: "Best Value",
-    icon: "💰",
+    icon: "\uD83D\uDCB0",
     desc: "Maximum performance per dollar — the smartest buys in our catalog."
   },
   {
     slug: "throw",
     label: "Best Throwers",
-    icon: "🎯",
+    icon: "\uD83C\uDFAF",
     desc: "Maximum beam distance and candela for long-range spotting."
   },
   {
     slug: "flood",
     label: "Best Flood",
-    icon: "💡",
+    icon: "\uD83D\uDCA1",
     desc: "Maximum lumen output for wide, bright area illumination."
   }
 ];
 
-export default async function BestFlashlightsPage() {
-  const data = await fetchFlashlights();
+export default async function BestFlashlightsPage({
+  searchParams,
+}: {
+  searchParams?: { brand?: string };
+}) {
+  const sp = searchParams || {};
+  const selectedBrand = sp.brand || "";
+
+  const [data, brands] = await Promise.all([
+    fetchFlashlights({ brand: selectedBrand || undefined }),
+    fetchBrands(),
+  ]);
 
   return (
     <section className="grid">
@@ -83,11 +93,34 @@ export default async function BestFlashlightsPage() {
         </div>
         <p className="muted" style={{ marginBottom: 16, fontSize: "0.88rem" }}>
           Full catalog with specs, scores, and current Amazon pricing.
+          {selectedBrand && <> Showing <strong>{selectedBrand}</strong> only.</>}
         </p>
+
+        <div className="filters" style={{ marginBottom: 20 }}>
+          <Link
+            href="/best-flashlights"
+            className={selectedBrand === "" ? "active" : ""}
+          >
+            All Brands
+          </Link>
+          {brands.map((brand) => (
+            <Link
+              key={brand}
+              href={`/best-flashlights?brand=${encodeURIComponent(brand)}`}
+              className={selectedBrand.toLowerCase() === brand.toLowerCase() ? "active" : ""}
+            >
+              {brand}
+            </Link>
+          ))}
+        </div>
+
         <div className="card-grid">
           {data.items.map((item) => (
             <FlashlightCard key={item.id} item={item} />
           ))}
+          {data.items.length === 0 && (
+            <p className="muted">No flashlights found for this brand.</p>
+          )}
         </div>
       </div>
 
