@@ -642,7 +642,66 @@ ORDER BY f.id ASC
 
 func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize int) ([]rankedResponse, int, error) {
 	offset := (page - 1) * pageSize
-	query := `
+
+	var query string
+	if useCase == "overall" {
+		query = `
+WITH latest_run AS (
+	SELECT id
+	FROM scoring_runs
+	WHERE status = 'completed'
+	ORDER BY completed_at DESC NULLS LAST, id DESC
+	LIMIT 1
+),
+agg_scores AS (
+	SELECT
+		fs.flashlight_id,
+		AVG(fs.score) AS avg_score
+	FROM flashlight_scores fs
+	JOIN latest_run lr ON lr.id = fs.run_id
+	GROUP BY fs.flashlight_id
+)
+SELECT
+	ROW_NUMBER() OVER (ORDER BY COALESCE(ag.avg_score, 0) DESC, f.id ASC) AS rank_position,
+	COALESCE(ag.avg_score, 0) AS score,
+	'overall'::text AS profile_slug,
+	f.id,
+	b.name,
+	f.name,
+	f.slug,
+	lm.url,
+	la.affiliate_url,
+	s.max_lumens,
+	s.beam_distance_m,
+	s.waterproof_rating
+FROM flashlights f
+JOIN brands b ON b.id = f.brand_id
+LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
+LEFT JOIN agg_scores ag ON ag.flashlight_id = f.id
+LEFT JOIN LATERAL (
+	SELECT m.url
+	FROM flashlight_media m
+	WHERE m.flashlight_id = f.id
+	  AND m.media_type = 'image'
+	ORDER BY m.sort_order ASC, m.id ASC
+	LIMIT 1
+) lm ON TRUE
+LEFT JOIN LATERAL (
+	SELECT al.affiliate_url
+	FROM affiliate_links al
+	WHERE al.flashlight_id = f.id
+	  AND al.provider = 'amazon'
+	  AND al.region_code = 'US'
+	  AND al.is_active = TRUE
+	ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
+	LIMIT 1
+) la ON TRUE
+WHERE f.is_active = TRUE
+ORDER BY rank_position ASC
+LIMIT $1 OFFSET $2
+`
+	} else {
+		query = `
 WITH latest_run AS (
 	SELECT id
 	FROM scoring_runs
@@ -665,9 +724,13 @@ SELECT
 	f.name,
 	f.slug,
 	lm.url,
-	la.affiliate_url
+	la.affiliate_url,
+	s.max_lumens,
+	s.beam_distance_m,
+	s.waterproof_rating
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
+LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
 JOIN selected_profile sp ON TRUE
 LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
 	AND fs.profile_id = sp.id
@@ -694,8 +757,17 @@ WHERE f.is_active = TRUE
 ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
 `
+	}
 
-	rows, err := s.db.QueryContext(ctx, query, useCase, pageSize, offset)
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if useCase == "overall" {
+		rows, err = s.db.QueryContext(ctx, query, pageSize, offset)
+	} else {
+		rows, err = s.db.QueryContext(ctx, query, useCase, pageSize, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}
@@ -704,8 +776,9 @@ LIMIT $2 OFFSET $3
 	out := make([]rankedResponse, 0, pageSize)
 	for rows.Next() {
 		var (
-			item                rankedResponse
-			imageURL, amazonURL sql.NullString
+			item                          rankedResponse
+			imageURL, amazonURL, waterproof sql.NullString
+			maxLumens, beamDist           sql.NullInt64
 		)
 		if err := rows.Scan(
 			&item.Rank,
@@ -717,31 +790,27 @@ LIMIT $2 OFFSET $3
 			&item.Flashlight.Slug,
 			&imageURL,
 			&amazonURL,
+			&maxLumens,
+			&beamDist,
+			&waterproof,
 		); err != nil {
 			return nil, 0, err
 		}
+		item.Score = math.Round(item.Score*10) / 10
 		item.Flashlight.ImageURL = nullString(imageURL)
 		item.Flashlight.AmazonURL = nullString(amazonURL)
+		item.Flashlight.MaxLumens = nullInt(maxLumens)
+		item.Flashlight.BeamDistanceM = nullInt(beamDist)
+		item.Flashlight.WaterproofRating = nullString(waterproof)
 		out = append(out, item)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
 
-	countQuery := `
-WITH selected_profile AS (
-	SELECT id
-	FROM scoring_profiles
-	WHERE slug = $1
-	LIMIT 1
-)
-SELECT COUNT(*)
-FROM flashlights f
-JOIN selected_profile sp ON TRUE
-WHERE f.is_active = TRUE
-`
+	countQuery := `SELECT COUNT(*) FROM flashlights WHERE is_active = TRUE`
 	var total int
-	if err := s.db.QueryRowContext(ctx, countQuery, useCase).Scan(&total); err != nil {
+	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	return out, total, nil

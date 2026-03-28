@@ -9,6 +9,9 @@ export type RankingItem = {
     slug: string;
     image_url?: string;
     amazon_url?: string;
+    max_lumens?: number;
+    beam_distance_m?: number;
+    waterproof_rating?: string;
   };
 };
 
