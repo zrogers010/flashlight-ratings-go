@@ -164,6 +164,7 @@ export default async function CategoryPage({ params }: { params: { category: str
               max_lumens: item.flashlight.max_lumens,
               beam_distance_m: item.flashlight.beam_distance_m,
               waterproof_rating: item.flashlight.waterproof_rating,
+              price_usd: item.flashlight.price_usd,
               tactical_score: item.profile === "tactical" ? item.score : undefined,
               edc_score: item.profile === "edc" ? item.score : undefined,
               value_score: item.profile === "value" ? item.score : undefined,

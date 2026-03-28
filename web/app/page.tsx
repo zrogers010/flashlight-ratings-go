@@ -61,19 +61,8 @@ export default async function HomePage() {
   const prices = flashlights.items.map((x) => x.price_usd).filter((p): p is number => p !== undefined);
   const minPrice = prices.length ? Math.min(...prices) : 0;
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faq.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a }
-    }))
-  };
-
   return (
     <section className="grid">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
       {/* ── Hero ──────────────────────────────────── */}
       <div className="panel hero" style={{ textAlign: "center", padding: "48px 24px" }}>
@@ -152,6 +141,7 @@ export default async function HomePage() {
                 max_lumens: item.flashlight.max_lumens,
                 beam_distance_m: item.flashlight.beam_distance_m,
                 waterproof_rating: item.flashlight.waterproof_rating,
+                price_usd: item.flashlight.price_usd,
                 tactical_score: item.score
               }}
               rank={item.rank}

@@ -140,15 +140,16 @@ type rankedResponse struct {
 	Score      float64 `json:"score"`
 	Profile    string  `json:"profile"`
 	Flashlight struct {
-		ID              int64   `json:"id"`
-		Brand           string  `json:"brand"`
-		Name            string  `json:"name"`
-		Slug            string  `json:"slug"`
-		ImageURL        *string `json:"image_url,omitempty"`
-		AmazonURL       *string `json:"amazon_url,omitempty"`
-		MaxLumens       *int64  `json:"max_lumens,omitempty"`
-		BeamDistanceM   *int64  `json:"beam_distance_m,omitempty"`
-		WaterproofRating *string `json:"waterproof_rating,omitempty"`
+		ID               int64    `json:"id"`
+		Brand            string   `json:"brand"`
+		Name             string   `json:"name"`
+		Slug             string   `json:"slug"`
+		ImageURL         *string  `json:"image_url,omitempty"`
+		AmazonURL        *string  `json:"amazon_url,omitempty"`
+		MaxLumens        *int64   `json:"max_lumens,omitempty"`
+		BeamDistanceM    *int64   `json:"beam_distance_m,omitempty"`
+		WaterproofRating *string  `json:"waterproof_rating,omitempty"`
+		PriceUSD         *float64 `json:"price_usd,omitempty"`
 	} `json:"flashlight"`
 }
 

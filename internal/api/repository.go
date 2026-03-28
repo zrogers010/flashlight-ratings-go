@@ -661,6 +661,14 @@ agg_scores AS (
 	FROM flashlight_scores fs
 	JOIN latest_run lr ON lr.id = fs.run_id
 	GROUP BY fs.flashlight_id
+),
+latest_price AS (
+	SELECT DISTINCT ON (p.flashlight_id)
+		p.flashlight_id,
+		p.price
+	FROM flashlight_price_snapshots p
+	WHERE p.currency_code = 'USD'
+	ORDER BY p.flashlight_id, p.captured_at DESC
 )
 SELECT
 	ROW_NUMBER() OVER (ORDER BY COALESCE(ag.avg_score, 0) DESC, f.id ASC) AS rank_position,
@@ -674,11 +682,13 @@ SELECT
 	la.affiliate_url,
 	s.max_lumens,
 	s.beam_distance_m,
-	s.waterproof_rating
+	s.waterproof_rating,
+	lp.price
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
 LEFT JOIN agg_scores ag ON ag.flashlight_id = f.id
+LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 LEFT JOIN LATERAL (
 	SELECT m.url
 	FROM flashlight_media m
@@ -715,6 +725,14 @@ selected_profile AS (
 	FROM scoring_profiles
 	WHERE slug = $1
 	LIMIT 1
+),
+latest_price AS (
+	SELECT DISTINCT ON (p.flashlight_id)
+		p.flashlight_id,
+		p.price
+	FROM flashlight_price_snapshots p
+	WHERE p.currency_code = 'USD'
+	ORDER BY p.flashlight_id, p.captured_at DESC
 )
 SELECT
 	ROW_NUMBER() OVER (ORDER BY COALESCE(fs.score, 0) DESC, f.id ASC) AS rank_position,
@@ -728,10 +746,12 @@ SELECT
 	la.affiliate_url,
 	s.max_lumens,
 	s.beam_distance_m,
-	s.waterproof_rating
+	s.waterproof_rating,
+	lp.price
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
+LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 JOIN selected_profile sp ON TRUE
 LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
 	AND fs.profile_id = sp.id
@@ -777,9 +797,10 @@ LIMIT $2 OFFSET $3
 	out := make([]rankedResponse, 0, pageSize)
 	for rows.Next() {
 		var (
-			item                          rankedResponse
+			item                            rankedResponse
 			imageURL, amazonURL, waterproof sql.NullString
-			maxLumens, beamDist           sql.NullInt64
+			maxLumens, beamDist             sql.NullInt64
+			price                           sql.NullFloat64
 		)
 		if err := rows.Scan(
 			&item.Rank,
@@ -794,6 +815,7 @@ LIMIT $2 OFFSET $3
 			&maxLumens,
 			&beamDist,
 			&waterproof,
+			&price,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -803,6 +825,9 @@ LIMIT $2 OFFSET $3
 		item.Flashlight.MaxLumens = nullInt(maxLumens)
 		item.Flashlight.BeamDistanceM = nullInt(beamDist)
 		item.Flashlight.WaterproofRating = nullString(waterproof)
+		if price.Valid {
+			item.Flashlight.PriceUSD = &price.Float64
+		}
 		out = append(out, item)
 	}
 	if err := rows.Err(); err != nil {

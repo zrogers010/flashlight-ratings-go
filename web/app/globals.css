@@ -381,9 +381,10 @@ img {
 }
 
 .card-price {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: var(--accent);
+  color: #22c55e;
+  font-family: var(--font-mono);
   margin: 0;
 }
 
@@ -624,6 +625,13 @@ h4 { font-size: 1rem; font-weight: 600; }
   background: var(--teal-subtle);
   color: var(--teal);
   border-color: rgba(45, 212, 191, 0.2);
+}
+
+.badge-gold {
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.25);
+  font-weight: 700;
 }
 
 /* ── CTA Row ──────────────────────────────────────── */
