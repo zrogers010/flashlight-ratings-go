@@ -1137,6 +1137,54 @@ select:focus, input:focus {
   margin-bottom: 8px;
 }
 
+/* ── Guide Body ──────────────────────────────────── */
+
+.guide-body h2 {
+  margin-top: 32px;
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+}
+
+.guide-body h3 {
+  margin-top: 24px;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.guide-body p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.guide-body ul,
+.guide-body ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.guide-body li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.guide-body strong {
+  color: var(--text-primary);
+}
+
+.guide-body code {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.88em;
+}
+
+.guide-body table {
+  width: 100%;
+}
+
 /* ── Review Cards ─────────────────────────────────── */
 
 .review-grid {

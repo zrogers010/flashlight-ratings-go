@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
 const categories = ["tactical", "edc", "camping", "search-rescue", "value", "throw", "flood"];
+const guideSlugs = ["how-we-score", "throw-vs-flood", "battery-guide", "runtime-explained", "ip-ratings", "best-edc-weight"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
@@ -38,5 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // API unavailable during build; product pages will be added on next regeneration
   }
 
-  return [...staticPages, ...categoryPages, ...productPages];
+  const guidePages: MetadataRoute.Sitemap = guideSlugs.map((slug) => ({
+    url: `${BASE_URL}/guides/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7
+  }));
+
+  return [...staticPages, ...categoryPages, ...guidePages, ...productPages];
 }
