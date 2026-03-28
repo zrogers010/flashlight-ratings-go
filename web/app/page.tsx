@@ -149,6 +149,9 @@ export default async function HomePage() {
                 slug: item.flashlight.slug,
                 image_url: item.flashlight.image_url,
                 amazon_url: item.flashlight.amazon_url,
+                max_lumens: item.flashlight.max_lumens,
+                beam_distance_m: item.flashlight.beam_distance_m,
+                waterproof_rating: item.flashlight.waterproof_rating,
                 tactical_score: item.score
               }}
               rank={item.rank}

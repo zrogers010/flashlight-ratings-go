@@ -19,7 +19,7 @@ products:
           alt: Fenix PD36R PRO Rechargeable Flashlight specs chart
         - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-PD36R-PRO-Flashlight-runtime-chart.png?v=1664291905
           alt: Fenix PD36R PRO Rechargeable Flashlight runtime chart
-        - url: http://www.fenixlighting.com/cdn/shop/files/PD36RPRO_E03R-Gray_1200x1200.jpg?v=1759355843
+        - url: https://www.fenixlighting.com/cdn/shop/files/PD36RPRO_E03R-Gray_1200x1200.jpg?v=1759355843
           alt: Fenix PD36R Pro product photo
       specs:
         max_lumens: 2800
@@ -75,7 +75,7 @@ products:
           alt: Fenix E35 V3 spec chart
         - url: https://www.fenixlighting.com/cdn/shop/files/E35-V3-flashlight-runtime-chart.webp?v=1650396561
           alt: Fenix E35 V3.0 Flashlight - DISCONTINUED runtime chart
-        - url: http://www.fenixlighting.com/cdn/shop/products/Fenix-E35-V3-Flashlight_19330f0b-081c-42b8-86c1-8b0f9d838b9c-753981_1200x1200.jpg?v=1690844054
+        - url: https://www.fenixlighting.com/cdn/shop/products/Fenix-E35-V3-Flashlight_19330f0b-081c-42b8-86c1-8b0f9d838b9c-753981_1200x1200.jpg?v=1690844054
           alt: Fenix E35 V3.0 product photo
       specs:
         max_lumens: 3000
@@ -131,7 +131,7 @@ products:
           alt: Fenix TK20R V2 spec chart
         - url: https://www.fenixlighting.com/cdn/shop/files/fenix-tk20rv2-rechargeable-tactical-flashlight-runtime-chart.png?v=1649973466
           alt: Fenix TK20R V2.0 Rechargeable Tac Flashlight with T5 Pen runtime chart
-        - url: http://www.fenixlighting.com/cdn/shop/files/TK20R-v2_T5-Pen_1200x1200.jpg?v=1762967527
+        - url: https://www.fenixlighting.com/cdn/shop/files/TK20R-v2_T5-Pen_1200x1200.jpg?v=1762967527
           alt: Fenix TK20R V2.0 product photo
       specs:
         max_lumens: 3000
@@ -189,7 +189,7 @@ products:
           alt: Fenix LD30R spec chart
         - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight-runtime-chart.png?v=1697494774
           alt: Fenix LD30R Rechargeable Flashlight runtime chart
-        - url: http://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight_1200x1200.jpg?v=1770054676
+        - url: https://www.fenixlighting.com/cdn/shop/files/fenix-LD30R-rechargeable-flashlight_1200x1200.jpg?v=1770054676
           alt: Fenix LD30R product photo
       specs:
         max_lumens: 1600
@@ -244,7 +244,7 @@ products:
           alt: Fenix E09R spec chart
         - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-flashlight-runtime.webp?v=1650062780
           alt: Fenix E09R Rechargeable EDC Flashlight runtime chart
-        - url: http://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-rechargeable-flashlight_f0458914-071d-40ca-bfc3-d89619669dd7_1200x1200.jpg?v=1756130601
+        - url: https://www.fenixlighting.com/cdn/shop/files/Fenix-E09R-rechargeable-flashlight_f0458914-071d-40ca-bfc3-d89619669dd7_1200x1200.jpg?v=1756130601
           alt: Fenix E09R product photo
       specs:
         max_lumens: 600
@@ -298,9 +298,9 @@ products:
         - url: https://us.olicdn.com/image/pc-w3s-xivttc.jpg
           alt: Olight Warrior 3S product photo
         - url: https://us.olicdn.com/image/3in1-warrior-3s-jll-003-xz1y0j.jpg
-          alt: ""
+          alt: Olight Warrior 3S three-in-one view
         - url: https://cdn.olightstore.com/image/warrior-3s-csdbt-1920x850-pcd-ptjb4o.jpg
-          alt: ""
+          alt: Olight Warrior 3S banner
       specs:
         max_lumens: 2300
         sustained_lumens: 0
@@ -1084,8 +1084,12 @@ products:
       average_rating: 4.6
       manufacturer_url: https://flashlight.nitecore.com/product/mh12pro
       images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CJB1PLW9.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore MH12 Pro
+        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-800x800.jpg
+          alt: Nitecore MH12 Pro rechargeable flashlight
+        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-2-500x500.jpg
+          alt: Nitecore MH12 Pro side view
+        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-3-500x500.jpg
+          alt: Nitecore MH12 Pro detail
       specs:
         max_lumens: 3300
         sustained_lumens: 0
@@ -1134,8 +1138,12 @@ products:
       average_rating: 4.5
       manufacturer_url: https://flashlight.nitecore.com/product/e4k
       images:
-        - url: https://images-na.ssl-images-amazon.com/images/P/B0CGGPY1SX.01._SCLZZZZZZZ_SX500_.jpg
-          alt: Nitecore E4K
+        - url: https://www.nitecore.co.nz/assets/full/E4k.jpg
+          alt: Nitecore E4K compact EDC flashlight
+        - url: https://www.nitecore.co.nz/assets/alt_1/E4k.jpg
+          alt: Nitecore E4K side view
+        - url: https://www.nitecore.co.nz/assets/alt_2/E4k.jpg
+          alt: Nitecore E4K detail
       specs:
         max_lumens: 4400
         sustained_lumens: 0

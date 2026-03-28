@@ -78,6 +78,8 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                 Model <SortIcon active={sortKey === "name"} dir={sortDir} />
               </button>
             </th>
+            <th className="hide-mobile" style={{ width: 90 }}>Lumens</th>
+            <th className="hide-mobile" style={{ width: 90 }}>Throw</th>
             <th className="hide-mobile" style={{ width: 160 }}>Action</th>
           </tr>
         </thead>
@@ -119,6 +121,12 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                   {item.flashlight.brand}
                 </span>
               </td>
+              <td className="hide-mobile" style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
+                {item.flashlight.max_lumens ? item.flashlight.max_lumens.toLocaleString() : "—"}
+              </td>
+              <td className="hide-mobile" style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
+                {item.flashlight.beam_distance_m ? `${item.flashlight.beam_distance_m}m` : "—"}
+              </td>
               <td className="hide-mobile">
                 <AmazonCTA href={item.flashlight.amazon_url} />
               </td>
@@ -126,7 +134,7 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
           ))}
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={6} style={{ textAlign: "center", color: "var(--text-tertiary)", padding: 32 }}>
+              <td colSpan={8} style={{ textAlign: "center", color: "var(--text-tertiary)", padding: 32 }}>
                 No data yet. Run the scoring job first.
               </td>
             </tr>
