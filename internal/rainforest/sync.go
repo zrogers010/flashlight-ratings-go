@@ -104,6 +104,13 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 			}
 		}
 
+		// Fill in image_url if empty
+		oldImage := strings.TrimSpace(row[colImageURL])
+		if oldImage == "" && product.MainImage != "" {
+			changes = append(changes, fmt.Sprintf("image added"))
+			row[colImageURL] = product.MainImage
+		}
+
 		// Update amazon_url with current partner tag
 		if partnerTag != "" {
 			canonicalURL := fmt.Sprintf("https://www.amazon.com/dp/%s?tag=%s", asin, partnerTag)
