@@ -96,19 +96,19 @@ export function CompareTable({ items }: Props) {
               {items.map((item) => (
                 <th key={item.id} className="compare-model-head">
                   <div style={{ padding: "4px 0" }}>
-                    {item.image_url && (
+                    <div className="compare-head-image">
                       <ImageWithFallback
                         src={item.image_url}
                         alt={`${item.brand} ${item.name}`}
                       />
-                    )}
+                    </div>
                     <h4>
                       <Link href={`/flashlights/${item.id}`}>
                         {item.brand} {item.name}
                       </Link>
                     </h4>
                     <div className="spec-row" style={{ justifyContent: "center", marginTop: 6 }}>
-                      {item.max_lumens !== undefined && (
+                      {item.max_lumens != null && item.max_lumens > 1 && (
                         <SpecBadge type="lumens" value={`${item.max_lumens.toLocaleString()} lm`} />
                       )}
                       {item.battery_types?.[0] && (
