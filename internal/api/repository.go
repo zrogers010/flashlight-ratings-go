@@ -14,6 +14,7 @@ import (
 
 type flashlightFilters struct {
 	BatteryType string
+	UseCase     string
 	MinPrice    *float64
 	MaxPrice    *float64
 	IPRating    string
@@ -80,6 +81,22 @@ latest_scores AS (
 	JOIN scoring_profiles sp ON sp.id = fs.profile_id
 	JOIN latest_run lr ON lr.id = fs.run_id
 	GROUP BY fs.flashlight_id
+),
+battery_agg AS (
+	SELECT
+		fbc.flashlight_id,
+		json_agg(bt.code ORDER BY bt.code) AS battery_types
+	FROM flashlight_battery_compatibility fbc
+	JOIN battery_types bt ON bt.id = fbc.battery_type_id
+	GROUP BY fbc.flashlight_id
+),
+use_case_agg AS (
+	SELECT
+		fuc.flashlight_id,
+		json_agg(u.slug ORDER BY u.slug) AS use_case_tags
+	FROM flashlight_use_cases fuc
+	JOIN use_cases u ON u.id = fuc.use_case_id
+	GROUP BY fuc.flashlight_id
 )
 SELECT
 	f.id,
@@ -100,7 +117,9 @@ SELECT
 	ls.edc_score,
 	ls.value_score,
 	ls.throw_score,
-	ls.flood_score
+	ls.flood_score,
+	COALESCE(ba.battery_types, '[]'::json),
+	COALESCE(uca.use_case_tags, '[]'::json)
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
@@ -108,6 +127,8 @@ LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 LEFT JOIN latest_affiliate la ON la.flashlight_id = f.id
 LEFT JOIN latest_media lm ON lm.flashlight_id = f.id
 LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
+LEFT JOIN battery_agg ba ON ba.flashlight_id = f.id
+LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
 %s
 ORDER BY %s %s, f.id ASC
 LIMIT %d OFFSET %d
@@ -127,6 +148,7 @@ LIMIT %d OFFSET %d
 			modelCode, description, imageURL          sql.NullString
 			ip, amazonURL                             sql.NullString
 			price, tactical, edc, value, throw, flood sql.NullFloat64
+			batteryTypesJSON, useCaseTagsJSON          []byte
 		)
 		if err := rows.Scan(
 			&item.ID,
@@ -148,6 +170,8 @@ LIMIT %d OFFSET %d
 			&value,
 			&throw,
 			&flood,
+			&batteryTypesJSON,
+			&useCaseTagsJSON,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -166,6 +190,8 @@ LIMIT %d OFFSET %d
 		item.ValueScore = nullFloat(value)
 		item.ThrowScore = nullFloat(throw)
 		item.FloodScore = nullFloat(flood)
+		item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
+		item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
@@ -551,6 +577,22 @@ latest_scores AS (
 	JOIN scoring_profiles sp ON sp.id = fs.profile_id
 	JOIN latest_run lr ON lr.id = fs.run_id
 	GROUP BY fs.flashlight_id
+),
+battery_agg AS (
+	SELECT
+		fbc.flashlight_id,
+		json_agg(bt.code ORDER BY bt.code) AS battery_types
+	FROM flashlight_battery_compatibility fbc
+	JOIN battery_types bt ON bt.id = fbc.battery_type_id
+	GROUP BY fbc.flashlight_id
+),
+use_case_agg AS (
+	SELECT
+		fuc.flashlight_id,
+		json_agg(u.slug ORDER BY u.slug) AS use_case_tags
+	FROM flashlight_use_cases fuc
+	JOIN use_cases u ON u.id = fuc.use_case_id
+	GROUP BY fuc.flashlight_id
 )
 SELECT
 	f.id,
@@ -571,7 +613,9 @@ SELECT
 	ls.edc_score,
 	ls.value_score,
 	ls.throw_score,
-	ls.flood_score
+	ls.flood_score,
+	COALESCE(ba.battery_types, '[]'::json),
+	COALESCE(uca.use_case_tags, '[]'::json)
 FROM flashlights f
 JOIN brands b ON b.id = f.brand_id
 LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
@@ -579,6 +623,8 @@ LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 LEFT JOIN latest_affiliate la ON la.flashlight_id = f.id
 LEFT JOIN latest_media lm ON lm.flashlight_id = f.id
 LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
+LEFT JOIN battery_agg ba ON ba.flashlight_id = f.id
+LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
 WHERE f.id IN (%s)
 ORDER BY f.id ASC
 `, ph)
@@ -597,6 +643,7 @@ ORDER BY f.id ASC
 			modelCode, description, imageURL          sql.NullString
 			ip, amazonURL                             sql.NullString
 			price, tactical, edc, value, throw, flood sql.NullFloat64
+			batteryTypesJSON, useCaseTagsJSON          []byte
 		)
 		if err := rows.Scan(
 			&item.ID,
@@ -618,6 +665,8 @@ ORDER BY f.id ASC
 			&value,
 			&throw,
 			&flood,
+			&batteryTypesJSON,
+			&useCaseTagsJSON,
 		); err != nil {
 			return nil, err
 		}
@@ -636,6 +685,8 @@ ORDER BY f.id ASC
 		item.ValueScore = nullFloat(value)
 		item.ThrowScore = nullFloat(throw)
 		item.FloodScore = nullFloat(flood)
+		item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
+		item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 		items = append(items, item)
 	}
 	return items, rows.Err()
@@ -1453,6 +1504,17 @@ EXISTS (
 	if f.Brand != "" {
 		clauses = append(clauses, fmt.Sprintf("LOWER(b.name) = LOWER($%d)", argn))
 		args = append(args, f.Brand)
+		argn++
+	}
+	if f.UseCase != "" {
+		clauses = append(clauses, fmt.Sprintf(`EXISTS (
+	SELECT 1
+	FROM flashlight_use_cases fuc
+	JOIN use_cases u ON u.id = fuc.use_case_id
+	WHERE fuc.flashlight_id = f.id
+	  AND u.slug = $%d
+)`, argn))
+		args = append(args, strings.ToLower(f.UseCase))
 		argn++
 	}
 

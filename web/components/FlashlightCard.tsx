@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AmazonCTA } from "./AmazonCTA";
 import { ScoreBadge } from "./ScoreBadge";
+import { SpecBadge } from "./SpecBadge";
+import { CompareToggle } from "./CompareToggle";
 import { ImageWithFallback } from "./ImageWithFallback";
 import type { FlashlightItem } from "@/lib/api";
 
@@ -35,6 +37,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
   const score = topScore(item);
   const useCase = bestUseCase(item);
   const href = `/flashlights/${item.id}`;
+  const primaryBattery = item.battery_types?.[0];
 
   return (
     <article className="product-card">
@@ -59,16 +62,20 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       {useCase && <span className="badge badge-teal">Best for {useCase}</span>}
 
       <div className="spec-row">
-        <span>{fmt(item.max_lumens)} lm</span>
-        <span>{fmt(item.beam_distance_m)} m</span>
-        {item.waterproof_rating && <span>{item.waterproof_rating}</span>}
+        {item.max_lumens !== undefined && <SpecBadge type="lumens" value={`${fmt(item.max_lumens)} lm`} />}
+        {item.beam_distance_m !== undefined && <SpecBadge type="throw" value={`${fmt(item.beam_distance_m)} m`} />}
+        {primaryBattery && <SpecBadge type="battery" value={primaryBattery} />}
+        {item.waterproof_rating && <SpecBadge type="water" value={item.waterproof_rating} />}
       </div>
 
       <div className="cta-row">
-        {item.price_usd !== undefined && item.price_usd > 0 && (
-          <span className="card-price">${fmt(item.price_usd, 2)}</span>
-        )}
-        <AmazonCTA href={item.amazon_url} />
+        <CompareToggle id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+          {item.price_usd !== undefined && item.price_usd > 0 && (
+            <span className="card-price">${fmt(item.price_usd, 2)}</span>
+          )}
+          <AmazonCTA href={item.amazon_url} />
+        </div>
       </div>
     </article>
   );
