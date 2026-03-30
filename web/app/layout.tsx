@@ -127,7 +127,7 @@ export default function RootLayout({
           <div className="container">
             <Link href="/" className="brand">
               <span className="brand-icon">◉</span>
-              FLASHLIGHTRATINGS
+              FLASHLIGHT RATINGS
             </Link>
             <nav className="nav" id="main-nav">
               <Link href="/flashlights">Flashlights</Link>
@@ -147,7 +147,7 @@ export default function RootLayout({
           <div className="container">
             <div className="footer-grid">
               <div>
-                <p className="footer-brand">◉ FLASHLIGHTRATINGS</p>
+                <p className="footer-brand">◉ FLASHLIGHT RATINGS</p>
                 <p className="muted" style={{ fontSize: "0.88rem", maxWidth: 340 }}>
                   Data-driven flashlight rankings powered by verified specs,
                   algorithmic scoring, and real-time Amazon pricing.
