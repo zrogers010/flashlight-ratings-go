@@ -189,7 +189,7 @@ INSERT INTO flashlight_specs (
 )
 SELECT
   f.id,
-  COALESCE(c.max_lumens, 1),
+  c.max_lumens,
   c.sustained_lumens,
   c.max_candela,
   c.beam_distance_m,

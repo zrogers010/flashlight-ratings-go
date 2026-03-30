@@ -62,8 +62,8 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       {useCase && <span className="badge badge-teal">Best for {useCase}</span>}
 
       <div className="spec-row">
-        {item.max_lumens !== undefined && <SpecBadge type="lumens" value={`${fmt(item.max_lumens)} lm`} />}
-        {item.beam_distance_m !== undefined && <SpecBadge type="throw" value={`${fmt(item.beam_distance_m)} m`} />}
+        {item.max_lumens != null && item.max_lumens > 1 && <SpecBadge type="lumens" value={`${fmt(item.max_lumens)} lm`} />}
+        {item.beam_distance_m != null && item.beam_distance_m > 0 && <SpecBadge type="throw" value={`${fmt(item.beam_distance_m)} m`} />}
         {primaryBattery && <SpecBadge type="battery" value={primaryBattery} />}
         {item.waterproof_rating && <SpecBadge type="water" value={item.waterproof_rating} />}
       </div>
