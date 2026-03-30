@@ -13,13 +13,13 @@ export const metadata: Metadata = {
     "Answer 4 questions and get data-driven flashlight recommendations tailored to your use case, budget, battery preference, and size requirements."
 };
 
-type UseCase = "edc" | "tactical" | "law-enforcement" | "camping" | "search-rescue" | "weapon-mount" | "keychain";
+type UseCase = "any" | "edc" | "tactical" | "law-enforcement" | "camping" | "search-rescue" | "weapon-mount" | "keychain";
 type BatteryPreference = "any" | "18650" | "21700" | "cr123a" | "proprietary";
 type SizeConstraint = "any" | "pocket" | "compact" | "full-size";
 
 function parseUseCase(input?: string): UseCase {
-  const valid: UseCase[] = ["edc", "tactical", "law-enforcement", "camping", "search-rescue", "weapon-mount", "keychain"];
-  return valid.includes((input || "") as UseCase) ? (input as UseCase) : "edc";
+  const valid: UseCase[] = ["any", "edc", "tactical", "law-enforcement", "camping", "search-rescue", "weapon-mount", "keychain"];
+  return valid.includes((input || "") as UseCase) ? (input as UseCase) : "any";
 }
 
 function parseBudget(input?: string): number {
@@ -83,6 +83,7 @@ export default async function FindYoursPage({
           <div className="form-group">
             <label htmlFor="use">Use Case</label>
             <select name="use" id="use" defaultValue={run.intended_use}>
+              <option value="any">Any Use Case</option>
               <option value="edc">EDC / Everyday Carry</option>
               <option value="tactical">Tactical / Defense</option>
               <option value="law-enforcement">Law Enforcement</option>
@@ -155,9 +156,9 @@ export default async function FindYoursPage({
 
               <div className="spec-row">
                 <span className="badge badge-teal">{entry.category}</span>
-                <span>{entry.price_usd !== undefined ? `~$${fmt(entry.price_usd, 0)}` : "—"}</span>
-                <span>{fmt(entry.max_lumens)} lm</span>
-                <span>{fmt(entry.beam_distance_m)} m</span>
+                {entry.price_usd !== undefined && entry.price_usd > 0 && <span>~${fmt(entry.price_usd, 0)}</span>}
+                {entry.max_lumens != null && entry.max_lumens > 1 && <span>{fmt(entry.max_lumens)} lm</span>}
+                {entry.beam_distance_m != null && entry.beam_distance_m > 0 && <span>{fmt(entry.beam_distance_m)} m</span>}
               </div>
 
               <div className="score-bars">

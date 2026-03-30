@@ -1099,8 +1099,8 @@ func (s *Server) intelligenceRecommendations(ctx context.Context, req intelligen
 	}
 	ranked := rankIntelligence(candidates, req)
 	top := ranked
-	if len(top) > 5 {
-		top = top[:5]
+	if len(top) > 20 {
+		top = top[:20]
 	}
 
 	return intelligenceResponse{
@@ -1358,6 +1358,10 @@ func intelligenceUseCaseScore(c intelligenceCandidate, use string) float64 {
 	throwScore := valOr(c.ThrowScore, 0)
 	flood := valOr(c.FloodScore, 0)
 	switch use {
+	case "any":
+		best := math.Max(tactical, math.Max(edc, math.Max(value, math.Max(throwScore, flood))))
+		avg := (tactical + edc + value + throwScore + flood) / 5
+		return best*0.6 + avg*0.4
 	case "tactical", "law-enforcement", "weapon-mount":
 		return tactical*0.65 + throwScore*0.35
 	case "camping":
