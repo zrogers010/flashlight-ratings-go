@@ -345,7 +345,18 @@ WHERE trim(c.use_case_tags) <> ''
 ON CONFLICT (flashlight_id, use_case_id) DO UPDATE
   SET confidence = EXCLUDED.confidence;
 
--- Step 10: Media
+-- Step 10: Media – update existing primary image if URL changed, insert if missing
+UPDATE flashlight_media m
+SET url = c.image_url,
+    alt_text = c.brand_name || ' ' || c.model_name
+FROM cleaned c
+JOIN flashlights f ON f.slug = c.model_slug
+WHERE m.flashlight_id = f.id
+  AND m.media_type = 'image'
+  AND m.sort_order = 1
+  AND c.image_url IS NOT NULL
+  AND m.url <> c.image_url;
+
 INSERT INTO flashlight_media (flashlight_id, media_type, url, alt_text, sort_order)
 SELECT
   f.id,
@@ -361,7 +372,6 @@ WHERE c.image_url IS NOT NULL
     FROM flashlight_media m
     WHERE m.flashlight_id = f.id
       AND m.media_type = 'image'
-      AND m.url = c.image_url
   );
 
 -- Summary
