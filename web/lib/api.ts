@@ -36,6 +36,8 @@ export type FlashlightItem = {
   value_score?: number;
   throw_score?: number;
   flood_score?: number;
+  battery_types?: string[];
+  use_case_tags?: string[];
 };
 
 export type FlashlightDetail = FlashlightItem & {
@@ -182,12 +184,24 @@ export async function fetchCompare(ids: string) {
   return getJSON<{ items: FlashlightItem[] }>(`/compare?ids=${encodeURIComponent(ids)}`);
 }
 
-export async function fetchFlashlights(opts?: { brand?: string; maxPrice?: number; sortBy?: string; order?: string; pageSize?: number }) {
+export async function fetchFlashlights(opts?: {
+  brand?: string;
+  maxPrice?: number;
+  minPrice?: number;
+  sortBy?: string;
+  order?: string;
+  pageSize?: number;
+  useCase?: string;
+  batteryType?: string;
+}) {
   const params = new URLSearchParams({ page: "1", page_size: String(opts?.pageSize ?? 100) });
   if (opts?.brand) params.set("brand", opts.brand);
   if (opts?.maxPrice) params.set("max_price", String(opts.maxPrice));
+  if (opts?.minPrice) params.set("min_price", String(opts.minPrice));
   if (opts?.sortBy) params.set("sort_by", opts.sortBy);
   if (opts?.order) params.set("order", opts.order);
+  if (opts?.useCase) params.set("use_case", opts.useCase);
+  if (opts?.batteryType) params.set("battery_type", opts.batteryType);
   return getJSON<FlashlightListResponse>(`/flashlights?${params.toString()}`);
 }
 

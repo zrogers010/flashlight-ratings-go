@@ -20,6 +20,16 @@ const useCases = [
   { label: "Max Throw", href: "/best-flashlights/throw", icon: "🎯" }
 ];
 
+const quickFilters = [
+  { label: "All", href: "/flashlights" },
+  { label: "EDC", href: "/flashlights?use_case=edc" },
+  { label: "Tactical", href: "/flashlights?use_case=tactical" },
+  { label: "Camping", href: "/flashlights?use_case=camping" },
+  { label: "Search & Rescue", href: "/flashlights?use_case=search-rescue" },
+  { label: "Under $50", href: "/flashlights?max_price=50" },
+  { label: "Under $100", href: "/flashlights?max_price=100" },
+];
+
 const methodology = [
   { name: "Tactical", weights: "Candela 30% · Runtime 20% · Durability 20% · Throw 20% · Price 10%" },
   { name: "EDC", weights: "Runtime 30% · Flood 20% · Price 20% · Durability 15% · Lumens 15%" },
@@ -61,6 +71,8 @@ export default async function HomePage() {
   const prices = flashlights.items.map((x) => x.price_usd).filter((p): p is number => p !== undefined);
   const minPrice = prices.length ? Math.min(...prices) : 0;
 
+  const compareIds = topRanked.map((r) => r.flashlight.id).join(",");
+
   return (
     <section className="grid">
 
@@ -78,8 +90,8 @@ export default async function HomePage() {
           <Link href="/find-yours" className="button-link">
             Find Your Flashlight
           </Link>
-          <Link href="/rankings" className="button-link button-secondary">
-            View Rankings
+          <Link href="/compare" className="button-link button-secondary">
+            Compare & Rankings
           </Link>
         </div>
       </div>
@@ -148,17 +160,31 @@ export default async function HomePage() {
             />
           ))}
         </div>
+        {compareIds && (
+          <div style={{ marginTop: 16, textAlign: "center" }}>
+            <Link href={`/compare?ids=${compareIds}`} className="btn btn-ghost">
+              Compare Top 3 Side by Side →
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── Featured Models ───────────────────────── */}
       <div className="panel">
         <div className="section-header">
           <h2>Browse the Catalog</h2>
-          <Link href="/best-flashlights">See all models →</Link>
+          <Link href="/flashlights">See all models →</Link>
         </div>
-        <p className="muted" style={{ marginBottom: 16, fontSize: "0.9rem" }}>
+        <p className="muted" style={{ marginBottom: 12, fontSize: "0.9rem" }}>
           Specs, scores, and prices for every flashlight we track.
         </p>
+        <div className="filters" style={{ marginBottom: 16 }}>
+          {quickFilters.map((qf) => (
+            <Link key={qf.label} href={qf.href} className="chip">
+              {qf.label}
+            </Link>
+          ))}
+        </div>
         <div className="card-grid">
           {featured.map((item) => (
             <FlashlightCard key={item.id} item={item} />

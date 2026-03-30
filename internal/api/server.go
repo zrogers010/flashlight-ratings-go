@@ -58,6 +58,8 @@ type flashlightItem struct {
 	ValueScore     *float64 `json:"value_score,omitempty"`
 	ThrowScore     *float64 `json:"throw_score,omitempty"`
 	FloodScore     *float64 `json:"flood_score,omitempty"`
+	BatteryTypes   []string `json:"battery_types"`
+	UseCaseTags    []string `json:"use_case_tags"`
 }
 
 type paginatedFlashlightsResponse struct {
@@ -243,6 +245,7 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 	pageSize := clamp(parseIntDefault(r.URL.Query().Get("page_size"), 20), 1, 100)
 	filters := flashlightFilters{
 		BatteryType: strings.TrimSpace(r.URL.Query().Get("battery_type")),
+		UseCase:     strings.TrimSpace(r.URL.Query().Get("use_case")),
 		IPRating:    strings.TrimSpace(r.URL.Query().Get("ip_rating")),
 		Brand:       strings.TrimSpace(r.URL.Query().Get("brand")),
 		SortBy:      strings.TrimSpace(r.URL.Query().Get("sort_by")),

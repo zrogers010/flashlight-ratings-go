@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";
+import { CompareTray } from "@/components/CompareTray";
 import "./globals.css";
 
 const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
@@ -129,10 +130,9 @@ export default function RootLayout({
               FLASHLIGHTRATINGS
             </Link>
             <nav className="nav" id="main-nav">
-              <Link href="/best-flashlights">Best Flashlights</Link>
-              <Link href="/find-yours">Find Yours</Link>
+              <Link href="/flashlights">Flashlights</Link>
               <Link href="/compare">Compare</Link>
-              <Link href="/rankings">Rankings</Link>
+              <Link href="/find-yours">Find Yours</Link>
               <Link href="/guides">Guides</Link>
             </nav>
             <MobileNav />
@@ -140,6 +140,8 @@ export default function RootLayout({
         </header>
 
         <main className="main container">{children}</main>
+
+        <CompareTray />
 
         <footer className="site-footer">
           <div className="container">
@@ -153,17 +155,16 @@ export default function RootLayout({
               </div>
               <div className="footer-section">
                 <h4>Explore</h4>
-                <Link href="/best-flashlights">Best Flashlights</Link>
-                <Link href="/rankings">Rankings</Link>
-                <Link href="/compare">Compare</Link>
+                <Link href="/flashlights">All Flashlights</Link>
+                <Link href="/compare">Compare & Rankings</Link>
                 <Link href="/find-yours">Find Yours</Link>
               </div>
               <div className="footer-section">
                 <h4>Categories</h4>
-                <Link href="/best-flashlights/tactical">Tactical</Link>
-                <Link href="/best-flashlights/edc">EDC</Link>
-                <Link href="/best-flashlights/camping">Camping</Link>
-                <Link href="/best-flashlights/value">Best Value</Link>
+                <Link href="/flashlights?use_case=tactical">Tactical</Link>
+                <Link href="/flashlights?use_case=edc">EDC</Link>
+                <Link href="/flashlights?use_case=camping">Camping</Link>
+                <Link href="/flashlights?use_case=value">Best Value</Link>
               </div>
               <div className="footer-section">
                 <h4>Resources</h4>
