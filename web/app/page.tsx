@@ -77,12 +77,12 @@ export default async function HomePage() {
     <section className="grid">
 
       {/* ── Hero ──────────────────────────────────── */}
-      <div className="panel hero" style={{ textAlign: "center", padding: "48px 24px" }}>
+      <div className="panel hero hero-home" style={{ textAlign: "center" }}>
         <p className="kicker" style={{ marginBottom: 8 }}>Independent, Algorithm-Powered Reviews</p>
-        <h1 style={{ fontSize: "2.25rem", maxWidth: 700, margin: "0 auto 12px" }}>
+        <h1 className="hero-title">
           Best Flashlights of 2026, Ranked by Data
         </h1>
-        <p className="muted" style={{ maxWidth: 600, margin: "0 auto 24px", fontSize: "1.05rem" }}>
+        <p className="muted hero-subtitle">
           {catalogSize} flashlights scored across tactical, EDC, camping, throw, and value profiles.
           Verified manufacturer specs, algorithmic rankings, and live Amazon pricing — no sponsored placements.
         </p>
