@@ -345,17 +345,13 @@ WHERE trim(c.use_case_tags) <> ''
 ON CONFLICT (flashlight_id, use_case_id) DO UPDATE
   SET confidence = EXCLUDED.confidence;
 
--- Step 10: Media – update existing primary image if URL changed, insert if missing
-UPDATE flashlight_media m
-SET url = c.image_url,
-    alt_text = c.brand_name || ' ' || c.model_name
-FROM cleaned c
+-- Step 10: Media – replace all images with the canonical CSV URL
+DELETE FROM flashlight_media m
+USING cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
 WHERE m.flashlight_id = f.id
   AND m.media_type = 'image'
-  AND m.sort_order = 1
-  AND c.image_url IS NOT NULL
-  AND m.url <> c.image_url;
+  AND c.image_url IS NOT NULL;
 
 INSERT INTO flashlight_media (flashlight_id, media_type, url, alt_text, sort_order)
 SELECT
@@ -366,13 +362,7 @@ SELECT
   1
 FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
-WHERE c.image_url IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM flashlight_media m
-    WHERE m.flashlight_id = f.id
-      AND m.media_type = 'image'
-  );
+WHERE c.image_url IS NOT NULL;
 
 -- Summary
 SELECT

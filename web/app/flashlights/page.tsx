@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
-import { FacetedSearch } from "@/components/FacetedSearch";
+import { FilterBar, BrandSidebar } from "@/components/FacetedSearch";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
@@ -53,9 +53,13 @@ export default async function FlashlightsPage({
         </p>
       </div>
 
+      <Suspense>
+        <FilterBar />
+      </Suspense>
+
       <div className="catalog-layout">
         <Suspense>
-          <FacetedSearch brands={brands} />
+          <BrandSidebar brands={brands} />
         </Suspense>
 
         <div>
