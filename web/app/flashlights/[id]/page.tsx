@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { AmazonCTA } from "@/components/AmazonCTA";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FAQ } from "@/components/FAQ";
@@ -218,7 +218,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
               </div>
             </div>
           )}
-          <AmazonCTA href={data.amazon_url} />
+          <AddToCartButton id={data.id} brand={data.brand} name={data.name} image_url={data.image_url} amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
           <div className="buy-meta">
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
@@ -340,7 +340,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
             ${fmt(data.price_usd, 2)}
           </p>
         )}
-        <AmazonCTA href={data.amazon_url} />
+        <AddToCartButton id={data.id} brand={data.brand} name={data.name} image_url={data.image_url} amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
         <p className="muted" style={{ fontSize: "0.8rem", marginTop: 10 }}>
           As an Amazon Associate we earn from qualifying purchases.
         </p>
