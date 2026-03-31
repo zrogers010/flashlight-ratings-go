@@ -31,7 +31,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/intelligence/recommendations", s.handleIntelligenceRecommendations)
 	mux.HandleFunc("/intelligence/runs", s.handleIntelligenceRuns)
 	mux.HandleFunc("/intelligence/runs/", s.handleIntelligenceRunByID)
-	return mux
+	return SecurityMiddleware(mux)
 }
 
 type apiError struct {

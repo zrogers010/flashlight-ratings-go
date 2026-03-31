@@ -33,10 +33,18 @@ func main() {
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 
-	srv := api.NewServer(db)
+	apiSrv := api.NewServer(db)
+
+	httpSrv := &http.Server{
+		Addr:         addr,
+		Handler:      apiSrv.Routes(),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
 
 	log.Printf("api listening on %s", addr)
-	if err := http.ListenAndServe(addr, srv.Routes()); err != nil {
+	if err := httpSrv.ListenAndServe(); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
 }
