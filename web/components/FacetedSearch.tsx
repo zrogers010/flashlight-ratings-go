@@ -4,12 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 
 const USE_CASES = [
-  { value: "edc", label: "EDC" },
-  { value: "tactical", label: "Tactical" },
-  { value: "camping", label: "Camping" },
+  { value: "edc", label: "EDC / Everyday Carry" },
+  { value: "tactical", label: "Tactical / Defense" },
+  { value: "law-enforcement", label: "Law Enforcement" },
+  { value: "camping", label: "Camping / Outdoors" },
   { value: "search-rescue", label: "Search & Rescue" },
-  { value: "throw", label: "Max Throw" },
-  { value: "flood", label: "Flood" },
+  { value: "weapon-mount", label: "Weapon Mount" },
+  { value: "keychain", label: "Keychain / Ultra-Compact" },
   { value: "value", label: "Best Value" },
 ];
 
@@ -24,9 +25,9 @@ const BATTERY_TYPES = [
 
 const PRICE_RANGES = [
   { value: "50", label: "Under $50", min: undefined, max: 50 },
-  { value: "100", label: "$50–$100", min: 50, max: 100 },
-  { value: "200", label: "$100–$200", min: 100, max: 200 },
-  { value: "300", label: "$200–$300", min: 200, max: 300 },
+  { value: "100", label: "$50 – $100", min: 50, max: 100 },
+  { value: "200", label: "$100 – $200", min: 100, max: 200 },
+  { value: "300", label: "$200 – $300", min: 200, max: 300 },
   { value: "300+", label: "$300+", min: 300, max: undefined },
 ];
 
@@ -34,10 +35,10 @@ function useFilterActions() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const applyFilter = useCallback(
+  const setParam = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (params.get(key) === value) {
+      if (!value) {
         params.delete(key);
         if (key === "price") {
           params.delete("min_price");
@@ -64,11 +65,11 @@ function useFilterActions() {
     router.push("?", { scroll: false });
   }, [router]);
 
-  return { searchParams, applyFilter, clearAll };
+  return { searchParams, setParam, clearAll };
 }
 
 export function FilterBar() {
-  const { searchParams, applyFilter, clearAll } = useFilterActions();
+  const { searchParams, setParam, clearAll } = useFilterActions();
   const currentUseCase = searchParams.get("use_case") || "";
   const currentBattery = searchParams.get("battery_type") || "";
   const currentPrice = searchParams.get("price") || "";
@@ -77,48 +78,48 @@ export function FilterBar() {
   return (
     <div className="filter-bar">
       <div className="filter-bar-group">
-        <span className="filter-bar-label">Use Case</span>
-        <div className="filter-chips">
+        <label htmlFor="filter-use-case" className="filter-bar-label">Use Case</label>
+        <select
+          id="filter-use-case"
+          className="filter-select"
+          value={currentUseCase}
+          onChange={(e) => setParam("use_case", e.target.value)}
+        >
+          <option value="">Any Use Case</option>
           {USE_CASES.map((uc) => (
-            <button
-              key={uc.value}
-              className={`chip ${currentUseCase === uc.value ? "active" : ""}`}
-              onClick={() => applyFilter("use_case", uc.value)}
-            >
-              {uc.label}
-            </button>
+            <option key={uc.value} value={uc.value}>{uc.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       <div className="filter-bar-group">
-        <span className="filter-bar-label">Battery</span>
-        <div className="filter-chips">
+        <label htmlFor="filter-battery" className="filter-bar-label">Battery</label>
+        <select
+          id="filter-battery"
+          className="filter-select"
+          value={currentBattery}
+          onChange={(e) => setParam("battery_type", e.target.value)}
+        >
+          <option value="">Any Battery</option>
           {BATTERY_TYPES.map((bt) => (
-            <button
-              key={bt.value}
-              className={`chip ${currentBattery === bt.value ? "active" : ""}`}
-              onClick={() => applyFilter("battery_type", bt.value)}
-            >
-              {bt.label}
-            </button>
+            <option key={bt.value} value={bt.value}>{bt.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       <div className="filter-bar-group">
-        <span className="filter-bar-label">Price</span>
-        <div className="filter-chips">
+        <label htmlFor="filter-price" className="filter-bar-label">Price Range</label>
+        <select
+          id="filter-price"
+          className="filter-select"
+          value={currentPrice}
+          onChange={(e) => setParam("price", e.target.value)}
+        >
+          <option value="">Any Price</option>
           {PRICE_RANGES.map((pr) => (
-            <button
-              key={pr.value}
-              className={`chip ${currentPrice === pr.value ? "active" : ""}`}
-              onClick={() => applyFilter("price", pr.value)}
-            >
-              {pr.label}
-            </button>
+            <option key={pr.value} value={pr.value}>{pr.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       {hasAny && (
@@ -131,30 +132,57 @@ export function FilterBar() {
 }
 
 export function BrandSidebar({ brands }: { brands: string[] }) {
-  const { searchParams, applyFilter } = useFilterActions();
-  const currentBrand = searchParams.get("brand") || "";
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedBrands = (searchParams.get("brand") || "").split(",").filter(Boolean);
   const [expanded, setExpanded] = useState(false);
+
+  const toggleBrand = useCallback(
+    (brand: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const current = new Set(selectedBrands);
+      if (current.has(brand)) {
+        current.delete(brand);
+      } else {
+        current.add(brand);
+      }
+      if (current.size === 0) {
+        params.delete("brand");
+      } else {
+        params.set("brand", Array.from(current).join(","));
+      }
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams, selectedBrands]
+  );
 
   if (brands.length === 0) return null;
 
-  const visible = expanded ? brands : brands.slice(0, 15);
+  const visible = expanded ? brands : brands.slice(0, 20);
 
   return (
     <aside className="brand-sidebar">
-      <h4 className="brand-sidebar-title">Brands</h4>
+      <h4 className="brand-sidebar-title">
+        Brands
+        {selectedBrands.length > 0 && (
+          <span className="brand-count">{selectedBrands.length}</span>
+        )}
+      </h4>
       <ul className="brand-list">
         {visible.map((b) => (
           <li key={b}>
-            <button
-              className={`brand-item ${currentBrand === b ? "active" : ""}`}
-              onClick={() => applyFilter("brand", b)}
-            >
+            <label className={`brand-check ${selectedBrands.includes(b) ? "active" : ""}`}>
+              <input
+                type="checkbox"
+                checked={selectedBrands.includes(b)}
+                onChange={() => toggleBrand(b)}
+              />
               {b}
-            </button>
+            </label>
           </li>
         ))}
       </ul>
-      {brands.length > 15 && (
+      {brands.length > 20 && (
         <button
           className="brand-show-more"
           onClick={() => setExpanded(!expanded)}
