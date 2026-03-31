@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { RankingItem } from "@/lib/api";
 import Link from "next/link";
-import { AmazonCTA } from "@/components/AmazonCTA";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { useCompareStore } from "@/lib/compare-store";
@@ -183,7 +183,7 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                   {item.flashlight.beam_distance_m ? `${item.flashlight.beam_distance_m}m` : "—"}
                 </td>
                 <td className="hide-mobile">
-                  <AmazonCTA href={item.flashlight.amazon_url} />
+                  <AddToCartButton id={item.flashlight.id} brand={item.flashlight.brand} name={item.flashlight.name} image_url={item.flashlight.image_url} amazon_url={item.flashlight.amazon_url} price_usd={item.flashlight.price_usd} />
                 </td>
               </tr>
             );

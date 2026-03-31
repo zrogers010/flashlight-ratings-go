@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { AmazonCTA } from "@/components/AmazonCTA";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
@@ -181,7 +181,7 @@ export default async function FindYoursPage({
               </div>
 
               <div className="cta-row">
-                <AmazonCTA href={entry.amazon_url} />
+                <AddToCartButton id={entry.model_id} brand={entry.brand} name={entry.name} image_url={entry.image_url} amazon_url={entry.amazon_url} price_usd={entry.price_usd} />
               </div>
             </article>
           ))}

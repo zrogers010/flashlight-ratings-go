@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AmazonCTA } from "./AmazonCTA";
+import { AddToCartButton } from "./AddToCartButton";
 import { ScoreBadge } from "./ScoreBadge";
 import { SpecBadge } from "./SpecBadge";
 import { CompareToggle } from "./CompareToggle";
@@ -74,7 +74,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
           {item.price_usd !== undefined && item.price_usd > 0 && (
             <span className="card-price">${fmt(item.price_usd, 2)}</span>
           )}
-          <AmazonCTA href={item.amazon_url} />
+          <AddToCartButton id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} amazon_url={item.amazon_url} price_usd={item.price_usd} />
         </div>
       </div>
     </article>

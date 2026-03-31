@@ -3,7 +3,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { ImageWithFallback } from "./ImageWithFallback";
-import { AmazonCTA } from "./AmazonCTA";
+import { AddToCartButton } from "./AddToCartButton";
 import { SpecBadge } from "./SpecBadge";
 import {
   SPEC_DEFS,
@@ -116,7 +116,7 @@ export function CompareTable({ items }: Props) {
                       )}
                     </div>
                     <div style={{ marginTop: 8 }}>
-                      <AmazonCTA href={item.amazon_url} />
+                      <AddToCartButton id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} amazon_url={item.amazon_url} price_usd={item.price_usd} />
                     </div>
                   </div>
                 </th>

@@ -28,6 +28,7 @@ export function MobileNav() {
         <Link href="/compare" onClick={close}>Compare</Link>
         <Link href="/find-yours" onClick={close}>Find Yours</Link>
         <Link href="/guides" onClick={close}>Guides</Link>
+        <Link href="/cart" onClick={close}>Cart</Link>
         <hr />
         <Link href="/flashlights?use_case=tactical" onClick={close} className="mobile-sub">Tactical</Link>
         <Link href="/flashlights?use_case=edc" onClick={close} className="mobile-sub">EDC</Link>
