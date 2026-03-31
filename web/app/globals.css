@@ -1668,8 +1668,8 @@ select:focus, input:focus {
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 24px;
+  align-items: flex-end;
+  gap: 12px 20px;
   padding: 14px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -1678,8 +1678,8 @@ select:focus, input:focus {
 
 .filter-bar-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .filter-bar-label {
@@ -1691,24 +1691,34 @@ select:focus, input:focus {
   white-space: nowrap;
 }
 
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+.filter-select {
+  appearance: none;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 30px 7px 10px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 130px;
 }
 
-.filter-chips .chip {
-  font-size: 0.78rem;
-  padding: 4px 10px;
+.filter-select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 
 .btn-clear {
   all: unset;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--accent);
   font-weight: 500;
   margin-left: auto;
+  padding: 7px 0;
 }
 
 .btn-clear:hover {
@@ -1719,7 +1729,7 @@ select:focus, input:focus {
 
 .catalog-layout {
   display: grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns: 160px 1fr;
   gap: 20px;
   align-items: start;
 }
@@ -1727,6 +1737,8 @@ select:focus, input:focus {
 .brand-sidebar {
   position: sticky;
   top: calc(var(--header-h) + 16px);
+  max-height: calc(100vh - var(--header-h) - 40px);
+  overflow-y: auto;
 }
 
 .brand-sidebar-title {
@@ -1737,6 +1749,23 @@ select:focus, input:focus {
   font-weight: 600;
   margin-bottom: 10px;
   padding: 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  font-size: 0.68rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 9px;
+  padding: 0 5px;
+  font-weight: 700;
 }
 
 .brand-list {
@@ -1745,30 +1774,39 @@ select:focus, input:focus {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 
-.brand-item {
-  all: unset;
+.brand-check {
   cursor: pointer;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   width: 100%;
-  padding: 5px 8px;
+  padding: 4px 6px;
   font-size: 0.82rem;
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   transition: background 0.15s, color 0.15s;
   box-sizing: border-box;
+  user-select: none;
 }
 
-.brand-item:hover {
+.brand-check input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.brand-check:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
 }
 
-.brand-item.active {
-  background: var(--accent);
-  color: #fff;
+.brand-check.active {
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -2392,14 +2430,18 @@ select:focus, input:focus {
   }
 
   .filter-bar {
-    gap: 10px 16px;
+    gap: 8px 12px;
     padding: 10px 14px;
   }
 
+  .filter-select {
+    min-width: 0;
+    width: 100%;
+  }
+
   .filter-bar-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
   }
 
   .catalog-layout {
@@ -2409,26 +2451,20 @@ select:focus, input:focus {
 
   .brand-sidebar {
     position: static;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .brand-sidebar-title {
-    margin-bottom: 0;
-    margin-right: 4px;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .brand-list {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 2px 8px;
   }
 
-  .brand-item {
-    padding: 4px 10px;
+  .brand-check {
+    padding: 4px 6px;
     font-size: 0.78rem;
+    width: auto;
   }
 
   .brand-show-more {

@@ -1506,9 +1506,14 @@ EXISTS (
 		argn++
 	}
 	if f.Brand != "" {
-		clauses = append(clauses, fmt.Sprintf("LOWER(b.name) = LOWER($%d)", argn))
-		args = append(args, f.Brand)
-		argn++
+		brands := strings.Split(f.Brand, ",")
+		placeholders := make([]string, len(brands))
+		for i, br := range brands {
+			placeholders[i] = fmt.Sprintf("LOWER($%d)", argn)
+			args = append(args, strings.TrimSpace(br))
+			argn++
+		}
+		clauses = append(clauses, fmt.Sprintf("LOWER(b.name) IN (%s)", strings.Join(placeholders, ",")))
 	}
 	if f.UseCase != "" {
 		clauses = append(clauses, fmt.Sprintf(`EXISTS (
