@@ -70,13 +70,41 @@ func (rl *RateLimiter) cleanup() {
 }
 
 var (
-	getLimiter  = newRateLimiter(120, 30)  // 120 req/min, burst 30
-	postLimiter = newRateLimiter(12, 5)    // 12 req/min, burst 5
+	getLimiter  = newRateLimiter(120, 30) // 120 req/min, burst 30
+	postLimiter = newRateLimiter(12, 5)  // 12 req/min, burst 5
+
+	// Docker bridge and standard private networks — trusted internal callers
+	privateNets = func() []*net.IPNet {
+		cidrs := []string{
+			"10.0.0.0/8",
+			"172.16.0.0/12",
+			"192.168.0.0/16",
+			"127.0.0.0/8",
+		}
+		nets := make([]*net.IPNet, len(cidrs))
+		for i, c := range cidrs {
+			_, n, _ := net.ParseCIDR(c)
+			nets[i] = n
+		}
+		return nets
+	}()
 )
+
+func isPrivateIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	for _, n := range privateNets {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
 
 func extractIP(r *http.Request) string {
 	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		// First IP in the chain is the client
 		for i := 0; i < len(fwd); i++ {
 			if fwd[i] == ',' {
 				return fwd[:i]
@@ -109,19 +137,21 @@ func SecurityMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		ip := extractIP(r)
 
-		// Rate limiting
-		var limiter *RateLimiter
-		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
-			limiter = postLimiter
-		} else {
-			limiter = getLimiter
-		}
+		// Skip rate limiting for internal Docker / loopback callers (e.g. Next.js SSR)
+		if !isPrivateIP(ip) {
+			var limiter *RateLimiter
+			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
+				limiter = postLimiter
+			} else {
+				limiter = getLimiter
+			}
 
-		if !limiter.allow(ip) {
-			w.Header().Set("Retry-After", "10")
-			writeJSON(w, http.StatusTooManyRequests, apiError{Error: "rate limit exceeded"})
-			log.Printf("[RATE] %s %s %s — 429", r.Method, r.URL.Path, ip)
-			return
+			if !limiter.allow(ip) {
+				w.Header().Set("Retry-After", "10")
+				writeJSON(w, http.StatusTooManyRequests, apiError{Error: "rate limit exceeded"})
+				log.Printf("[RATE] %s %s %s — 429", r.Method, r.URL.Path, ip)
+				return
+			}
 		}
 
 		// Body size limit for POST/PUT/PATCH (1 MB)
