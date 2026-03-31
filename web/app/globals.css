@@ -357,6 +357,7 @@ img {
 
 .panel-flush {
   padding: 0;
+  overflow: hidden;
 }
 
 .hero {
@@ -1140,7 +1141,9 @@ select:focus, input:focus {
 .compare-table th,
 .compare-table td {
   vertical-align: top;
-  min-width: 180px;
+  min-width: 150px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
   scroll-snap-align: start;
 }
 
@@ -1149,10 +1152,10 @@ select:focus, input:focus {
   left: 0;
   background: var(--bg-card);
   z-index: 2;
-  min-width: 160px;
+  min-width: 130px;
   font-weight: 600;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   scroll-snap-align: none;
 }
 
@@ -1179,18 +1182,18 @@ select:focus, input:focus {
 }
 
 .compare-model-head {
-  min-width: 180px;
-  max-width: 220px;
+  min-width: 150px;
+  max-width: 190px;
 }
 
 .compare-model-head h4 {
-  margin: 8px 0 4px;
-  font-size: 0.9rem;
+  margin: 5px 0 3px;
+  font-size: 0.82rem;
 }
 
 .compare-head-image {
-  width: 120px;
-  height: 120px;
+  width: 90px;
+  height: 90px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -1207,8 +1210,8 @@ select:focus, input:focus {
 }
 
 .compare-model-head .button-link {
-  font-size: 0.75rem;
-  padding: 5px 10px;
+  font-size: 0.72rem;
+  padding: 4px 8px;
 }
 
 .compare-best {
@@ -1220,16 +1223,16 @@ select:focus, input:focus {
 .compare-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
+  gap: 12px;
+  padding: 8px 14px;
 }
 
 .compare-toggle-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-secondary);
   user-select: none;
@@ -1237,22 +1240,22 @@ select:focus, input:focus {
 
 .compare-toggle-label input[type="checkbox"] {
   accent-color: var(--teal);
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .compare-hidden-count {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .compare-group-header td {
   background: var(--bg-secondary);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  padding: 10px 14px;
+  padding: 6px 10px;
   cursor: pointer;
   user-select: none;
   transition: color 0.15s;
@@ -1279,7 +1282,7 @@ select:focus, input:focus {
 
 .compare-beam-row td {
   vertical-align: middle;
-  padding: 12px;
+  padding: 8px;
 }
 
 .compare-row-same td:not(.compare-row-label) {

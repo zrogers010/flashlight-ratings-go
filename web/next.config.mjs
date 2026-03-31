@@ -53,7 +53,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https://m.media-amazon.com https://images-na.ssl-images-amazon.com https://*.amazonaws.com",
+              "img-src 'self' data: https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.amazonaws.com",
               "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com",
               "form-action 'self' https://www.amazon.com",
               "frame-ancestors 'none'",
