@@ -13,22 +13,40 @@ export const metadata: Metadata = {
 
 const categories = [
   {
+    slug: "edc",
+    label: "Best Everyday Carry",
+    icon: "\uD83D\uDD11",
+    desc: "Compact, reliable, and pocket-friendly for daily use."
+  },
+  {
     slug: "tactical",
     label: "Best Tactical",
     icon: "\u2694",
-    desc: "High candela, durable, and duty-ready for law enforcement and defense."
-  },
-  {
-    slug: "edc",
-    label: "Best EDC",
-    icon: "\uD83D\uDD11",
-    desc: "Compact, reliable, and pocket-friendly for everyday carry."
+    desc: "High candela, durable, and duty-ready for defense and security."
   },
   {
     slug: "camping",
-    label: "Best for Camping",
+    label: "Best for Camping & Outdoors",
     icon: "\u26FA",
     desc: "Long runtime, wide beam, and weather-resistant for the outdoors."
+  },
+  {
+    slug: "search-rescue",
+    label: "Best for Search & Rescue",
+    icon: "\uD83D\uDD26",
+    desc: "Maximum throw and runtime for critical field operations."
+  },
+  {
+    slug: "survival",
+    label: "Best for Survival",
+    icon: "\uD83D\uDD25",
+    desc: "Bomb-proof reliability and rugged durability for emergency situations."
+  },
+  {
+    slug: "diving",
+    label: "Best for Diving & Maritime",
+    icon: "\uD83E\uDD3F",
+    desc: "Submersible lights rated for deep underwater use."
   },
   {
     slug: "value",

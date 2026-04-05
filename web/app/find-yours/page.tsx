@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     "Answer 4 questions and get data-driven flashlight recommendations tailored to your use case, budget, battery preference, and size requirements."
 };
 
-type UseCase = "any" | "edc" | "tactical" | "law-enforcement" | "camping" | "search-rescue" | "weapon-mount" | "keychain";
+type UseCase = "any" | "edc" | "tactical" | "camping" | "search-rescue" | "survival" | "diving" | "weapon-mount" | "keychain";
 type BatteryPreference = "any" | "18650" | "21700" | "cr123a" | "proprietary";
 type SizeConstraint = "any" | "pocket" | "compact" | "full-size";
 
 function parseUseCase(input?: string): UseCase {
-  const valid: UseCase[] = ["any", "edc", "tactical", "law-enforcement", "camping", "search-rescue", "weapon-mount", "keychain"];
+  const valid: UseCase[] = ["any", "edc", "tactical", "camping", "search-rescue", "survival", "diving", "weapon-mount", "keychain"];
   return valid.includes((input || "") as UseCase) ? (input as UseCase) : "any";
 }
 
@@ -84,11 +84,12 @@ export default async function FindYoursPage({
             <label htmlFor="use">Use Case</label>
             <select name="use" id="use" defaultValue={run.intended_use}>
               <option value="any">Any Use Case</option>
-              <option value="edc">EDC / Everyday Carry</option>
+              <option value="edc">Everyday Carry</option>
               <option value="tactical">Tactical / Defense</option>
-              <option value="law-enforcement">Law Enforcement</option>
-              <option value="camping">Camping / Outdoors</option>
+              <option value="camping">Camping &amp; Outdoors</option>
               <option value="search-rescue">Search &amp; Rescue</option>
+              <option value="survival">Survival</option>
+              <option value="diving">Diving &amp; Maritime</option>
               <option value="weapon-mount">Weapon Mount</option>
               <option value="keychain">Keychain / Ultra-Compact</option>
             </select>
@@ -181,7 +182,7 @@ export default async function FindYoursPage({
               </div>
 
               <div className="cta-row">
-                <AddToCartButton id={entry.model_id} brand={entry.brand} name={entry.name} image_url={entry.image_url} amazon_url={entry.amazon_url} price_usd={entry.price_usd} />
+                <BuyOnAmazonButton amazon_url={entry.amazon_url} price_usd={entry.price_usd} />
               </div>
             </article>
           ))}

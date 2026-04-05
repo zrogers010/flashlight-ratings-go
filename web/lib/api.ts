@@ -30,6 +30,9 @@ export type FlashlightItem = {
   beam_distance_m?: number;
   runtime_high_min?: number;
   waterproof_rating?: string;
+  weight_g?: number;
+  switch_type?: string;
+  led_model?: string;
   price_usd?: number;
   tactical_score?: number;
   edc_score?: number;
@@ -155,13 +158,18 @@ export type IntelligenceResponse = {
   top_results: IntelligenceRunResult[];
 };
 
-const API_BASE =
+const SERVER_API_BASE =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "http://localhost:8080";
 
+function getAPIBase(): string {
+  if (typeof window === "undefined") return SERVER_API_BASE;
+  return "/api";
+}
+
 async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getAPIBase()}${path}`, {
     cache: "no-store"
   });
   if (!res.ok) {
@@ -188,6 +196,10 @@ export async function fetchFlashlights(opts?: {
   brand?: string;
   maxPrice?: number;
   minPrice?: number;
+  minLumens?: number;
+  maxLumens?: number;
+  minThrow?: number;
+  maxThrow?: number;
   sortBy?: string;
   order?: string;
   pageSize?: number;
@@ -198,6 +210,10 @@ export async function fetchFlashlights(opts?: {
   if (opts?.brand) params.set("brand", opts.brand);
   if (opts?.maxPrice) params.set("max_price", String(opts.maxPrice));
   if (opts?.minPrice) params.set("min_price", String(opts.minPrice));
+  if (opts?.minLumens) params.set("min_lumens", String(opts.minLumens));
+  if (opts?.maxLumens) params.set("max_lumens", String(opts.maxLumens));
+  if (opts?.minThrow) params.set("min_throw", String(opts.minThrow));
+  if (opts?.maxThrow) params.set("max_throw", String(opts.maxThrow));
   if (opts?.sortBy) params.set("sort_by", opts.sortBy);
   if (opts?.order) params.set("order", opts.order);
   if (opts?.useCase) params.set("use_case", opts.useCase);
@@ -210,7 +226,7 @@ export async function fetchBrands() {
 }
 
 export async function createIntelligenceRun(input: IntelligenceRunInput) {
-  const res = await fetch(`${API_BASE}/intelligence/runs`, {
+  const res = await fetch(`${getAPIBase()}/intelligence/runs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -227,7 +243,7 @@ export async function fetchIntelligenceRun(runID: string | number) {
 }
 
 export async function fetchIntelligenceRecommendations(input: IntelligenceRunInput) {
-  const res = await fetch(`${API_BASE}/intelligence/recommendations`, {
+  const res = await fetch(`${getAPIBase()}/intelligence/recommendations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-const MAX_COMPARE = 5;
+const MAX_COMPARE = 4;
 
 type CompareItem = {
   id: number;

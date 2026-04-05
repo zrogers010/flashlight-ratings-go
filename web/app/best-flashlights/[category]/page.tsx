@@ -31,27 +31,51 @@ const categoryMap: Record<string, CategoryConfig> = {
     }
   },
   edc: {
-    label: "EDC",
+    label: "Everyday Carry",
     rankingKey: "edc",
-    h1: "Best EDC Flashlights",
+    h1: "Best Everyday Carry Flashlights",
     description:
       "Top everyday carry flashlights ranked by runtime, portability, price, and durability. Pocket-sized lights for daily use.",
     guide: {
-      title: "Choosing the Right EDC Flashlight",
+      title: "Choosing the Right Everyday Carry Flashlight",
       content:
-        "The best EDC flashlight disappears in your pocket until you need it. Look for a weight under 100g, a length under 120mm, and solid medium-mode runtime (4+ hours). USB-C charging is nearly essential for daily use. A good moonlight mode (sub-1 lumen) preserves night vision and extends battery life. Our EDC score weights runtime (30%), flood coverage (20%), price (20%), durability (15%), and lumens (15%)."
+        "The best everyday carry flashlight disappears in your pocket until you need it. Look for a weight under 100g, a length under 120mm, and solid medium-mode runtime (4+ hours). USB-C charging is nearly essential for daily use. A good moonlight mode (sub-1 lumen) preserves night vision and extends battery life. Our EDC score weights runtime (30%), flood coverage (20%), price (20%), durability (15%), and lumens (15%)."
     }
   },
   camping: {
-    label: "Camping",
+    label: "Camping & Outdoors",
     rankingKey: "flood",
-    h1: "Best Flashlights for Camping",
+    h1: "Best Flashlights for Camping & Outdoors",
     description:
       "Top camping flashlights ranked by flood output, runtime, and value. Bright, long-lasting illumination for the outdoors.",
     guide: {
       title: "Picking a Camping Flashlight",
       content:
         "Camping flashlights prioritize long runtime and wide, even illumination over raw throw distance. Look for models with 4+ hour medium-mode runtime, good flood beam patterns, and at least IPX4 water resistance. Magnetic tailcaps are useful for hands-free use in tents. Our flood score — which powers this category — weights lumens (50%), runtime (25%), price (15%), and durability (10%)."
+    }
+  },
+  survival: {
+    label: "Survival",
+    rankingKey: "tactical",
+    h1: "Best Flashlights for Survival",
+    description:
+      "Top survival flashlights ranked by durability, reliability, and runtime. Built to withstand the toughest conditions when failure is not an option.",
+    guide: {
+      title: "What Makes a Great Survival Flashlight?",
+      content:
+        "A survival flashlight must be utterly reliable. Look for bomb-proof construction (potted electronics, sealed housings), high impact resistance (2m+), IPX8 waterproofing, and long runtime on medium modes. Common battery types like AA or CR123A are preferred for field availability. Brands like Elzetta, MagLite, Coast Polysteel, and Streamlight Siege are built for worst-case scenarios. Our survival ranking uses the tactical score, emphasizing durability and runtime."
+    }
+  },
+  diving: {
+    label: "Diving & Maritime",
+    rankingKey: "tactical",
+    h1: "Best Dive Lights & Maritime Flashlights",
+    description:
+      "Top dive lights and underwater flashlights ranked for submersible performance. IPX8 rated for deep-sea diving and maritime use.",
+    guide: {
+      title: "Choosing a Dive Light",
+      content:
+        "Dive lights must be rated for actual submersion depth — not just splash-proof IPX4. Look for IPX8 ratings with manufacturer depth specifications (100m+ for recreational diving). Narrow beam angles (6-12 degrees) provide focused illumination underwater, while wider beams are better for video. Magnetic or rotary switches are preferred for gloved operation. Brands like OrcaTorch, ScubaPro, Wurkkos, and Underwater Kinetics specialize in submersible illumination."
     }
   },
   "search-rescue": {

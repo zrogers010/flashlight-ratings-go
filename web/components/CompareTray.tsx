@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useCompareStore } from "@/lib/compare-store";
+import { CompareOverlayTrigger } from "./CompareOverlay";
 
 export function CompareTray() {
   const items = useCompareStore((s) => s.items);
@@ -13,8 +13,6 @@ export function CompareTray() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted || items.length === 0) return null;
-
-  const ids = items.map((i) => i.id).join(",");
 
   return (
     <div className="compare-tray">
@@ -39,9 +37,9 @@ export function CompareTray() {
               </button>
             </div>
           ))}
-          {items.length < 5 && (
+          {items.length < 4 && (
             <span className="compare-tray-hint muted">
-              {items.length < 2 ? `Add ${2 - items.length} more to compare` : `${5 - items.length} slots left`}
+              {items.length < 2 ? `Add ${2 - items.length} more to compare` : `${4 - items.length} slots left`}
             </span>
           )}
         </div>
@@ -49,11 +47,9 @@ export function CompareTray() {
           <button className="btn btn-ghost btn-sm" onClick={clear}>
             Clear
           </button>
-          {items.length >= 2 && (
-            <Link href={`/compare?ids=${ids}`} className="button-link btn-sm">
-              Compare {items.length}
-            </Link>
-          )}
+          <CompareOverlayTrigger>
+            Compare {items.length}
+          </CompareOverlayTrigger>
         </div>
       </div>
     </div>

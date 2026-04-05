@@ -10,7 +10,7 @@ const useCases = ["overall", "tactical", "edc", "value", "throw", "flood"] as co
 const useCaseLabel: Record<(typeof useCases)[number], string> = {
   overall: "Overall",
   tactical: "Tactical",
-  edc: "EDC",
+  edc: "Everyday Carry",
   value: "Value",
   throw: "Throw",
   flood: "Flood"
@@ -18,7 +18,7 @@ const useCaseLabel: Record<(typeof useCases)[number], string> = {
 
 const useCaseDesc: Record<(typeof useCases)[number], string> = {
   overall: "Select flashlights to compare side by side, or browse all rankings by category.",
-  tactical: "Ranked by candela, runtime, durability, and throw — optimized for law enforcement and defense.",
+  tactical: "Ranked by candela, runtime, durability, and throw — optimized for tactical and defense.",
   edc: "Ranked by runtime, flood, price, and size — optimized for everyday pocket carry.",
   value: "Ranked by performance-per-dollar — the best specs for the lowest price.",
   throw: "Ranked by candela and beam distance — the farthest-reaching flashlights.",

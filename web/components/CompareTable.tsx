@@ -3,7 +3,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { ImageWithFallback } from "./ImageWithFallback";
-import { AddToCartButton } from "./AddToCartButton";
+import { BuyOnAmazonButton } from "./BuyOnAmazonButton";
 import { SpecBadge } from "./SpecBadge";
 import {
   SPEC_DEFS,
@@ -27,6 +27,7 @@ function getSpecValue(item: FlashlightDetail, key: string): unknown {
 
 export function CompareTable({ items }: Props) {
   const [hideSimilar, setHideSimilar] = useState(false);
+  const [highlightDiffs, setHighlightDiffs] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const maxDistance = useMemo(
@@ -81,6 +82,14 @@ export function CompareTable({ items }: Props) {
           />
           <span>Hide identical specs</span>
         </label>
+        <label className="compare-toggle-label">
+          <input
+            type="checkbox"
+            checked={highlightDiffs}
+            onChange={(e) => setHighlightDiffs(e.target.checked)}
+          />
+          <span>Highlight differences</span>
+        </label>
         {hiddenCount > 0 && (
           <span className="compare-hidden-count muted">
             Hiding {hiddenCount} identical {hiddenCount === 1 ? "row" : "rows"}
@@ -116,7 +125,7 @@ export function CompareTable({ items }: Props) {
                       )}
                     </div>
                     <div style={{ marginTop: 8 }}>
-                      <AddToCartButton id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} amazon_url={item.amazon_url} price_usd={item.price_usd} />
+                      <BuyOnAmazonButton amazon_url={item.amazon_url} price_usd={item.price_usd} />
                     </div>
                   </div>
                 </th>
@@ -184,32 +193,43 @@ export function CompareTable({ items }: Props) {
                   </td>
                 </tr>,
                 ...(!isCollapsed
-                  ? visibleRows.map((row) => (
-                      <tr
-                        key={row.spec.key}
-                        className={
-                          row.allSame ? "compare-row-same" : ""
-                        }
-                      >
-                        <td className="compare-row-label">
-                          {row.spec.label}
-                        </td>
-                        {row.formatted.map((val, i) => (
-                          <td
-                            key={i}
-                            className={
-                              row.bestIdx === i ? "compare-best" : ""
-                            }
-                            style={{
-                              fontFamily: "var(--font-mono)",
-                              fontSize: "0.9rem",
-                            }}
-                          >
-                            {val}
+                  ? visibleRows.map((row) => {
+                      const isDiff = !row.allSame && row.hasAnyData;
+                      const isChecklist = row.spec.group === "checklist";
+                      return (
+                        <tr
+                          key={row.spec.key}
+                          className={[
+                            row.allSame ? "compare-row-same" : "",
+                            highlightDiffs && isDiff ? "compare-diff" : "",
+                          ].filter(Boolean).join(" ")}
+                        >
+                          <td className="compare-row-label">
+                            {row.spec.label}
                           </td>
-                        ))}
-                      </tr>
-                    ))
+                          {row.formatted.map((val, i) => (
+                            <td
+                              key={i}
+                              className={
+                                row.bestIdx === i ? "compare-best" : ""
+                              }
+                              style={{
+                                fontFamily: "var(--font-mono)",
+                                fontSize: "0.9rem",
+                              }}
+                            >
+                              {isChecklist ? (
+                                <span className={val === "Yes" ? "check-yes" : val === "No" ? "check-no" : ""}>
+                                  {val === "Yes" ? "✓" : val === "No" ? "✗" : val}
+                                </span>
+                              ) : (
+                                val
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })
                   : []),
               ];
             })}

@@ -17,6 +17,15 @@ const nextConfig = {
       }
     ]
   },
+  async rewrites() {
+    const apiDest = process.env.API_BASE_URL || "http://localhost:8080";
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiDest}/:path*`
+      }
+    ];
+  },
   async headers() {
     return [
       {
@@ -54,7 +63,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.amazonaws.com",
-              "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com",
+              "connect-src 'self' https://flashlightratings.com https://www.google-analytics.com https://www.googletagmanager.com",
               "form-action 'self' https://www.amazon.com",
               "frame-ancestors 'none'",
               "base-uri 'self'"

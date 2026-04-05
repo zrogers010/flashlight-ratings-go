@@ -17,6 +17,10 @@ type flashlightFilters struct {
 	UseCase     string
 	MinPrice    *float64
 	MaxPrice    *float64
+	MinLumens   *int64
+	MaxLumens   *int64
+	MinThrow    *int64
+	MaxThrow    *int64
 	IPRating    string
 	Brand       string
 	SortBy      string
@@ -112,6 +116,9 @@ SELECT
 	s.beam_distance_m,
 	s.runtime_high_min,
 	s.waterproof_rating,
+	s.weight_g,
+	s.switch_type,
+	s.led_model,
 	lp.price,
 	ls.tactical_score,
 	ls.edc_score,
@@ -146,7 +153,8 @@ LIMIT %d OFFSET %d
 			item                                      flashlightItem
 			maxLumens, maxCandela, beam, runtimeHi    sql.NullInt64
 			modelCode, description, imageURL          sql.NullString
-			ip, amazonURL                             sql.NullString
+			ip, amazonURL, switchType, ledModel       sql.NullString
+			weight                                    sql.NullFloat64
 			price, tactical, edc, value, throw, flood sql.NullFloat64
 			batteryTypesJSON, useCaseTagsJSON          []byte
 		)
@@ -164,6 +172,9 @@ LIMIT %d OFFSET %d
 			&beam,
 			&runtimeHi,
 			&ip,
+			&weight,
+			&switchType,
+			&ledModel,
 			&price,
 			&tactical,
 			&edc,
@@ -184,6 +195,9 @@ LIMIT %d OFFSET %d
 		item.BeamDistanceM = nullInt(beam)
 		item.RuntimeHighMin = nullInt(runtimeHi)
 		item.Waterproof = nullString(ip)
+		item.WeightG = nullFloat(weight)
+		item.SwitchType = nullString(switchType)
+		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
@@ -608,6 +622,9 @@ SELECT
 	s.beam_distance_m,
 	s.runtime_high_min,
 	s.waterproof_rating,
+	s.weight_g,
+	s.switch_type,
+	s.led_model,
 	lp.price,
 	ls.tactical_score,
 	ls.edc_score,
@@ -641,7 +658,8 @@ ORDER BY f.id ASC
 			item                                      flashlightItem
 			maxLumens, maxCandela, beam, runtimeHi    sql.NullInt64
 			modelCode, description, imageURL          sql.NullString
-			ip, amazonURL                             sql.NullString
+			ip, amazonURL, switchType, ledModel       sql.NullString
+			weight                                    sql.NullFloat64
 			price, tactical, edc, value, throw, flood sql.NullFloat64
 			batteryTypesJSON, useCaseTagsJSON          []byte
 		)
@@ -659,6 +677,9 @@ ORDER BY f.id ASC
 			&beam,
 			&runtimeHi,
 			&ip,
+			&weight,
+			&switchType,
+			&ledModel,
 			&price,
 			&tactical,
 			&edc,
@@ -679,6 +700,9 @@ ORDER BY f.id ASC
 		item.BeamDistanceM = nullInt(beam)
 		item.RuntimeHighMin = nullInt(runtimeHi)
 		item.Waterproof = nullString(ip)
+		item.WeightG = nullFloat(weight)
+		item.SwitchType = nullString(switchType)
+		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
@@ -1362,12 +1386,16 @@ func intelligenceUseCaseScore(c intelligenceCandidate, use string) float64 {
 		best := math.Max(tactical, math.Max(edc, math.Max(value, math.Max(throwScore, flood))))
 		avg := (tactical + edc + value + throwScore + flood) / 5
 		return best*0.6 + avg*0.4
-	case "tactical", "law-enforcement", "weapon-mount":
+	case "tactical", "weapon-mount":
 		return tactical*0.65 + throwScore*0.35
 	case "camping":
 		return flood*0.5 + value*0.3 + edc*0.2
 	case "search-rescue":
 		return throwScore*0.5 + tactical*0.3 + flood*0.2
+	case "survival":
+		return tactical*0.5 + flood*0.3 + value*0.2
+	case "diving":
+		return tactical*0.4 + flood*0.4 + value*0.2
 	case "keychain", "edc":
 		return edc
 	default:
@@ -1478,7 +1506,14 @@ func buildFlashlightWhere(f flashlightFilters) (string, []any) {
 	argn := 1
 
 	if f.BatteryType != "" {
-		clauses = append(clauses, fmt.Sprintf(`
+		raw := strings.Split(f.BatteryType, ",")
+		var parts []string
+		for _, code := range raw {
+			c := strings.ToUpper(strings.TrimSpace(code))
+			if c == "" {
+				continue
+			}
+			parts = append(parts, fmt.Sprintf(`
 EXISTS (
 	SELECT 1
 	FROM flashlight_battery_compatibility fbc
@@ -1486,8 +1521,12 @@ EXISTS (
 	WHERE fbc.flashlight_id = f.id
 	  AND bt.code = $%d
 )`, argn))
-		args = append(args, strings.ToUpper(f.BatteryType))
-		argn++
+			args = append(args, c)
+			argn++
+		}
+		if len(parts) > 0 {
+			clauses = append(clauses, "("+strings.Join(parts, " OR ")+")")
+		}
 	}
 
 	if f.MinPrice != nil {
@@ -1524,6 +1563,26 @@ EXISTS (
 	  AND u.slug = $%d
 )`, argn))
 		args = append(args, strings.ToLower(f.UseCase))
+		argn++
+	}
+	if f.MinLumens != nil {
+		clauses = append(clauses, fmt.Sprintf("s.max_lumens >= $%d", argn))
+		args = append(args, *f.MinLumens)
+		argn++
+	}
+	if f.MaxLumens != nil {
+		clauses = append(clauses, fmt.Sprintf("s.max_lumens <= $%d", argn))
+		args = append(args, *f.MaxLumens)
+		argn++
+	}
+	if f.MinThrow != nil {
+		clauses = append(clauses, fmt.Sprintf("s.beam_distance_m >= $%d", argn))
+		args = append(args, *f.MinThrow)
+		argn++
+	}
+	if f.MaxThrow != nil {
+		clauses = append(clauses, fmt.Sprintf("s.beam_distance_m <= $%d", argn))
+		args = append(args, *f.MaxThrow)
 		argn++
 	}
 

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
-const categories = ["tactical", "edc", "camping", "search-rescue", "value", "throw", "flood"];
+const categories = ["tactical", "edc", "camping", "search-rescue", "survival", "diving", "value", "throw", "flood"];
 const guideSlugs = ["how-we-score", "throw-vs-flood", "battery-guide", "runtime-explained", "ip-ratings", "best-edc-weight"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/guides`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/best-flashlights/under-50`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/best-flashlights/under-100`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
-    { url: `${BASE_URL}/best-flashlights/for-law-enforcement`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
+    { url: `${BASE_URL}/best-flashlights/survival`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
   ];
 
   const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({

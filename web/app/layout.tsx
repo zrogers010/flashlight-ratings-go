@@ -3,7 +3,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";
 import { CompareTray } from "@/components/CompareTray";
-import { CartIndicator } from "@/components/CartIndicator";
 import "./globals.css";
 
 const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
@@ -136,7 +135,6 @@ export default function RootLayout({
               <Link href="/find-yours">Find Yours</Link>
               <Link href="/guides">Guides</Link>
             </nav>
-            <CartIndicator />
             <MobileNav />
           </div>
         </header>
