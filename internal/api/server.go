@@ -52,6 +52,9 @@ type flashlightItem struct {
 	BeamDistanceM  *int64   `json:"beam_distance_m,omitempty"`
 	RuntimeHighMin *int64   `json:"runtime_high_min,omitempty"`
 	Waterproof     *string  `json:"waterproof_rating,omitempty"`
+	WeightG        *float64 `json:"weight_g,omitempty"`
+	SwitchType     *string  `json:"switch_type,omitempty"`
+	LEDModel       *string  `json:"led_model,omitempty"`
 	PriceUSD       *float64 `json:"price_usd,omitempty"`
 	TacticalScore  *float64 `json:"tactical_score,omitempty"`
 	EDCScore       *float64 `json:"edc_score,omitempty"`
@@ -269,6 +272,38 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		filters.MaxPrice = &v
+	}
+	if v := strings.TrimSpace(r.URL.Query().Get("min_lumens")); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid min_lumens"})
+			return
+		}
+		filters.MinLumens = &n
+	}
+	if v := strings.TrimSpace(r.URL.Query().Get("max_lumens")); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid max_lumens"})
+			return
+		}
+		filters.MaxLumens = &n
+	}
+	if v := strings.TrimSpace(r.URL.Query().Get("min_throw")); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid min_throw"})
+			return
+		}
+		filters.MinThrow = &n
+	}
+	if v := strings.TrimSpace(r.URL.Query().Get("max_throw")); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid max_throw"})
+			return
+		}
+		filters.MaxThrow = &n
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

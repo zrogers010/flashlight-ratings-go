@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FAQ } from "@/components/FAQ";
@@ -40,13 +40,6 @@ function topScore(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
     data.throw_score || 0,
     data.flood_score || 0
   );
-}
-
-function toDate(v?: string) {
-  if (!v) return "—";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString();
 }
 
 function pros(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
@@ -218,7 +211,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
               </div>
             </div>
           )}
-          <AddToCartButton id={data.id} brand={data.brand} name={data.name} image_url={data.image_url} amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
+          <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
           <div className="buy-meta">
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
@@ -340,7 +333,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
             ${fmt(data.price_usd, 2)}
           </p>
         )}
-        <AddToCartButton id={data.id} brand={data.brand} name={data.name} image_url={data.image_url} amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
+        <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
         <p className="muted" style={{ fontSize: "0.8rem", marginTop: 10 }}>
           As an Amazon Associate we earn from qualifying purchases.
         </p>

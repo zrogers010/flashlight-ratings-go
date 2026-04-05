@@ -1,26 +1,15 @@
 import Link from "next/link";
-import { AddToCartButton } from "./AddToCartButton";
+import { BuyOnAmazonButton } from "./BuyOnAmazonButton";
 import { ScoreBadge } from "./ScoreBadge";
 import { SpecBadge } from "./SpecBadge";
 import { CompareToggle } from "./CompareToggle";
 import { ImageWithFallback } from "./ImageWithFallback";
+import { QuickSpecTooltip } from "./QuickSpecTooltip";
 import type { FlashlightItem } from "@/lib/api";
 
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
-}
-
-function bestUseCase(item: FlashlightItem) {
-  const scores = [
-    { label: "Tactical", v: item.tactical_score || 0 },
-    { label: "EDC", v: item.edc_score || 0 },
-    { label: "Value", v: item.value_score || 0 },
-    { label: "Throw", v: item.throw_score || 0 },
-    { label: "Flood", v: item.flood_score || 0 }
-  ];
-  scores.sort((a, b) => b.v - a.v);
-  return scores[0]?.v > 0 ? scores[0].label : null;
 }
 
 function topScore(item: FlashlightItem) {
@@ -33,14 +22,38 @@ function topScore(item: FlashlightItem) {
   );
 }
 
+const TAG_COLORS: Record<string, string> = {
+  tactical: "badge-red",
+  edc: "badge-blue",
+  camping: "badge-green",
+  diving: "badge-cyan",
+  "search-rescue": "badge-orange",
+  survival: "badge-orange",
+  "weapon-mount": "badge-red",
+  keychain: "badge-blue",
+  value: "badge-teal",
+};
+
+const TAG_LABELS: Record<string, string> = {
+  tactical: "Tactical",
+  edc: "Everyday Carry",
+  camping: "Camping & Outdoors",
+  diving: "Diving & Maritime",
+  "search-rescue": "Search & Rescue",
+  survival: "Survival",
+  "weapon-mount": "Weapon Mount",
+  keychain: "Keychain",
+  value: "Value",
+};
+
 export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: number }) {
   const score = topScore(item);
-  const useCase = bestUseCase(item);
   const href = `/flashlights/${item.id}`;
   const primaryBattery = item.battery_types?.[0];
+  const tags = (item.use_case_tags || []).slice(0, 2);
 
   return (
-    <article className="product-card">
+    <article className="product-card product-card--tooltip">
       <Link href={href} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
 
       <div className="image-card">
@@ -59,7 +72,15 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
         {score > 0 && <ScoreBadge score={score} size="sm" />}
       </div>
 
-      {useCase && <span className="badge badge-teal">Best for {useCase}</span>}
+      {tags.length > 0 && (
+        <div className="card-tags">
+          {tags.map((t) => (
+            <span key={t} className={`badge ${TAG_COLORS[t] || "badge-teal"}`}>
+              {TAG_LABELS[t] || t}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="spec-row">
         {item.max_lumens != null && item.max_lumens > 1 && <SpecBadge type="lumens" value={`${fmt(item.max_lumens)} lm`} />}
@@ -70,13 +91,12 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
 
       <div className="cta-row">
         <CompareToggle id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} />
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-          {item.price_usd !== undefined && item.price_usd > 0 && (
-            <span className="card-price">${fmt(item.price_usd, 2)}</span>
-          )}
-          <AddToCartButton id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} amazon_url={item.amazon_url} price_usd={item.price_usd} />
+        <div style={{ marginLeft: "auto" }}>
+          <BuyOnAmazonButton amazon_url={item.amazon_url} price_usd={item.price_usd} />
         </div>
       </div>
+
+      <QuickSpecTooltip item={item} />
     </article>
   );
 }

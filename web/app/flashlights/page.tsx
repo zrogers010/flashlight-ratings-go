@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
-import { FilterBar, BrandSidebar } from "@/components/FacetedSearch";
+import { SpecBar } from "@/components/FacetedSearch";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
@@ -12,33 +13,184 @@ export const metadata: Metadata = {
     "Browse every flashlight in our catalog. Filter by use case, battery type, price, and brand. Specs, scores, and current Amazon pricing for each model."
 };
 
+type CatalogSearchParams = {
+  use_case?: string;
+  battery_type?: string;
+  brand?: string;
+  min_price?: string;
+  max_price?: string;
+  min_lumens?: string;
+  max_lumens?: string;
+  min_throw?: string;
+  max_throw?: string;
+  sort_by?: string;
+  order?: string;
+};
+
+const CATALOG_QUERY_KEYS: (keyof CatalogSearchParams)[] = [
+  "use_case",
+  "battery_type",
+  "brand",
+  "min_price",
+  "max_price",
+  "min_lumens",
+  "max_lumens",
+  "min_throw",
+  "max_throw",
+  "sort_by",
+  "order"
+];
+
+const USE_CASE_LABELS: Record<string, string> = {
+  edc: "Everyday Carry",
+  tactical: "Tactical",
+  camping: "Camping & Outdoors",
+  "search-rescue": "Search & Rescue",
+  survival: "Survival",
+  diving: "Diving & Maritime",
+  "weapon-mount": "Weapon Mount",
+  keychain: "Keychain",
+};
+
+function parseQueryInt(s?: string): number | undefined {
+  if (s === undefined || s === "") return undefined;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function catalogHref(sp: CatalogSearchParams): string {
+  const p = new URLSearchParams();
+  for (const k of CATALOG_QUERY_KEYS) {
+    const v = sp[k];
+    if (v) p.set(k, v);
+  }
+  const q = p.toString();
+  return q ? `/flashlights?${q}` : "/flashlights";
+}
+
+function buildActiveFilterChips(sp: CatalogSearchParams): { label: string; href: string }[] {
+  const chips: { label: string; href: string }[] = [];
+
+  if (sp.use_case) {
+    chips.push({
+      label: `Use: ${USE_CASE_LABELS[sp.use_case] ?? sp.use_case}`,
+      href: catalogHref({ ...sp, use_case: undefined })
+    });
+  }
+
+  const batteries = (sp.battery_type || "").split(",").map((s) => s.trim()).filter(Boolean);
+  for (const b of batteries) {
+    const rest: CatalogSearchParams = { ...sp };
+    const next = batteries.filter((x) => x !== b);
+    rest.battery_type = next.length ? next.join(",") : undefined;
+    chips.push({ label: `Battery: ${b}`, href: catalogHref(rest) });
+  }
+
+  const brands = (sp.brand || "").split(",").map((s) => s.trim()).filter(Boolean);
+  for (const br of brands) {
+    const rest: CatalogSearchParams = { ...sp };
+    const next = brands.filter((x) => x !== br);
+    rest.brand = next.length ? next.join(",") : undefined;
+    chips.push({ label: `Brand: ${br}`, href: catalogHref(rest) });
+  }
+
+  if (sp.min_price || sp.max_price) {
+    let label = "Price";
+    if (sp.min_price && sp.max_price) {
+      label = `Price: $${sp.min_price}–$${sp.max_price}`;
+    } else if (sp.max_price) {
+      label = `Price: under $${sp.max_price}`;
+    } else if (sp.min_price) {
+      label = `Price: $${sp.min_price}+`;
+    }
+    chips.push({
+      label,
+      href: catalogHref({ ...sp, min_price: undefined, max_price: undefined })
+    });
+  }
+
+  if (sp.min_lumens || sp.max_lumens) {
+    const minL = parseQueryInt(sp.min_lumens);
+    const maxL = parseQueryInt(sp.max_lumens);
+    let label = "Lumens";
+    if (minL !== undefined && maxL !== undefined) {
+      label = `Lumens: ${minL.toLocaleString()}–${maxL.toLocaleString()}`;
+    } else if (minL !== undefined) {
+      label = `Lumens: ≥${minL.toLocaleString()}`;
+    } else if (maxL !== undefined) {
+      label = `Lumens: ≤${maxL.toLocaleString()}`;
+    }
+    chips.push({
+      label,
+      href: catalogHref({ ...sp, min_lumens: undefined, max_lumens: undefined })
+    });
+  }
+
+  if (sp.min_throw || sp.max_throw) {
+    const minT = parseQueryInt(sp.min_throw);
+    const maxT = parseQueryInt(sp.max_throw);
+    let label = "Throw";
+    if (minT !== undefined && maxT !== undefined) {
+      label = `Throw: ${minT.toLocaleString()}–${maxT.toLocaleString()} m`;
+    } else if (minT !== undefined) {
+      label = `Throw: ≥${minT.toLocaleString()} m`;
+    } else if (maxT !== undefined) {
+      label = `Throw: ≤${maxT.toLocaleString()} m`;
+    }
+    chips.push({
+      label,
+      href: catalogHref({ ...sp, min_throw: undefined, max_throw: undefined })
+    });
+  }
+
+  if (sp.sort_by || sp.order) {
+    const sortLabel = [sp.sort_by, sp.order].filter(Boolean).join(" · ");
+    chips.push({
+      label: `Sort: ${sortLabel}`,
+      href: catalogHref({ ...sp, sort_by: undefined, order: undefined })
+    });
+  }
+
+  return chips;
+}
+
 export default async function FlashlightsPage({
-  searchParams,
+  searchParams
 }: {
-  searchParams?: {
-    use_case?: string;
-    battery_type?: string;
-    brand?: string;
-    min_price?: string;
-    max_price?: string;
-    sort_by?: string;
-    order?: string;
-  };
+  searchParams?: CatalogSearchParams;
 }) {
+  const sp: CatalogSearchParams = searchParams ?? {};
+
   const [data, brands] = await Promise.all([
     fetchFlashlights({
-      useCase: searchParams?.use_case,
-      batteryType: searchParams?.battery_type,
-      brand: searchParams?.brand,
-      minPrice: searchParams?.min_price ? Number(searchParams.min_price) : undefined,
-      maxPrice: searchParams?.max_price ? Number(searchParams.max_price) : undefined,
-      sortBy: searchParams?.sort_by,
-      order: searchParams?.order,
+      useCase: sp.use_case,
+      batteryType: sp.battery_type,
+      brand: sp.brand,
+      minPrice: sp.min_price ? Number(sp.min_price) : undefined,
+      maxPrice: sp.max_price ? Number(sp.max_price) : undefined,
+      minLumens: parseQueryInt(sp.min_lumens),
+      maxLumens: parseQueryInt(sp.max_lumens),
+      minThrow: parseQueryInt(sp.min_throw),
+      maxThrow: parseQueryInt(sp.max_throw),
+      sortBy: sp.sort_by,
+      order: sp.order
     }),
-    fetchBrands(),
+    fetchBrands()
   ]);
 
-  const hasFilters = searchParams?.use_case || searchParams?.battery_type || searchParams?.brand || searchParams?.min_price || searchParams?.max_price;
+  const hasFilters = Boolean(
+    sp.use_case ||
+      sp.battery_type ||
+      sp.brand ||
+      sp.min_price ||
+      sp.max_price ||
+      sp.min_lumens ||
+      sp.max_lumens ||
+      sp.min_throw ||
+      sp.max_throw
+  );
+
+  const filterChips = buildActiveFilterChips(sp);
 
   return (
     <section className="grid">
@@ -53,16 +205,31 @@ export default async function FlashlightsPage({
         </p>
       </div>
 
-      <Suspense>
-        <FilterBar />
-      </Suspense>
-
-      <div className="catalog-layout">
+      <div className="catalog-grid-layout">
         <Suspense>
-          <BrandSidebar brands={brands} />
+          <SpecBar brands={brands} />
         </Suspense>
 
         <div>
+          {filterChips.length > 0 && (
+            <div className="filter-chips" aria-label="Active filters">
+              {filterChips.map((chip) => (
+                <Link
+                  key={chip.href}
+                  href={chip.href}
+                  className="filter-chip"
+                  scroll={false}
+                  aria-label={`Remove filter: ${chip.label}`}
+                >
+                  <span>{chip.label}</span>
+                  <span className="filter-chip-remove" aria-hidden>
+                    ×
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+
           <div className="card-grid">
             {data.items.map((item) => (
               <FlashlightCard key={item.id} item={item} />

@@ -17,6 +17,7 @@ export const SPEC_GROUPS = [
   { key: "physical", label: "Physical" },
   { key: "battery", label: "Battery & Charging" },
   { key: "features", label: "Features" },
+  { key: "checklist", label: "Checklist" },
   { key: "emitter", label: "Emitter & Optics" },
   { key: "scores", label: "Category Scores" },
   { key: "amazon", label: "Amazon" },
@@ -67,6 +68,17 @@ export const SPEC_DEFS: SpecDef[] = [
   { key: "has_moonlight_mode", label: "Moonlight Mode", group: "features", format: "boolean" },
   { key: "has_magnetic_tailcap", label: "Magnetic Tailcap", group: "features", format: "boolean" },
   { key: "has_pocket_clip", label: "Pocket Clip", group: "features", format: "boolean" },
+
+  // Checklist (boolean summary rendered as checkmark/X icons)
+  { key: "impact_resistance_m", label: "Impact Resistant", group: "checklist", format: "boolean" },
+  { key: "waterproof_rating", label: "Waterproof", group: "checklist", format: "boolean" },
+  { key: "usb_c_rechargeable", label: "USB-C Rechargeable", group: "checklist", format: "boolean" },
+  { key: "battery_replaceable", label: "Battery Replaceable", group: "checklist", format: "boolean" },
+  { key: "has_strobe", label: "Strobe Mode", group: "checklist", format: "boolean" },
+  { key: "has_memory_mode", label: "Memory Mode", group: "checklist", format: "boolean" },
+  { key: "has_lockout", label: "Lockout", group: "checklist", format: "boolean" },
+  { key: "has_magnetic_tailcap", label: "Magnetic Tailcap", group: "checklist", format: "boolean" },
+  { key: "has_pocket_clip", label: "Pocket Clip", group: "checklist", format: "boolean" },
 
   // Emitter & Optics
   { key: "led_model", label: "LED / Emitter", group: "emitter", format: "string" },
