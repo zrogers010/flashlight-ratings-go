@@ -26,17 +26,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   let productPages: MetadataRoute.Sitemap = [];
+  let vsPages: MetadataRoute.Sitemap = [];
   try {
     const API_BASE = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
     const res = await fetch(`${API_BASE}/flashlights?page=1&page_size=500`, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
-      productPages = (data.items || []).map((item: { id: number; slug?: string }) => ({
+      const items: { id: number }[] = data.items || [];
+      productPages = items.map((item) => ({
         url: `${BASE_URL}/flashlights/${item.id}`,
         lastModified: new Date(),
         changeFrequency: "weekly" as const,
         priority: 0.8
       }));
+
+      const topIds = items.slice(0, 10).map((i) => i.id);
+      for (let i = 0; i < topIds.length; i++) {
+        for (let j = i + 1; j < topIds.length; j++) {
+          vsPages.push({
+            url: `${BASE_URL}/compare/${topIds[i]}-vs-${topIds[j]}`,
+            lastModified: new Date(),
+            changeFrequency: "weekly" as const,
+            priority: 0.7
+          });
+        }
+      }
     }
   } catch {
     // API unavailable during build; product pages will be added on next regeneration
@@ -49,5 +63,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  return [...staticPages, ...categoryPages, ...guidePages, ...productPages];
+  return [...staticPages, ...categoryPages, ...guidePages, ...productPages, ...vsPages];
 }

@@ -20,6 +20,14 @@ function yesNo(v?: boolean) {
   return v ? "Yes" : "No";
 }
 
+const BEST_FOR_SLUG: Record<string, string> = {
+  Tactical: "tactical",
+  EDC: "edc",
+  Value: "value",
+  Throw: "throw",
+  Flood: "flood",
+};
+
 function bestForLabel(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
   const picks = [
     { label: "Tactical", value: data.tactical_score || 0 },
@@ -188,7 +196,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
             </div>
           )}
           <div className="spec-row" style={{ marginBottom: 8 }}>
-            <span className="badge badge-teal">Best for {bestFor}</span>
+            <Link href={`/best-flashlights/${BEST_FOR_SLUG[bestFor] || "tactical"}`} className="badge badge-teal" style={{ textDecoration: "none" }}>Best for {bestFor}</Link>
             <span>{fmt(data.max_lumens)} lm</span>
             <span>{fmt(data.beam_distance_m)} m throw</span>
             <span>{data.waterproof_rating || "—"}</span>
@@ -211,7 +219,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
               </div>
             </div>
           )}
-          <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
+          <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" priceUpdatedAt={data.price_last_updated_at} />
           <div className="buy-meta">
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
@@ -383,7 +391,7 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
         <div className="panel">
           <div className="section-header">
             <h2>Similar Flashlights</h2>
-            <Link href="/best-flashlights">Browse all →</Link>
+            <Link href={`/best-flashlights/${BEST_FOR_SLUG[bestFor] || "tactical"}`}>Browse {bestFor} →</Link>
           </div>
           <p className="muted" style={{ marginBottom: 16, fontSize: "0.9rem" }}>
             Other models in a similar price range you should consider.

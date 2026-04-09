@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { BreadcrumbStructuredData } from "@/components/StructuredData";
+import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/StructuredData";
 import { fetchRankings } from "@/lib/api";
 
 type CategoryConfig = {
@@ -165,6 +165,16 @@ export default async function CategoryPage({ params }: { params: { category: str
   return (
     <section className="grid">
       <BreadcrumbStructuredData items={[{ name: "Best Flashlights", href: "/best-flashlights" }, { name: config.label }]} />
+      <ItemListStructuredData
+        name={config.h1}
+        items={data.items.slice(0, 10).map((item) => ({
+          position: item.rank,
+          name: `${item.flashlight.brand} ${item.flashlight.name}`,
+          url: `/flashlights/${item.flashlight.id}`,
+          image: item.flashlight.image_url,
+          price: item.flashlight.price_usd
+        }))}
+      />
       <Breadcrumbs items={[{ label: "Best Flashlights", href: "/best-flashlights" }, { label: config.label }]} />
 
       <div className="panel hero">
