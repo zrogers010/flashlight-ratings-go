@@ -8,9 +8,9 @@ import { fetchFlashlights, fetchRankings } from "@/lib/api";
 import type { FlashlightItem } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "Gear Discovery Dashboard — Flashlight Specs & Rankings | FlashlightRatings",
+  title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews | FlashlightRatings",
   description:
-    "Data-dense flashlight catalog: filter by use case, compare verified specs, and browse algorithmic tactical rankings with live Amazon pricing.",
+    "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
   alternates: { canonical: "/" }
 };
 
@@ -249,6 +249,23 @@ export default async function HomePage() {
           <p className="kicker">Starting At</p>
           <p className="stat-value">${minPrice.toFixed(0)}</p>
           <p className="stat-label">lowest in catalog</p>
+        </div>
+      </div>
+
+      <div className="panel panel-tight">
+        <div className="section-header dashboard-section-head">
+          <h2>Best Flashlights by Category</h2>
+          <Link href="/best-flashlights">All categories →</Link>
+        </div>
+        <div className="spec-row" style={{ flexWrap: "wrap", gap: 8 }}>
+          <Link href="/best-flashlights/tactical" className="chip">Tactical</Link>
+          <Link href="/best-flashlights/edc" className="chip">EDC</Link>
+          <Link href="/best-flashlights/camping" className="chip">Camping</Link>
+          <Link href="/best-flashlights/search-rescue" className="chip">Search &amp; Rescue</Link>
+          <Link href="/best-flashlights/survival" className="chip">Survival</Link>
+          <Link href="/best-flashlights/value" className="chip">Best Value</Link>
+          <Link href="/best-flashlights/throw" className="chip">Max Throw</Link>
+          <Link href="/best-flashlights/flood" className="chip">Max Flood</Link>
         </div>
       </div>
 

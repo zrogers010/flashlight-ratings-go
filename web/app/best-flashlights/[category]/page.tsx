@@ -31,15 +31,15 @@ const categoryMap: Record<string, CategoryConfig> = {
     }
   },
   edc: {
-    label: "Everyday Carry",
+    label: "EDC",
     rankingKey: "edc",
-    h1: "Best Everyday Carry Flashlights",
+    h1: "Best EDC Flashlights",
     description:
-      "Top everyday carry flashlights ranked by runtime, portability, price, and durability. Pocket-sized lights for daily use.",
+      "Top EDC (everyday carry) flashlights ranked by runtime, portability, price, and durability. Pocket-sized lights for daily use.",
     guide: {
-      title: "Choosing the Right Everyday Carry Flashlight",
+      title: "Choosing the Right EDC Flashlight",
       content:
-        "The best everyday carry flashlight disappears in your pocket until you need it. Look for a weight under 100g, a length under 120mm, and solid medium-mode runtime (4+ hours). USB-C charging is nearly essential for daily use. A good moonlight mode (sub-1 lumen) preserves night vision and extends battery life. Our EDC score weights runtime (30%), flood coverage (20%), price (20%), durability (15%), and lumens (15%)."
+        "The best EDC flashlight disappears in your pocket until you need it. Look for a weight under 100g, a length under 120mm, and solid medium-mode runtime (4+ hours). USB-C charging is nearly essential for daily use. A good moonlight mode (sub-1 lumen) preserves night vision and extends battery life. Our EDC score weights runtime (30%), flood coverage (20%), price (20%), durability (15%), and lumens (15%)."
     }
   },
   camping: {
