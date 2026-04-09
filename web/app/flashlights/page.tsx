@@ -10,7 +10,8 @@ import { fetchFlashlights, fetchBrands } from "@/lib/api";
 export const metadata: Metadata = {
   title: "All Flashlights — Full Catalog with Specs & Prices",
   description:
-    "Browse every flashlight in our catalog. Filter by use case, battery type, price, and brand. Specs, scores, and current Amazon pricing for each model."
+    "Browse every flashlight in our catalog. Filter by use case, battery type, price, and brand. Specs, scores, and current Amazon pricing for each model.",
+  alternates: { canonical: "/flashlights" }
 };
 
 type CatalogSearchParams = {

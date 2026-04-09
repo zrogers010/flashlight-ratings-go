@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { BreadcrumbStructuredData } from "@/components/StructuredData";
 
+type RelatedLink = { href: string; label: string };
+
 type GuideContent = {
   title: string;
   description: string;
   category: string;
   body: React.ReactNode;
+  relatedLinks: RelatedLink[];
 };
 
 const guides: Record<string, GuideContent> = {
@@ -120,6 +123,13 @@ const guides: Record<string, GuideContent> = {
         </p>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/tactical", label: "Best Tactical Flashlights" },
+      { href: "/best-flashlights/edc", label: "Best EDC Flashlights" },
+      { href: "/best-flashlights/value", label: "Best Value Flashlights" },
+      { href: "/best-flashlights/throw", label: "Best Throw Flashlights" },
+      { href: "/best-flashlights/flood", label: "Best Flood Flashlights" },
+    ],
   },
 
   "throw-vs-flood": {
@@ -227,6 +237,12 @@ const guides: Record<string, GuideContent> = {
         </p>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/throw", label: "Best Throw Flashlights" },
+      { href: "/best-flashlights/flood", label: "Best Flood Flashlights" },
+      { href: "/best-flashlights/search-rescue", label: "Best Search & Rescue Flashlights" },
+      { href: "/best-flashlights/camping", label: "Best Camping Flashlights" },
+    ],
   },
 
   "battery-guide": {
@@ -338,6 +354,12 @@ const guides: Record<string, GuideContent> = {
         </p>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/edc", label: "Best EDC Flashlights" },
+      { href: "/best-flashlights/tactical", label: "Best Tactical Flashlights" },
+      { href: "/best-flashlights/survival", label: "Best Survival Flashlights" },
+      { href: "/flashlights", label: "Browse All Flashlights" },
+    ],
   },
 
   "runtime-explained": {
@@ -419,6 +441,11 @@ const guides: Record<string, GuideContent> = {
         </ul>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/edc", label: "Best EDC Flashlights" },
+      { href: "/best-flashlights/tactical", label: "Best Tactical Flashlights" },
+      { href: "/best-flashlights/camping", label: "Best Camping Flashlights" },
+    ],
   },
 
   "ip-ratings": {
@@ -517,6 +544,12 @@ const guides: Record<string, GuideContent> = {
         </p>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/tactical", label: "Best Tactical Flashlights" },
+      { href: "/best-flashlights/diving", label: "Best Dive Lights" },
+      { href: "/best-flashlights/survival", label: "Best Survival Flashlights" },
+      { href: "/best-flashlights/camping", label: "Best Camping Flashlights" },
+    ],
   },
 
   "best-edc-weight": {
@@ -599,6 +632,11 @@ const guides: Record<string, GuideContent> = {
         </p>
       </>
     ),
+    relatedLinks: [
+      { href: "/best-flashlights/edc", label: "Best EDC Flashlights" },
+      { href: "/best-flashlights/value", label: "Best Value Flashlights" },
+      { href: "/flashlights", label: "Browse All Flashlights" },
+    ],
   },
 };
 
@@ -655,7 +693,19 @@ export default async function GuidePage({
           {guide.description}
         </p>
         <div className="guide-body">{guide.body}</div>
-        <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
+        {guide.relatedLinks.length > 0 && (
+          <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
+            <h3 style={{ fontSize: "0.95rem", marginBottom: 12 }}>Related Rankings</h3>
+            <div className="spec-row" style={{ flexWrap: "wrap", gap: 8 }}>
+              {guide.relatedLinks.map((rl) => (
+                <Link key={rl.href} href={rl.href} className="chip">
+                  {rl.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
           <Link href="/guides" className="btn btn-ghost btn-sm">
             ← All Guides
           </Link>

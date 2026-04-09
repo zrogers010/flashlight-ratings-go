@@ -8,7 +8,8 @@ import { fetchFlashlights, fetchBrands } from "@/lib/api";
 export const metadata: Metadata = {
   title: "Best Flashlights 2026 — Expert-Ranked by Category",
   description:
-    "Browse the best flashlights ranked across tactical, EDC, camping, search & rescue, value, and throw categories. Data-driven scores based on verified specs."
+    "Browse the best flashlights ranked across tactical, EDC, camping, search & rescue, value, and throw categories. Data-driven scores based on verified specs.",
+  alternates: { canonical: "/best-flashlights" }
 };
 
 const categories = [

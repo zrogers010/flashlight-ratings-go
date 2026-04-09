@@ -76,6 +76,52 @@ export function FAQStructuredData({ items }: { items: { q: string; a: string }[]
   );
 }
 
+export function ItemListStructuredData({
+  items,
+  name
+}: {
+  items: { name: string; url: string; position: number; image?: string; price?: number }[];
+  name: string;
+}) {
+  if (!items.length) return null;
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: items.length,
+    itemListElement: items.map((item) => {
+      const entry: Record<string, unknown> = {
+        "@type": "ListItem",
+        position: item.position,
+        name: item.name,
+        url: item.url
+      };
+      if (item.image) entry.image = item.image;
+      if (item.price !== undefined) {
+        entry.item = {
+          "@type": "Product",
+          name: item.name,
+          offers: {
+            "@type": "Offer",
+            price: item.price.toFixed(2),
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock"
+          }
+        };
+      }
+      return entry;
+    })
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 export function BreadcrumbStructuredData({ items }: { items: { name: string; href?: string }[] }) {
   const schema = {
     "@context": "https://schema.org",
