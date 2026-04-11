@@ -34,9 +34,12 @@ type SpecRow struct {
 	WaterproofRating  sql.NullString
 	ImpactResistanceM sql.NullFloat64
 	PriceUSD          sql.NullFloat64
+	AmazonAvgRating   sql.NullFloat64
+	AmazonRatingCount sql.NullFloat64
 }
 
 type ScoreOutput struct {
+	Overall  float64
 	Tactical float64
 	EDC      float64
 	Value    float64
@@ -56,7 +59,7 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 		opts.RunLabel = fmt.Sprintf("batch-%s", time.Now().UTC().Format("20060102-150405"))
 	}
 	if strings.TrimSpace(opts.FormulaVersion) == "" {
-		opts.FormulaVersion = "v1"
+		opts.FormulaVersion = "v2"
 	}
 	if strings.TrimSpace(opts.InitiatedBy) == "" {
 		opts.InitiatedBy = "scorejob"
@@ -74,7 +77,7 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 	}
 	defer tx.Rollback()
 
-	profileIDs, err := ensureProfiles(ctx, tx, []string{"tactical", "edc", "value", "throw", "flood"})
+	profileIDs, err := ensureProfiles(ctx, tx, []string{"overall", "tactical", "edc", "value", "throw", "flood"})
 	if err != nil {
 		_ = failRun(ctx, e.db, runID, err)
 		return runID, err
@@ -86,27 +89,25 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 		return runID, err
 	}
 
+	profiles := []struct {
+		key   string
+		score func(ScoreOutput) float64
+	}{
+		{"overall", func(s ScoreOutput) float64 { return s.Overall }},
+		{"tactical", func(s ScoreOutput) float64 { return s.Tactical }},
+		{"edc", func(s ScoreOutput) float64 { return s.EDC }},
+		{"value", func(s ScoreOutput) float64 { return s.Value }},
+		{"throw", func(s ScoreOutput) float64 { return s.Throw }},
+		{"flood", func(s ScoreOutput) float64 { return s.Flood }},
+	}
+
 	for _, row := range rows {
 		scores, breakdown := computeScores(row, opts.FormulaVersion)
-		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["tactical"], scores.Tactical, breakdown); err != nil {
-			_ = failRun(ctx, e.db, runID, err)
-			return runID, err
-		}
-		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["edc"], scores.EDC, breakdown); err != nil {
-			_ = failRun(ctx, e.db, runID, err)
-			return runID, err
-		}
-		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["value"], scores.Value, breakdown); err != nil {
-			_ = failRun(ctx, e.db, runID, err)
-			return runID, err
-		}
-		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["throw"], scores.Throw, breakdown); err != nil {
-			_ = failRun(ctx, e.db, runID, err)
-			return runID, err
-		}
-		if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs["flood"], scores.Flood, breakdown); err != nil {
-			_ = failRun(ctx, e.db, runID, err)
-			return runID, err
+		for _, p := range profiles {
+			if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs[p.key], p.score(scores), breakdown); err != nil {
+				_ = failRun(ctx, e.db, runID, err)
+				return runID, err
+			}
 		}
 	}
 
@@ -136,7 +137,9 @@ SELECT
 	s.runtime_high_min,
 	s.waterproof_rating,
 	s.impact_resistance_m,
-	p.price
+	p.price,
+	a.average_rating,
+	a.rating_count
 FROM flashlights f
 JOIN flashlight_specs s ON s.flashlight_id = f.id
 LEFT JOIN LATERAL (
@@ -147,6 +150,13 @@ LEFT JOIN LATERAL (
 	ORDER BY p1.captured_at DESC
 	LIMIT 1
 ) p ON TRUE
+LEFT JOIN LATERAL (
+	SELECT a1.average_rating, a1.rating_count
+	FROM amazon_product_snapshots a1
+	WHERE a1.flashlight_id = f.id
+	ORDER BY a1.captured_at DESC
+	LIMIT 1
+) a ON TRUE
 WHERE f.is_active = TRUE
 `
 
@@ -169,6 +179,8 @@ WHERE f.is_active = TRUE
 			&row.WaterproofRating,
 			&row.ImpactResistanceM,
 			&row.PriceUSD,
+			&row.AmazonAvgRating,
+			&row.AmazonRatingCount,
 		); err != nil {
 			return nil, err
 		}
@@ -192,19 +204,22 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	runtimeMedium := nullFloat(row.RuntimeMediumMin)
 	impact := nullFloat(row.ImpactResistanceM)
 	price := nullFloat(row.PriceUSD)
+	avgRating := nullFloat(row.AmazonAvgRating)
+	ratingCount := nullFloat(row.AmazonRatingCount)
 	durability := durabilityScore(row.WaterproofRating.String, impact)
 
+	// Normalize individual metrics
 	if lumens > 0 {
 		raw["max_lumens"] = lumens
 		norm["max_lumens"] = normalizeHigherLog(lumens, 100, 5000)
 	}
 	if candela > 0 {
 		raw["max_candela"] = candela
-		norm["max_candela"] = normalizeHigherLog(candela, 1000, 120000)
+		norm["max_candela"] = normalizeHigherLog(candela, 1000, 100000)
 	}
 	if beam > 0 {
 		raw["beam_distance_m"] = beam
-		norm["beam_distance_m"] = normalizeHigherLog(beam, 60, 700)
+		norm["beam_distance_m"] = normalizeHigherLog(beam, 50, 700)
 	}
 	if runtimeHigh > 0 {
 		raw["runtime_high_min"] = runtimeHigh
@@ -219,49 +234,85 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 
 	if price > 0 {
 		raw["price_usd"] = price
-		norm["price"] = normalizeLowerLinear(price, 20, 300)
+		norm["price"] = normalizeLowerLinear(price, 15, 250)
 	}
 
+	// Amazon Trust: 60% rating quality + 40% rating confidence
+	if avgRating > 0 {
+		raw["amazon_avg_rating"] = avgRating
+		norm["amazon_avg_rating"] = normalizeHigherLinear(avgRating, 3.5, 5.0)
+	}
+	if ratingCount > 0 {
+		raw["amazon_rating_count"] = ratingCount
+		norm["amazon_rating_count"] = normalizeHigherLog(ratingCount, 20, 5000)
+	}
+
+	amazonTrust := weightedMean("amazon_trust", []namedPair{
+		{name: "amazon_avg_rating", value: norm["amazon_avg_rating"], weight: 0.60},
+		{name: "amazon_rating_count", value: norm["amazon_rating_count"], weight: 0.40},
+	}, weighted)
+
+	// Performance: raw capability blend
+	performanceScore := weightedMean("performance", []namedPair{
+		{name: "max_lumens", value: norm["max_lumens"], weight: 0.35},
+		{name: "max_candela", value: norm["max_candela"], weight: 0.25},
+		{name: "beam_distance_m", value: norm["beam_distance_m"], weight: 0.20},
+		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.20},
+	}, weighted)
+
+	// Value: performance relative to price
+	perfBlend := weightedMean("perf_blend", []namedPair{
+		{name: "max_lumens", value: norm["max_lumens"], weight: 0.40},
+		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.30},
+		{name: "max_candela", value: norm["max_candela"], weight: 0.30},
+	}, weighted)
+
+	valueScore := weightedMean("value", []namedPair{
+		{name: "perf_blend", value: perfBlend, weight: 0.55},
+		{name: "price", value: norm["price"], weight: 0.45},
+	}, weighted)
+
+	// Overall: Amazon-anchored composite
+	overallScore := weightedMean("overall", []namedPair{
+		{name: "amazon_trust", value: amazonTrust, weight: 0.35},
+		{name: "value", value: valueScore, weight: 0.25},
+		{name: "performance", value: performanceScore, weight: 0.25},
+		{name: "durability", value: norm["durability"], weight: 0.15},
+	}, weighted)
+
+	// Category scores — each includes Amazon Trust at 15%
 	throwScore := weightedMean("throw", []namedPair{
-		{name: "max_candela", value: norm["max_candela"], weight: 0.45},
-		{name: "beam_distance_m", value: norm["beam_distance_m"], weight: 0.30},
+		{name: "max_candela", value: norm["max_candela"], weight: 0.35},
+		{name: "beam_distance_m", value: norm["beam_distance_m"], weight: 0.25},
+		{name: "amazon_trust", value: amazonTrust, weight: 0.15},
 		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.15},
 		{name: "durability", value: norm["durability"], weight: 0.10},
 	}, weighted)
 
 	floodScore := weightedMean("flood", []namedPair{
-		{name: "max_lumens", value: norm["max_lumens"], weight: 0.50},
-		{name: "runtime_medium_min", value: norm["runtime_medium_min"], weight: 0.25},
+		{name: "max_lumens", value: norm["max_lumens"], weight: 0.35},
+		{name: "runtime_medium_min", value: norm["runtime_medium_min"], weight: 0.20},
+		{name: "amazon_trust", value: amazonTrust, weight: 0.15},
 		{name: "price", value: norm["price"], weight: 0.15},
-		{name: "durability", value: norm["durability"], weight: 0.10},
+		{name: "durability", value: norm["durability"], weight: 0.15},
 	}, weighted)
 
 	tacticalScore := weightedMean("tactical", []namedPair{
-		{name: "max_candela", value: norm["max_candela"], weight: 0.30},
-		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.20},
+		{name: "max_candela", value: norm["max_candela"], weight: 0.25},
 		{name: "durability", value: norm["durability"], weight: 0.20},
-		{name: "throw", value: throwScore, weight: 0.20},
-		{name: "price", value: norm["price"], weight: 0.10},
+		{name: "amazon_trust", value: amazonTrust, weight: 0.15},
+		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.15},
+		{name: "throw", value: throwScore, weight: 0.15},
+		{name: "max_lumens", value: norm["max_lumens"], weight: 0.10},
 	}, weighted)
 
 	edcScore := weightedMean("edc", []namedPair{
-		{name: "runtime_medium_min", value: norm["runtime_medium_min"], weight: 0.30},
-		{name: "flood", value: floodScore, weight: 0.20},
-		{name: "durability", value: norm["durability"], weight: 0.15},
-		{name: "max_lumens", value: norm["max_lumens"], weight: 0.15},
+		{name: "runtime_medium_min", value: norm["runtime_medium_min"], weight: 0.25},
 		{name: "price", value: norm["price"], weight: 0.20},
-	}, weighted)
-
-	performanceMean := weightedMean("performance", []namedPair{
-		{name: "max_lumens", value: norm["max_lumens"], weight: 0.35},
-		{name: "max_candela", value: norm["max_candela"], weight: 0.25},
-		{name: "runtime_high_min", value: norm["runtime_high_min"], weight: 0.20},
-		{name: "durability", value: norm["durability"], weight: 0.20},
-	}, weighted)
-
-	valueScore := weightedMean("value", []namedPair{
-		{name: "performance", value: performanceMean, weight: 0.60},
-		{name: "price", value: norm["price"], weight: 0.40},
+		{name: "amazon_trust", value: amazonTrust, weight: 0.15},
+		{name: "max_lumens", value: norm["max_lumens"], weight: 0.15},
+		{name: "flood", value: floodScore, weight: 0.15},
+		{name: "durability", value: norm["durability"], weight: 0.10},
 	}, weighted)
 
 	breakdown, _ := json.Marshal(scoreBreakdown{
@@ -272,12 +323,27 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	})
 
 	return ScoreOutput{
-		Tactical: round3(tacticalScore),
-		EDC:      round3(edcScore),
-		Value:    round3(valueScore),
-		Throw:    round3(throwScore),
-		Flood:    round3(floodScore),
+		Overall:  round3(boostScore(overallScore)),
+		Tactical: round3(boostScore(tacticalScore)),
+		EDC:      round3(boostScore(edcScore)),
+		Value:    round3(boostScore(valueScore)),
+		Throw:    round3(boostScore(throwScore)),
+		Flood:    round3(boostScore(floodScore)),
 	}, breakdown
+}
+
+// boostScore rescales a raw 0-100 weighted mean into a more intuitive range.
+// Raw scores cluster around 50-80 for curated products; this lifts them so
+// average products score ~70-80 and top products reach 90+.
+func boostScore(raw float64) float64 {
+	if raw <= 0 {
+		return 0
+	}
+	boosted := 35 + (raw * 0.65)
+	if boosted > 100 {
+		return 100
+	}
+	return boosted
 }
 
 type namedPair struct {
