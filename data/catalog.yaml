@@ -1306,18 +1306,10 @@ products:
       average_rating: 4.6
       manufacturer_url: https://www.acebeam.com/e75
       images:
-        - url: https://www.acebeam.com/images/thumbs/008/0089814_e75-high-performance-quad-core-edc-flashlight_600.jpeg
+        - url: https://m.media-amazon.com/images/I/61bCwpqUHvL.jpg
           alt: Acebeam E75 front angle
-        - url: https://www.acebeam.com/images/thumbs/008/0089790_e75-high-performance-quad-core-edc-flashlight_600.jpeg
+        - url: https://m.media-amazon.com/images/I/61kJfjWXp4L.jpg
           alt: Acebeam E75 side view
-        - url: https://www.acebeam.com/images/thumbs/008/0089723_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Acebeam E75 beam detail
-        - url: https://www.acebeam.com/images/thumbs/008/0089767_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Picture of E75 High-performance Quad-core EDC Flashlight
-        - url: https://www.acebeam.com/images/thumbs/008/0088181_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Camping Flashlight
-        - url: https://www.acebeam.com/images/thumbs/008/0089659_e75-high-performance-quad-core-edc-flashlight_600.jpeg
-          alt: Picture of E75 High-performance Quad-core EDC Flashlight
       specs:
         max_lumens: 4500
         sustained_lumens: 1000
