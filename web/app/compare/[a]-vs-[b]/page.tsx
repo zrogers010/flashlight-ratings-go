@@ -8,6 +8,8 @@ import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlightByID, fetchRankings, type FlashlightDetail } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });

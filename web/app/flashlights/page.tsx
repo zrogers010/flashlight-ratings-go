@@ -7,6 +7,8 @@ import { SpecBar } from "@/components/FacetedSearch";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "All Flashlights — Full Catalog with Specs & Prices",
   description:

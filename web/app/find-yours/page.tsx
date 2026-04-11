@@ -7,6 +7,8 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchIntelligenceRecommendations } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Find Your Perfect Flashlight — Personalized Recommendations",
   description:

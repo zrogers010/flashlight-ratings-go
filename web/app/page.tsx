@@ -7,6 +7,8 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchRankings } from "@/lib/api";
 import type { FlashlightItem } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews | FlashlightRatings",
   description:

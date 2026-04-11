@@ -6,6 +6,8 @@ import { RankingsTable } from "@/components/RankingsTable";
 import { CompareTable } from "@/components/CompareTable";
 import { fetchRankings, fetchFlashlightByID, type FlashlightDetail } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 const useCases = ["overall", "tactical", "edc", "value", "throw", "flood"] as const;
 const useCaseLabel: Record<(typeof useCases)[number], string> = {
   overall: "Overall",
