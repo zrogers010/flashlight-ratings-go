@@ -81,7 +81,7 @@ CREATE TEMP TABLE tmp_manual_catalog (
 );
 \copy tmp_manual_catalog FROM STDIN WITH (FORMAT csv, HEADER true);
 SQL
-  cat "${CSV_PATH}"
+  tr -d '\r' < "${CSV_PATH}" | sed '/^$/d'
   cat <<'SQL'
 \.
 
