@@ -3,18 +3,21 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "m.media-amazon.com"
-      },
-      {
-        protocol: "https",
-        hostname: "images-na.ssl-images-amazon.com"
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazonaws.com"
-      }
+      { protocol: "https", hostname: "m.media-amazon.com" },
+      { protocol: "https", hostname: "images-na.ssl-images-amazon.com" },
+      { protocol: "https", hostname: "**.amazonaws.com" },
+      { protocol: "https", hostname: "**.fenixlighting.com" },
+      { protocol: "https", hostname: "**.streamlight.com" },
+      { protocol: "https", hostname: "**.olightstore.com" },
+      { protocol: "https", hostname: "**.olicdn.com" },
+      { protocol: "https", hostname: "**.skilhunt.com" },
+      { protocol: "https", hostname: "**.nitecore.co.uk" },
+      { protocol: "https", hostname: "**.nitecore.co.nz" },
+      { protocol: "https", hostname: "**.acebeam.com" },
+      { protocol: "https", hostname: "**.bigcommerce.com" },
+      { protocol: "https", hostname: "**.staticdj.com" },
+      { protocol: "https", hostname: "**.shopify.com" },
+      { protocol: "https", hostname: "**.ly200-cdn.com" },
     ]
   },
   async redirects() {
@@ -71,7 +74,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.amazonaws.com",
+              "img-src 'self' data: https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.amazonaws.com https://*.fenixlighting.com https://*.streamlight.com https://*.olightstore.com https://*.olicdn.com https://*.skilhunt.com https://*.nitecore.co.uk https://*.nitecore.co.nz https://*.acebeam.com https://*.bigcommerce.com https://*.staticdj.com https://*.shopify.com https://*.ly200-cdn.com",
               "connect-src 'self' https://flashlightratings.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
               "form-action 'self' https://www.amazon.com",
               "frame-ancestors 'none'",

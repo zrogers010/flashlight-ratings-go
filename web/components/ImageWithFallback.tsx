@@ -1,9 +1,37 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 function isBrokenPlaceholder(url: string) {
   return url.includes("._SCLZZZZZZZ_");
+}
+
+const OPTIMIZABLE_HOSTS = [
+  ".media-amazon.com",
+  ".ssl-images-amazon.com",
+  ".amazonaws.com",
+  ".fenixlighting.com",
+  ".streamlight.com",
+  ".olightstore.com",
+  ".olicdn.com",
+  ".skilhunt.com",
+  ".nitecore.co.uk",
+  ".nitecore.co.nz",
+  ".acebeam.com",
+  ".bigcommerce.com",
+  ".staticdj.com",
+  ".shopify.com",
+  ".ly200-cdn.com",
+];
+
+function isOptimizable(url: string) {
+  try {
+    const host = new URL(url).hostname;
+    return OPTIMIZABLE_HOSTS.some((h) => host.endsWith(h));
+  } catch {
+    return false;
+  }
 }
 
 export function ImageWithFallback({
@@ -20,6 +48,21 @@ export function ImageWithFallback({
 
   if (!usable || failed) {
     return <div className="image-fallback">{alt}</div>;
+  }
+
+  if (isOptimizable(src)) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={400}
+        height={400}
+        loading={loading ?? "lazy"}
+        sizes="(max-width: 600px) 280px, 360px"
+        style={{ objectFit: "contain", width: "100%", height: "auto" }}
+        onError={() => setFailed(true)}
+      />
+    );
   }
 
   return (

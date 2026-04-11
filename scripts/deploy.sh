@@ -220,6 +220,9 @@ do_deploy() {
     || echo "WARNING: DB health check timed out"
 
   # ── Import catalog ─────────────────────────────────────────────
+  echo "→ Building YAML catalog into database..."
+  ${COMPOSE} run --rm catalog-build
+
   echo "→ Importing manual catalog CSV into database..."
   bash scripts/import-manual-catalog.sh data/manual_catalog.csv
 

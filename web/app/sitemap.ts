@@ -5,22 +5,25 @@ const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 const categories = ["tactical", "edc", "camping", "search-rescue", "survival", "diving", "value", "throw", "flood"];
 const guideSlugs = ["how-we-score", "throw-vs-flood", "battery-guide", "runtime-explained", "ip-ratings", "best-edc-weight"];
 
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
   const staticPages: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
-    { url: `${BASE_URL}/best-flashlights`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/flashlights`, lastModified: new Date(), changeFrequency: "daily", priority: 0.85 },
-    { url: `${BASE_URL}/compare`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/find-yours`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE_URL}/guides`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE_URL}/best-flashlights/under-50`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
-    { url: `${BASE_URL}/best-flashlights/under-100`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
-    { url: `${BASE_URL}/best-flashlights/survival`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
+    { url: BASE_URL, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${BASE_URL}/best-flashlights`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/flashlights`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
+    { url: `${BASE_URL}/compare`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/find-yours`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE_URL}/guides`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${BASE_URL}/best-flashlights/under-50`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${BASE_URL}/best-flashlights/under-100`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
   ];
 
   const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
     url: `${BASE_URL}/best-flashlights/${cat}`,
-    lastModified: new Date(),
+    lastModified: now,
     changeFrequency: "daily" as const,
     priority: 0.85
   }));
@@ -29,13 +32,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let vsPages: MetadataRoute.Sitemap = [];
   try {
     const API_BASE = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-    const res = await fetch(`${API_BASE}/flashlights?page=1&page_size=500`, { cache: "no-store" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${API_BASE}/flashlights?page=1&page_size=500`, {
+      signal: controller.signal,
+      next: { revalidate: 3600 },
+    });
+    clearTimeout(timeout);
+
     if (res.ok) {
       const data = await res.json();
       const items: { id: number }[] = data.items || [];
       productPages = items.map((item) => ({
         url: `${BASE_URL}/flashlights/${item.id}`,
-        lastModified: new Date(),
+        lastModified: now,
         changeFrequency: "weekly" as const,
         priority: 0.8
       }));
@@ -45,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         for (let j = i + 1; j < topIds.length; j++) {
           vsPages.push({
             url: `${BASE_URL}/compare/${topIds[i]}-vs-${topIds[j]}`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: "weekly" as const,
             priority: 0.7
           });
@@ -53,12 +63,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
   } catch {
-    // API unavailable during build; product pages will be added on next regeneration
+    // API unavailable — static pages still generated; products added on next revalidation
   }
 
   const guidePages: MetadataRoute.Sitemap = guideSlugs.map((slug) => ({
     url: `${BASE_URL}/guides/${slug}`,
-    lastModified: new Date(),
+    lastModified: now,
     changeFrequency: "monthly" as const,
     priority: 0.7
   }));

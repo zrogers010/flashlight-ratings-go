@@ -4,11 +4,13 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/StructuredData";
-import { fetchRankings } from "@/lib/api";
+import { fetchRankings, fetchFlashlights } from "@/lib/api";
 
 type CategoryConfig = {
   label: string;
   rankingKey: string;
+  useCaseFilter?: string;
+  sortField?: string;
   h1: string;
   description: string;
   guide: {
@@ -21,6 +23,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   tactical: {
     label: "Tactical",
     rankingKey: "tactical",
+    useCaseFilter: "tactical",
+    sortField: "tactical_score",
     h1: "Best Tactical Flashlights",
     description:
       "Top tactical flashlights ranked by candela, runtime, durability, and throw. Optimized for law enforcement, defense, and duty use.",
@@ -33,6 +37,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   edc: {
     label: "EDC",
     rankingKey: "edc",
+    useCaseFilter: "edc",
+    sortField: "edc_score",
     h1: "Best EDC Flashlights",
     description:
       "Top EDC (everyday carry) flashlights ranked by runtime, portability, price, and durability. Pocket-sized lights for daily use.",
@@ -45,6 +51,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   camping: {
     label: "Camping & Outdoors",
     rankingKey: "flood",
+    useCaseFilter: "camping",
+    sortField: "flood_score",
     h1: "Best Flashlights for Camping & Outdoors",
     description:
       "Top camping flashlights ranked by flood output, runtime, and value. Bright, long-lasting illumination for the outdoors.",
@@ -57,6 +65,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   survival: {
     label: "Survival",
     rankingKey: "tactical",
+    useCaseFilter: "survival",
+    sortField: "tactical_score",
     h1: "Best Flashlights for Survival",
     description:
       "Top survival flashlights ranked by durability, reliability, and runtime. Built to withstand the toughest conditions when failure is not an option.",
@@ -69,6 +79,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   diving: {
     label: "Diving & Maritime",
     rankingKey: "tactical",
+    useCaseFilter: "diving",
+    sortField: "tactical_score",
     h1: "Best Dive Lights & Maritime Flashlights",
     description:
       "Top dive lights and underwater flashlights ranked for submersible performance. IPX8 rated for deep-sea diving and maritime use.",
@@ -81,6 +93,8 @@ const categoryMap: Record<string, CategoryConfig> = {
   "search-rescue": {
     label: "Search & Rescue",
     rankingKey: "throw",
+    useCaseFilter: "search-rescue",
+    sortField: "throw_score",
     h1: "Best Flashlights for Search & Rescue",
     description:
       "Top search and rescue flashlights ranked by beam distance, candela, and runtime. Maximum visibility for critical operations.",
@@ -93,6 +107,7 @@ const categoryMap: Record<string, CategoryConfig> = {
   value: {
     label: "Best Value",
     rankingKey: "value",
+    sortField: "value_score",
     h1: "Best Value Flashlights",
     description:
       "Top flashlights ranked by performance-per-dollar. The most capability for the lowest price.",
@@ -105,6 +120,7 @@ const categoryMap: Record<string, CategoryConfig> = {
   throw: {
     label: "Max Throw",
     rankingKey: "throw",
+    sortField: "throw_score",
     h1: "Best Throw Flashlights",
     description:
       "Flashlights with the farthest beam distance, ranked by candela and throw performance.",
@@ -117,6 +133,7 @@ const categoryMap: Record<string, CategoryConfig> = {
   flood: {
     label: "Max Flood",
     rankingKey: "flood",
+    sortField: "flood_score",
     h1: "Best Flood Flashlights",
     description:
       "Flashlights with the brightest, widest beams, ranked by lumen output and coverage.",
@@ -144,6 +161,36 @@ export async function generateMetadata({ params }: { params: { category: string 
   };
 }
 
+type ScoredCard = {
+  id: number;
+  brand: string;
+  name: string;
+  slug: string;
+  image_url?: string;
+  amazon_url?: string;
+  max_lumens?: number;
+  beam_distance_m?: number;
+  waterproof_rating?: string;
+  price_usd?: number;
+  tactical_score?: number;
+  edc_score?: number;
+  value_score?: number;
+  throw_score?: number;
+  flood_score?: number;
+  score: number;
+};
+
+function getScore(item: ScoredCard, field?: string): number {
+  switch (field) {
+    case "tactical_score": return item.tactical_score || 0;
+    case "edc_score": return item.edc_score || 0;
+    case "value_score": return item.value_score || 0;
+    case "throw_score": return item.throw_score || 0;
+    case "flood_score": return item.flood_score || 0;
+    default: return item.score;
+  }
+}
+
 export default async function CategoryPage({ params }: { params: { category: string } }) {
   const config = categoryMap[params.category];
 
@@ -160,19 +207,68 @@ export default async function CategoryPage({ params }: { params: { category: str
     );
   }
 
-  const data = await fetchRankings(config.rankingKey, 200);
+  const useFiltered = !!config.useCaseFilter;
+
+  const [rankingData, filteredData] = await Promise.all([
+    fetchRankings(config.rankingKey, 200),
+    useFiltered
+      ? fetchFlashlights({ useCase: config.useCaseFilter, pageSize: 200, sortBy: config.sortField, order: "desc" })
+      : Promise.resolve(null),
+  ]);
+
+  let cards: ScoredCard[];
+  if (filteredData && filteredData.items.length > 0) {
+    cards = filteredData.items.map((item, i) => ({
+      id: item.id,
+      brand: item.brand,
+      name: item.name,
+      slug: item.slug,
+      image_url: item.image_url,
+      amazon_url: item.amazon_url,
+      max_lumens: item.max_lumens,
+      beam_distance_m: item.beam_distance_m,
+      waterproof_rating: item.waterproof_rating,
+      price_usd: item.price_usd,
+      tactical_score: item.tactical_score,
+      edc_score: item.edc_score,
+      value_score: item.value_score,
+      throw_score: item.throw_score,
+      flood_score: item.flood_score,
+      score: getScore(item as unknown as ScoredCard, config.sortField) || 0,
+    }));
+    cards.sort((a, b) => getScore(b, config.sortField) - getScore(a, config.sortField));
+  } else {
+    cards = rankingData.items.map((item) => ({
+      id: item.flashlight.id,
+      brand: item.flashlight.brand,
+      name: item.flashlight.name,
+      slug: item.flashlight.slug,
+      image_url: item.flashlight.image_url,
+      amazon_url: item.flashlight.amazon_url,
+      max_lumens: item.flashlight.max_lumens,
+      beam_distance_m: item.flashlight.beam_distance_m,
+      waterproof_rating: item.flashlight.waterproof_rating,
+      price_usd: item.flashlight.price_usd,
+      tactical_score: item.profile === "tactical" ? item.score : undefined,
+      edc_score: item.profile === "edc" ? item.score : undefined,
+      value_score: item.profile === "value" ? item.score : undefined,
+      throw_score: item.profile === "throw" ? item.score : undefined,
+      flood_score: item.profile === "flood" ? item.score : undefined,
+      score: item.score,
+    }));
+  }
 
   return (
     <section className="grid">
       <BreadcrumbStructuredData items={[{ name: "Best Flashlights", href: "/best-flashlights" }, { name: config.label }]} />
       <ItemListStructuredData
         name={config.h1}
-        items={data.items.slice(0, 10).map((item) => ({
-          position: item.rank,
-          name: `${item.flashlight.brand} ${item.flashlight.name}`,
-          url: `/flashlights/${item.flashlight.id}`,
-          image: item.flashlight.image_url,
-          price: item.flashlight.price_usd
+        items={cards.slice(0, 10).map((item, i) => ({
+          position: i + 1,
+          name: `${item.brand} ${item.name}`,
+          url: `/flashlights/${item.id}`,
+          image: item.image_url,
+          price: item.price_usd
         }))}
       />
       <Breadcrumbs items={[{ label: "Best Flashlights", href: "/best-flashlights" }, { label: config.label }]} />
@@ -184,32 +280,32 @@ export default async function CategoryPage({ params }: { params: { category: str
       </div>
 
       <div className="card-grid">
-        {data.items.map((item) => (
+        {cards.map((item, i) => (
           <FlashlightCard
-            key={item.flashlight.id}
-            rank={item.rank}
+            key={item.id}
+            rank={i + 1}
             item={{
-              id: item.flashlight.id,
-              brand: item.flashlight.brand,
-              name: item.flashlight.name,
-              slug: item.flashlight.slug,
-              image_url: item.flashlight.image_url,
-              amazon_url: item.flashlight.amazon_url,
-              max_lumens: item.flashlight.max_lumens,
-              beam_distance_m: item.flashlight.beam_distance_m,
-              waterproof_rating: item.flashlight.waterproof_rating,
-              price_usd: item.flashlight.price_usd,
-              tactical_score: item.profile === "tactical" ? item.score : undefined,
-              edc_score: item.profile === "edc" ? item.score : undefined,
-              value_score: item.profile === "value" ? item.score : undefined,
-              throw_score: item.profile === "throw" ? item.score : undefined,
-              flood_score: item.profile === "flood" ? item.score : undefined
+              id: item.id,
+              brand: item.brand,
+              name: item.name,
+              slug: item.slug,
+              image_url: item.image_url,
+              amazon_url: item.amazon_url,
+              max_lumens: item.max_lumens,
+              beam_distance_m: item.beam_distance_m,
+              waterproof_rating: item.waterproof_rating,
+              price_usd: item.price_usd,
+              tactical_score: item.tactical_score,
+              edc_score: item.edc_score,
+              value_score: item.value_score,
+              throw_score: item.throw_score,
+              flood_score: item.flood_score,
             }}
           />
         ))}
       </div>
 
-      {data.items.length === 0 && (
+      {cards.length === 0 && (
         <div className="panel" style={{ textAlign: "center", padding: 40 }}>
           <p className="muted">No ranked flashlights in this category yet. Run the scoring job to populate rankings.</p>
         </div>

@@ -170,7 +170,7 @@ function getAPIBase(): string {
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${getAPIBase()}${path}`, {
-    cache: "no-store"
+    next: { revalidate: 900 },
   });
   if (!res.ok) {
     throw new Error(`API request failed: ${res.status}`);
@@ -230,7 +230,7 @@ export async function createIntelligenceRun(input: IntelligenceRunInput) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-    cache: "no-store"
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`Intelligence run failed: ${res.status}`);
@@ -247,7 +247,7 @@ export async function fetchIntelligenceRecommendations(input: IntelligenceRunInp
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-    cache: "no-store"
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`Intelligence recommendation failed: ${res.status}`);
