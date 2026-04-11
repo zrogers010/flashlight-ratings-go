@@ -6,6 +6,8 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Best Flashlights Under $50 in 2026 — Top Budget Picks Ranked",
   description:

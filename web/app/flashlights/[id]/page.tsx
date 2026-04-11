@@ -10,6 +10,8 @@ import { FlashlightCard } from "@/components/FlashlightCard";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchFlashlightByID, fetchFlashlights, fetchRankings } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });

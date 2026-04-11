@@ -145,9 +145,7 @@ const categoryMap: Record<string, CategoryConfig> = {
   }
 };
 
-export function generateStaticParams() {
-  return Object.keys(categoryMap).map((category) => ({ category }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   const config = categoryMap[params.category];
