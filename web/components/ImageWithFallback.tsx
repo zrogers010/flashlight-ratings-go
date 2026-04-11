@@ -12,6 +12,7 @@ const OPTIMIZABLE_HOSTS = [
   ".ssl-images-amazon.com",
   ".amazonaws.com",
   ".fenixlighting.com",
+  ".fenixlight.com",
   ".streamlight.com",
   ".olightstore.com",
   ".olicdn.com",
