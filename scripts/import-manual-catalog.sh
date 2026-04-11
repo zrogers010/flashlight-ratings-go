@@ -127,12 +127,13 @@ CREATE TEMP VIEW cleaned AS
 
 -- Step 1: Upsert brands (separate statement so flashlights can see them)
 INSERT INTO brands (name, slug, country_code, website_url)
-SELECT DISTINCT
+SELECT DISTINCT ON (c.brand_slug)
   c.brand_name,
   c.brand_slug,
   c.brand_country_code,
   c.brand_website_url
 FROM cleaned c
+ORDER BY c.brand_slug
 ON CONFLICT (slug) DO UPDATE
   SET
     name = EXCLUDED.name,
