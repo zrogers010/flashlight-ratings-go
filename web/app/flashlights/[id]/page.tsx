@@ -180,7 +180,11 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
       {/* ── Hero Section ──────────────────────────── */}
       <div className="panel hero detail-hero">
         <div className="detail-hero-main">
-          <p className="kicker">{data.brand}</p>
+          <p className="kicker">
+            <Link href={`/brands/${data.brand_slug || data.brand.toLowerCase()}`} style={{ color: "inherit", textDecoration: "none" }}>
+              {data.brand}
+            </Link>
+          </p>
           <h1>
             {data.name}
             {data.model_code ? <span className="muted" style={{ fontWeight: 400 }}> {data.model_code}</span> : null}
@@ -209,6 +213,16 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
               Amazon: {fmt(data.amazon_average_rating, 1)}/5 ({fmt(data.amazon_rating_count)} ratings)
             </p>
           )}
+          <div className="spec-row" style={{ marginTop: 8, fontSize: "0.85rem" }}>
+            <Link href={`/brands/${data.brand_slug || data.brand.toLowerCase()}`}>
+              All {data.brand} Flashlights →
+            </Link>
+            {data.brand_website_url && (
+              <a href={data.brand_website_url} target="_blank" rel="noopener noreferrer" className="brand-external-link">
+                {data.brand} Official Site ↗
+              </a>
+            )}
+          </div>
         </div>
 
         <aside className="buy-box">

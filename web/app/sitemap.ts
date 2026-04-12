@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/flashlights`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${BASE_URL}/compare`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/find-yours`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE_URL}/brands`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/guides`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/best-flashlights/under-50`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/best-flashlights/under-100`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
@@ -30,18 +31,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let productPages: MetadataRoute.Sitemap = [];
   let vsPages: MetadataRoute.Sitemap = [];
+  let brandPages: MetadataRoute.Sitemap = [];
   try {
     const API_BASE = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`${API_BASE}/flashlights?page=1&page_size=500`, {
-      signal: controller.signal,
-      next: { revalidate: 3600 },
-    });
+
+    const [flashlightsRes, brandsRes] = await Promise.all([
+      fetch(`${API_BASE}/flashlights?page=1&page_size=500`, {
+        signal: controller.signal,
+        next: { revalidate: 3600 },
+      }),
+      fetch(`${API_BASE}/brands?detail=true`, {
+        signal: controller.signal,
+        next: { revalidate: 3600 },
+      }),
+    ]);
     clearTimeout(timeout);
 
-    if (res.ok) {
-      const data = await res.json();
+    if (flashlightsRes.ok) {
+      const data = await flashlightsRes.json();
       const items: { id: number }[] = data.items || [];
       productPages = items.map((item) => ({
         url: `${BASE_URL}/flashlights/${item.id}`,
@@ -62,6 +71,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       }
     }
+
+    if (brandsRes.ok) {
+      const brands: { slug: string }[] = await brandsRes.json();
+      brandPages = brands.map((b) => ({
+        url: `${BASE_URL}/brands/${b.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.75,
+      }));
+    }
   } catch {
     // API unavailable — static pages still generated; products added on next revalidation
   }
@@ -73,5 +92,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  return [...staticPages, ...categoryPages, ...guidePages, ...productPages, ...vsPages];
+  return [...staticPages, ...categoryPages, ...guidePages, ...brandPages, ...productPages, ...vsPages];
 }

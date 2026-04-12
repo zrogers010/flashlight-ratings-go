@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Find Your Perfect Flashlight — Personalized Recommendations",
   description:
-    "Answer 4 questions and get data-driven flashlight recommendations tailored to your use case, budget, battery preference, and size requirements."
+    "Answer 4 questions and get data-driven flashlight recommendations tailored to your use case, budget, battery preference, and size requirements.",
+  alternates: { canonical: "/find-yours" },
 };
 
 type UseCase = "any" | "edc" | "tactical" | "camping" | "search-rescue" | "survival" | "diving" | "weapon-mount" | "keychain";

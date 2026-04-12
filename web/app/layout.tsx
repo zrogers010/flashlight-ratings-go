@@ -131,6 +131,7 @@ export default function RootLayout({
             </Link>
             <nav className="nav" id="main-nav">
               <Link href="/flashlights">Flashlights</Link>
+              <Link href="/brands">Brands</Link>
               <Link href="/compare">Compare</Link>
               <Link href="/find-yours">Find Yours</Link>
               <Link href="/guides">Guides</Link>
@@ -156,6 +157,7 @@ export default function RootLayout({
               <div className="footer-section">
                 <h4>Explore</h4>
                 <Link href="/flashlights">All Flashlights</Link>
+                <Link href="/brands">Brands</Link>
                 <Link href="/compare">Compare & Rankings</Link>
                 <Link href="/find-yours">Find Yours</Link>
               </div>

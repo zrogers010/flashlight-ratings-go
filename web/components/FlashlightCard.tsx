@@ -12,7 +12,8 @@ function fmt(v?: number, digits = 0) {
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
-function topScore(item: FlashlightItem) {
+function bestScore(item: FlashlightItem) {
+  if (item.overall_score && item.overall_score > 0) return item.overall_score;
   return Math.max(
     item.tactical_score || 0,
     item.edc_score || 0,
@@ -47,7 +48,7 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: number }) {
-  const score = topScore(item);
+  const score = bestScore(item);
   const href = `/flashlights/${item.id}`;
   const primaryBattery = item.battery_types?.[0];
   const tags = (item.use_case_tags || []).slice(0, 2);

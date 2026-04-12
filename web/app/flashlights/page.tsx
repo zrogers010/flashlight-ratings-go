@@ -3,8 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
-import { SpecBar } from "@/components/FacetedSearch";
+import { SpecBar, SortDropdown } from "@/components/FacetedSearch";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
+import { ItemListStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -146,14 +147,6 @@ function buildActiveFilterChips(sp: CatalogSearchParams): { label: string; href:
     });
   }
 
-  if (sp.sort_by || sp.order) {
-    const sortLabel = [sp.sort_by, sp.order].filter(Boolean).join(" · ");
-    chips.push({
-      label: `Sort: ${sortLabel}`,
-      href: catalogHref({ ...sp, sort_by: undefined, order: undefined })
-    });
-  }
-
   return chips;
 }
 
@@ -197,6 +190,17 @@ export default async function FlashlightsPage({
 
   return (
     <section className="grid">
+      <BreadcrumbStructuredData items={[{ name: "Catalog" }]} />
+      <ItemListStructuredData
+        name="All Flashlights"
+        items={data.items.slice(0, 10).map((item, i) => ({
+          position: i + 1,
+          name: `${item.brand} ${item.name}`,
+          url: `/flashlights/${item.id}`,
+          image: item.image_url,
+          price: item.price_usd,
+        }))}
+      />
       <Breadcrumbs items={[{ label: "Catalog" }]} />
 
       <div className="panel hero">
@@ -214,24 +218,29 @@ export default async function FlashlightsPage({
         </Suspense>
 
         <div>
-          {filterChips.length > 0 && (
-            <div className="filter-chips" aria-label="Active filters">
-              {filterChips.map((chip) => (
-                <Link
-                  key={chip.href}
-                  href={chip.href}
-                  className="filter-chip"
-                  scroll={false}
-                  aria-label={`Remove filter: ${chip.label}`}
-                >
-                  <span>{chip.label}</span>
-                  <span className="filter-chip-remove" aria-hidden>
-                    ×
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="catalog-toolbar">
+            {filterChips.length > 0 && (
+              <div className="filter-chips" aria-label="Active filters">
+                {filterChips.map((chip) => (
+                  <Link
+                    key={chip.href}
+                    href={chip.href}
+                    className="filter-chip"
+                    scroll={false}
+                    aria-label={`Remove filter: ${chip.label}`}
+                  >
+                    <span>{chip.label}</span>
+                    <span className="filter-chip-remove" aria-hidden>
+                      ×
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+            <Suspense>
+              <SortDropdown />
+            </Suspense>
+          </div>
 
           <div className="card-grid">
             {data.items.map((item) => (
