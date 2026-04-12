@@ -76,6 +76,7 @@ latest_media AS (
 latest_scores AS (
 	SELECT
 		fs.flashlight_id,
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
 		MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
 		MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
 		MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
@@ -120,6 +121,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	ls.overall_score,
 	ls.tactical_score,
 	ls.edc_score,
 	ls.value_score,
@@ -155,8 +157,8 @@ LIMIT %d OFFSET %d
 			modelCode, description, imageURL          sql.NullString
 			ip, amazonURL, switchType, ledModel       sql.NullString
 			weight                                    sql.NullFloat64
-			price, tactical, edc, value, throw, flood sql.NullFloat64
-			batteryTypesJSON, useCaseTagsJSON          []byte
+			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
+			batteryTypesJSON, useCaseTagsJSON                    []byte
 		)
 		if err := rows.Scan(
 			&item.ID,
@@ -176,6 +178,7 @@ LIMIT %d OFFSET %d
 			&switchType,
 			&ledModel,
 			&price,
+			&overall,
 			&tactical,
 			&edc,
 			&value,
@@ -199,6 +202,7 @@ LIMIT %d OFFSET %d
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
+		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
 		item.ValueScore = nullFloat(value)
@@ -582,6 +586,7 @@ latest_media AS (
 latest_scores AS (
 	SELECT
 		fs.flashlight_id,
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
 		MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
 		MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
 		MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
@@ -626,6 +631,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	ls.overall_score,
 	ls.tactical_score,
 	ls.edc_score,
 	ls.value_score,
@@ -655,13 +661,13 @@ ORDER BY f.id ASC
 	items := make([]flashlightItem, 0, len(ids))
 	for rows.Next() {
 		var (
-			item                                      flashlightItem
-			maxLumens, maxCandela, beam, runtimeHi    sql.NullInt64
-			modelCode, description, imageURL          sql.NullString
-			ip, amazonURL, switchType, ledModel       sql.NullString
-			weight                                    sql.NullFloat64
-			price, tactical, edc, value, throw, flood sql.NullFloat64
-			batteryTypesJSON, useCaseTagsJSON          []byte
+			item                                              flashlightItem
+			maxLumens, maxCandela, beam, runtimeHi            sql.NullInt64
+			modelCode, description, imageURL                  sql.NullString
+			ip, amazonURL, switchType, ledModel               sql.NullString
+			weight                                            sql.NullFloat64
+			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
+			batteryTypesJSON, useCaseTagsJSON                  []byte
 		)
 		if err := rows.Scan(
 			&item.ID,
@@ -681,6 +687,7 @@ ORDER BY f.id ASC
 			&switchType,
 			&ledModel,
 			&price,
+			&overall,
 			&tactical,
 			&edc,
 			&value,
@@ -704,6 +711,7 @@ ORDER BY f.id ASC
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
+		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
 		item.ValueScore = nullFloat(value)
@@ -1522,6 +1530,8 @@ func sortColumn(sortBy string) string {
 		return "s.max_candela"
 	case "runtime_high_min":
 		return "s.runtime_high_min"
+	case "overall_score":
+		return "ls.overall_score"
 	case "tactical_score":
 		return "ls.tactical_score"
 	case "edc_score":
@@ -1533,7 +1543,7 @@ func sortColumn(sortBy string) string {
 	case "flood_score":
 		return "ls.flood_score"
 	default:
-		return "ls.tactical_score"
+		return "ls.overall_score"
 	}
 }
 

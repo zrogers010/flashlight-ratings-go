@@ -3,6 +3,65 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
+const SORT_OPTIONS = [
+  { value: "", label: "Rating (High → Low)" },
+  { value: "price_asc", label: "Price (Low → High)" },
+  { value: "price_desc", label: "Price (High → Low)" },
+] as const;
+
+export function SortDropdown() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentValue = useMemo(() => {
+    const sb = searchParams.get("sort_by") || "";
+    const ord = searchParams.get("order") || "";
+    if (sb === "price" && ord === "asc") return "price_asc";
+    if (sb === "price" && ord === "desc") return "price_desc";
+    return "";
+  }, [searchParams]);
+
+  const onChange = useCallback(
+    (val: string) => {
+      const next = new URLSearchParams(searchParams.toString());
+      if (val === "price_asc") {
+        next.set("sort_by", "price");
+        next.set("order", "asc");
+      } else if (val === "price_desc") {
+        next.set("sort_by", "price");
+        next.set("order", "desc");
+      } else {
+        next.delete("sort_by");
+        next.delete("order");
+      }
+      const q = next.toString();
+      router.push(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
+  return (
+    <div className="sort-bar">
+      <label htmlFor="sort-select" className="sort-bar-label">
+        Sort by
+      </label>
+      <select
+        id="sort-select"
+        className="filter-select sort-bar-select"
+        value={currentValue}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {SORT_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 const USE_CASES = [
   { value: "edc", label: "Everyday Carry" },
   { value: "tactical", label: "Tactical" },

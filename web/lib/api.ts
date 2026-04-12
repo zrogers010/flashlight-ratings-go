@@ -34,6 +34,7 @@ export type FlashlightItem = {
   switch_type?: string;
   led_model?: string;
   price_usd?: number;
+  overall_score?: number;
   tactical_score?: number;
   edc_score?: number;
   value_score?: number;

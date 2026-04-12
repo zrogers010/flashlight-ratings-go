@@ -56,6 +56,7 @@ type flashlightItem struct {
 	SwitchType     *string  `json:"switch_type,omitempty"`
 	LEDModel       *string  `json:"led_model,omitempty"`
 	PriceUSD       *float64 `json:"price_usd,omitempty"`
+	OverallScore   *float64 `json:"overall_score,omitempty"`
 	TacticalScore  *float64 `json:"tactical_score,omitempty"`
 	EDCScore       *float64 `json:"edc_score,omitempty"`
 	ValueScore     *float64 `json:"value_score,omitempty"`
