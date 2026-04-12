@@ -3554,3 +3554,57 @@ select:focus, input:focus {
     order: -1;
   }
 }
+
+/* ── Brand pages ────────────────────────────── */
+
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.brand-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.brand-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.brand-card-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.brand-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.brand-card-url {
+  font-size: 0.8rem;
+}
+
+.brand-external-link {
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.brand-external-link:hover {
+  text-decoration: underline;
+}

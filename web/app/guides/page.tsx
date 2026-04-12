@@ -5,7 +5,8 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 export const metadata: Metadata = {
   title: "Flashlight Buying Guides — Learn Before You Buy",
   description:
-    "Expert guides on flashlight technology, scoring methodology, battery types, beam patterns, and more. Everything you need to make an informed purchase."
+    "Expert guides on flashlight technology, scoring methodology, battery types, beam patterns, and more. Everything you need to make an informed purchase.",
+  alternates: { canonical: "/guides" },
 };
 
 const guides = [

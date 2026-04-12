@@ -45,6 +45,9 @@ export type FlashlightItem = {
 };
 
 export type FlashlightDetail = FlashlightItem & {
+  brand_slug?: string;
+  brand_website_url?: string;
+  brand_country_code?: string;
   release_year?: number;
   msrp_usd?: number;
   asin?: string;
@@ -222,8 +225,28 @@ export async function fetchFlashlights(opts?: {
   return getJSON<FlashlightListResponse>(`/flashlights?${params.toString()}`);
 }
 
+export type BrandSummary = {
+  name: string;
+  slug: string;
+  country_code?: string;
+  website_url?: string;
+  product_count: number;
+};
+
+export type BrandDetail = BrandSummary & {
+  products: FlashlightItem[];
+};
+
 export async function fetchBrands() {
   return getJSON<string[]>("/brands");
+}
+
+export async function fetchBrandsDetailed() {
+  return getJSON<BrandSummary[]>("/brands?detail=true");
+}
+
+export async function fetchBrandBySlug(slug: string) {
+  return getJSON<BrandDetail>(`/brands/${encodeURIComponent(slug)}`);
 }
 
 export async function createIntelligenceRun(input: IntelligenceRunInput) {

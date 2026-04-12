@@ -25,6 +25,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/flashlights", s.handleFlashlights)
 	mux.HandleFunc("/flashlights/", s.handleFlashlightByID)
 	mux.HandleFunc("/brands", s.handleBrands)
+	mux.HandleFunc("/brands/", s.handleBrandBySlug)
 	mux.HandleFunc("/compare", s.handleCompare)
 	mux.HandleFunc("/rankings", s.handleRankings)
 	mux.HandleFunc("/finder", s.handleFinder)
@@ -76,6 +77,9 @@ type paginatedFlashlightsResponse struct {
 
 type flashlightDetail struct {
 	flashlightItem
+	BrandSlug           *string          `json:"brand_slug,omitempty"`
+	BrandWebsiteURL     *string          `json:"brand_website_url,omitempty"`
+	BrandCountryCode    *string          `json:"brand_country_code,omitempty"`
 	ReleaseYear         *int64           `json:"release_year,omitempty"`
 	MSRPUSD             *float64         `json:"msrp_usd,omitempty"`
 	ASIN                *string          `json:"asin,omitempty"`
@@ -126,6 +130,19 @@ type flashlightMode struct {
 	RuntimeMin    *int64 `json:"runtime_min,omitempty"`
 	Candela       *int64 `json:"candela,omitempty"`
 	BeamDistanceM *int64 `json:"beam_distance_m,omitempty"`
+}
+
+type brandSummary struct {
+	Name         string  `json:"name"`
+	Slug         string  `json:"slug"`
+	CountryCode  *string `json:"country_code,omitempty"`
+	WebsiteURL   *string `json:"website_url,omitempty"`
+	ProductCount int     `json:"product_count"`
+}
+
+type brandDetail struct {
+	brandSummary
+	Products []flashlightItem `json:"products"`
 }
 
 type compareResponse struct {
@@ -332,12 +349,44 @@ func (s *Server) handleBrands(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
+
+	if r.URL.Query().Get("detail") == "true" {
+		brands, err := s.listBrandsDetailed(ctx)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to fetch brands"})
+			return
+		}
+		writeJSON(w, http.StatusOK, brands)
+		return
+	}
+
 	brands, err := s.listBrands(ctx)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to fetch brands"})
 		return
 	}
 	writeJSON(w, http.StatusOK, brands)
+}
+
+func (s *Server) handleBrandBySlug(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+	slug := strings.TrimPrefix(r.URL.Path, "/brands/")
+	slug = strings.TrimSpace(slug)
+	if slug == "" || strings.Contains(slug, "/") {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid brand slug"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	brand, err := s.getBrandBySlug(ctx, slug)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, apiError{Error: "brand not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, brand)
 }
 
 func (s *Server) handleFlashlightByID(w http.ResponseWriter, r *http.Request) {

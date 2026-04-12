@@ -298,6 +298,9 @@ SELECT
 	f.name,
 	f.slug,
 	f.model_code,
+	b.slug,
+	b.website_url,
+	b.country_code,
 	EXTRACT(YEAR FROM f.launch_date)::INTEGER,
 	f.msrp_usd,
 	f.description,
@@ -406,16 +409,16 @@ WHERE f.id = $1
 `
 
 	var (
-		item                                                                                                                                          flashlightDetail
-		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial                                 sql.NullString
-		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri sql.NullInt64
-		cctMinK, cctMaxK                                                                                                                              sql.NullInt64
-		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, tactical, edc, value, throw, flood                                 sql.NullFloat64
-		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable                                                                                sql.NullBool
-		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                              sql.NullBool
-		priceUpdatedAt, amazonSyncedAt                                                                                                                sql.NullTime
-		amazonRatingCount                                                                                                                             sql.NullInt64
-		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON                                                                                   []byte
+		item                                                                                                                                                              flashlightDetail
+		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode sql.NullString
+		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri               sql.NullInt64
+		cctMinK, cctMaxK                                                                                                                                            sql.NullInt64
+		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, tactical, edc, value, throw, flood                                               sql.NullFloat64
+		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable                                                                                               sql.NullBool
+		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                                             sql.NullBool
+		priceUpdatedAt, amazonSyncedAt                                                                                                                               sql.NullTime
+		amazonRatingCount                                                                                                                                            sql.NullInt64
+		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON                                                                                                  []byte
 	)
 
 	if err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -424,6 +427,9 @@ WHERE f.id = $1
 		&item.Name,
 		&item.Slug,
 		&modelCode,
+		&brandSlug,
+		&brandWebsiteURL,
+		&brandCountryCode,
 		&releaseYear,
 		&msrpUSD,
 		&desc,
@@ -483,6 +489,9 @@ WHERE f.id = $1
 	}
 
 	item.ModelCode = nullString(modelCode)
+	item.BrandSlug = nullString(brandSlug)
+	item.BrandWebsiteURL = nullString(brandWebsiteURL)
+	item.BrandCountryCode = nullString(brandCountryCode)
 	item.ReleaseYear = nullInt(releaseYear)
 	item.MSRPUSD = nullFloat(msrpUSD)
 	item.Description = nullString(desc)
@@ -1425,6 +1434,65 @@ ORDER BY b.name ASC
 		brands = append(brands, name)
 	}
 	return brands, rows.Err()
+}
+
+func (s *Server) listBrandsDetailed(ctx context.Context) ([]brandSummary, error) {
+	query := `
+SELECT b.name, b.slug, b.country_code, b.website_url, COUNT(f.id) AS product_count
+FROM brands b
+JOIN flashlights f ON f.brand_id = b.id AND f.is_active = TRUE
+GROUP BY b.id, b.name, b.slug, b.country_code, b.website_url
+ORDER BY b.name ASC
+`
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var brands []brandSummary
+	for rows.Next() {
+		var b brandSummary
+		var cc, wu sql.NullString
+		if err := rows.Scan(&b.Name, &b.Slug, &cc, &wu, &b.ProductCount); err != nil {
+			return nil, err
+		}
+		b.CountryCode = nullString(cc)
+		b.WebsiteURL = nullString(wu)
+		brands = append(brands, b)
+	}
+	return brands, rows.Err()
+}
+
+func (s *Server) getBrandBySlug(ctx context.Context, slug string) (*brandDetail, error) {
+	bq := `
+SELECT b.id, b.name, b.slug, b.country_code, b.website_url
+FROM brands b
+WHERE b.slug = $1
+`
+	var brandID int64
+	var bd brandDetail
+	var cc, wu sql.NullString
+	err := s.db.QueryRowContext(ctx, bq, slug).Scan(&brandID, &bd.Name, &bd.Slug, &cc, &wu)
+	if err != nil {
+		return nil, err
+	}
+	bd.CountryCode = nullString(cc)
+	bd.WebsiteURL = nullString(wu)
+
+	products, _, err := s.listFlashlights(ctx, flashlightFilters{
+		Brand:    bd.Name,
+		SortBy:   "overall_score",
+		Order:    "desc",
+		Page:     1,
+		PageSize: 200,
+	})
+	if err != nil {
+		return nil, err
+	}
+	bd.Products = products
+	bd.ProductCount = len(products)
+	return &bd, nil
 }
 
 func round1(v float64) float64 {
