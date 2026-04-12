@@ -330,11 +330,8 @@ export default async function BreakdownArticlePage({
 
       {/* ── Disclaimer ───────────────────────── */}
       <aside className="review-disclaimer">
-        <strong>Transparency note:</strong> This analysis is generated from
-        verified manufacturer specifications, our proprietary scoring algorithm,
-        and aggregated Amazon customer feedback. We have not physically tested
-        this product. Scores reflect data-driven assessment, not hands-on
-        experience.
+        Analysis based on manufacturer specs, algorithmic scoring, and
+        aggregated customer data. Not a hands-on review.
       </aside>
 
       {/* ── Quick Specs ──────────────────────── */}

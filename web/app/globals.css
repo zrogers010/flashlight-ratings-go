@@ -3671,13 +3671,13 @@ select:focus, input:focus {
 }
 
 .review-disclaimer {
-  background: rgba(255, 107, 44, 0.06);
-  border: 1px solid rgba(255, 107, 44, 0.18);
-  border-radius: var(--radius-md);
-  padding: 14px 18px;
-  font-size: 0.84rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  opacity: 0.7;
 }
 
 .review-spec-grid {
