@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/compare`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/find-yours`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/brands`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE_URL}/reviews`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${BASE_URL}/guides`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/best-flashlights/under-50`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/best-flashlights/under-100`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
@@ -30,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   let productPages: MetadataRoute.Sitemap = [];
+  let reviewPages: MetadataRoute.Sitemap = [];
   let vsPages: MetadataRoute.Sitemap = [];
   let brandPages: MetadataRoute.Sitemap = [];
   try {
@@ -51,13 +53,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     if (flashlightsRes.ok) {
       const data = await flashlightsRes.json();
-      const items: { id: number }[] = data.items || [];
+      const items: { id: number; slug: string }[] = data.items || [];
       productPages = items.map((item) => ({
         url: `${BASE_URL}/flashlights/${item.id}`,
         lastModified: now,
         changeFrequency: "weekly" as const,
         priority: 0.8
       }));
+      reviewPages = items
+        .filter((item) => item.slug)
+        .map((item) => ({
+          url: `${BASE_URL}/reviews/${item.slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.8
+        }));
 
       const topIds = items.slice(0, 10).map((i) => i.id);
       for (let i = 0; i < topIds.length; i++) {
@@ -92,5 +102,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  return [...staticPages, ...categoryPages, ...guidePages, ...brandPages, ...productPages, ...vsPages];
+  return [...staticPages, ...categoryPages, ...guidePages, ...brandPages, ...productPages, ...reviewPages, ...vsPages];
 }

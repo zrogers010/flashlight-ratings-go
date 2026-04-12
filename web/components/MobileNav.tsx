@@ -25,6 +25,7 @@ export function MobileNav() {
       {open && <div className="mobile-backdrop" onClick={close} />}
       <nav className={`mobile-nav ${open ? "open" : ""}`} aria-label="Mobile navigation">
         <Link href="/flashlights" onClick={close}>Flashlights</Link>
+        <Link href="/reviews" onClick={close}>Reviews</Link>
         <Link href="/brands" onClick={close}>Brands</Link>
         <Link href="/compare" onClick={close}>Compare</Link>
         <Link href="/find-yours" onClick={close}>Find Yours</Link>
