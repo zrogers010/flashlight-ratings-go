@@ -214,6 +214,9 @@ export default async function FlashlightDetailPage({ params }: { params: { id: s
             </p>
           )}
           <div className="spec-row" style={{ marginTop: 8, fontSize: "0.85rem" }}>
+            <Link href={`/reviews/${data.slug}`}>
+              Read Full Breakdown →
+            </Link>
             <Link href={`/brands/${data.brand_slug || data.brand.toLowerCase()}`}>
               All {data.brand} Flashlights →
             </Link>

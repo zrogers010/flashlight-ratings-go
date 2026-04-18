@@ -87,6 +87,25 @@ services:
       - ./data:/app/data
     profiles: ["tools"]
 
+  # One-shot tool: refresh manual_catalog.csv with live Amazon data via Rainforest
+  # API (prices, ratings, images, links) and prune chronically-unavailable
+  # listings. Mounts ./data read-write so updates persist on the host.
+  # Invoke via:  scripts/catalog-sync.sh   (or directly via `docker compose run`)
+  rainforest-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        TARGET: rainforest-sync
+    container_name: flashlight-rainforest-sync
+    user: root
+    environment:
+      RAINFOREST_API_KEY: ${RAINFOREST_API_KEY:-}
+      AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-flashlightrat-20}
+    volumes:
+      - ./data:/app/data
+    profiles: ["tools"]
+
   web:
     build:
       context: .

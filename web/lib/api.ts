@@ -249,6 +249,18 @@ export async function fetchBrandBySlug(slug: string) {
   return getJSON<BrandDetail>(`/brands/${encodeURIComponent(slug)}`);
 }
 
+export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDetail> {
+  const listing = await fetchFlashlights({ pageSize: 500 });
+  const match = listing.items.find((item) => item.slug === slug);
+  if (!match) throw new Error(`Flashlight not found: ${slug}`);
+  return fetchFlashlightByID(String(match.id));
+}
+
+export async function fetchAllSlugs(): Promise<{ slug: string; id: number }[]> {
+  const listing = await fetchFlashlights({ pageSize: 500 });
+  return listing.items.map((item) => ({ slug: item.slug, id: item.id }));
+}
+
 export async function createIntelligenceRun(input: IntelligenceRunInput) {
   const res = await fetch(`${getAPIBase()}/intelligence/runs`, {
     method: "POST",
