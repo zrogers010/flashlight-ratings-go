@@ -20,10 +20,12 @@ API_PUBLIC_URL="https://${DOMAIN}/api"
 
 # ─── Usage ──────────────────────────────────────────────────────────
 usage() {
-  echo "Usage: $0 [setup|deploy]"
+  echo "Usage: $0 [setup|deploy|install-cron|catalog-sync]"
   echo ""
-  echo "  setup   First-time server setup (run as ec2-user with sudo)"
-  echo "  deploy  Pull latest code and deploy (run as deploy user)"
+  echo "  setup          First-time server setup (run as ec2-user with sudo)"
+  echo "  deploy         Pull latest code and deploy (run as deploy user)"
+  echo "  install-cron   Install weekly cron entry that runs catalog-sync"
+  echo "  catalog-sync   Run a one-off catalog refresh (sync + import + restart)"
   echo ""
   echo "If no argument given, defaults to 'deploy'."
   exit 0
@@ -248,10 +250,69 @@ do_deploy() {
   echo ""
 }
 
+# ═════════════════════════════════════════════════════════════════════
+# CATALOG-SYNC — thin wrapper around scripts/catalog-sync.sh
+#   Usage:  bash scripts/deploy.sh catalog-sync
+# ═════════════════════════════════════════════════════════════════════
+do_catalog_sync() {
+  if [[ ! -d "${APP_DIR}" ]]; then
+    echo "ERROR: ${APP_DIR} not found. Run setup first."
+    exit 1
+  fi
+  cd "${APP_DIR}"
+  bash scripts/catalog-sync.sh
+}
+
+# ═════════════════════════════════════════════════════════════════════
+# INSTALL-CRON — install a weekly cron entry for catalog-sync
+#   Usage:  bash scripts/deploy.sh install-cron
+#
+# Installs (or replaces) a single cron line that runs catalog-sync every
+# Monday at 09:00 UTC and appends output to ~/catalog-sync.log. The script
+# is idempotent — running it multiple times leaves exactly one entry.
+#
+# Override schedule with CRON_SCHEDULE env var, e.g.:
+#   CRON_SCHEDULE="0 4 * * *" bash scripts/deploy.sh install-cron   # daily 04:00
+# ═════════════════════════════════════════════════════════════════════
+do_install_cron() {
+  if ! command -v crontab >/dev/null 2>&1; then
+    echo "ERROR: crontab is not installed on this system."
+    exit 1
+  fi
+  if [[ ! -f "${APP_DIR}/scripts/catalog-sync.sh" ]]; then
+    echo "ERROR: ${APP_DIR}/scripts/catalog-sync.sh not found. Pull latest code first."
+    exit 1
+  fi
+
+  CRON_SCHEDULE="${CRON_SCHEDULE:-0 9 * * 1}"
+  CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
+  CRON_TAG="# flashlightratings-catalog-sync"
+  CRON_CMD="cd ${APP_DIR} && bash scripts/catalog-sync.sh >> ${CRON_LOG} 2>&1"
+  CRON_LINE="${CRON_SCHEDULE} ${CRON_CMD} ${CRON_TAG}"
+
+  echo "→ Installing cron entry:"
+  echo "    ${CRON_LINE}"
+
+  # Replace any existing entry with the same tag, then append the new one
+  ( crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" ; echo "${CRON_LINE}" ) | crontab -
+
+  echo ""
+  echo "✓ Cron installed. Verify with:  crontab -l"
+  echo "  Logs will go to: ${CRON_LOG}"
+  echo ""
+  echo "  To trigger immediately for testing:"
+  echo "    bash ${APP_DIR}/scripts/catalog-sync.sh"
+  echo ""
+  echo "  To remove later:"
+  echo "    crontab -l | grep -vF '${CRON_TAG}' | crontab -"
+}
+
 # ─── Entrypoint ─────────────────────────────────────────────────────
 case "${1:-deploy}" in
-  setup)  do_setup  ;;
-  deploy) do_deploy ;;
+  setup)         do_setup         ;;
+  deploy)        do_deploy        ;;
+  install-cron)  do_install_cron  ;;
+  catalog-sync)  do_catalog_sync  ;;
   -h|--help|help) usage ;;
   *) echo "Unknown command: $1"; usage ;;
 esac

@@ -37,6 +37,11 @@ bin/
 dist/
 coverage.out
 *.test
+# stray local binaries from `go build -o NAME ./cmd/NAME`
+/rainforest-sync
+/amazon-sync
+/catalog-build
+/catalog-refresh
 
 # Next.js / Node (web/)
 web/node_modules/
