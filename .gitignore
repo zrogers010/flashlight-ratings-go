@@ -28,6 +28,11 @@ tmp/
 temp/
 .cache/
 
+# rainforest-sync sidecar state file (per-ASIN unavailable streaks).
+# Regenerated locally on every `cmd/rainforest-sync` run; not consumed
+# by the API, worker, deploy script, or DB import.
+data/*.sync_state.json
+
 # Test artifacts
 web/mobile-screenshots/
 web/mobile-test*.js

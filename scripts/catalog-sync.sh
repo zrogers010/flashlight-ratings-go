@@ -8,8 +8,10 @@
 #
 # Workflow:
 #   1. Run the rainforest-sync container in `update` mode, which rewrites
-#      data/manual_catalog.csv with current prices/ratings/images and updates
-#      data/manual_catalog.sync_state.json with per-ASIN unavailable streaks.
+#      data/manual_catalog.csv with current prices/ratings/images. It also
+#      writes a local-only sidecar (data/manual_catalog.sync_state.json,
+#      gitignored) tracking per-ASIN unavailable streaks for the optional
+#      auto-prune feature; nothing else in the app or deploy reads it.
 #   2. Optionally prune any ASIN that has been unavailable for N consecutive
 #      runs (PRUNE_THRESHOLD env var, default 3).
 #   3. Re-import the freshly-updated CSV into Postgres.
@@ -26,8 +28,8 @@
 #   PRUNE_THRESHOLD        default: 3 (0 = never prune)
 #   SYNC_DELAY             default: 1s   (delay between Rainforest API calls)
 #   SYNC_MODE              default: update  (update | discover | both)
-#   CATALOG_AUTO_COMMIT    default: 0   (set to 1 to git add+commit+push CSV
-#                                         and state file after a successful run;
+#   CATALOG_AUTO_COMMIT    default: 0   (set to 1 to git add+commit+push the
+#                                         refreshed CSV after a successful run;
 #                                         requires push credentials in $HOME)
 #
 # Usage:
@@ -95,13 +97,15 @@ echo "→ Restarting worker..."
 ${COMPOSE} restart worker
 sleep 5
 
-# ── 5. Optional: commit refreshed CSV + state file back to git ──────────
+# ── 5. Optional: commit refreshed CSV back to git ──────────────────────
+# (data/manual_catalog.sync_state.json is gitignored — it's a local-only
+#  sidecar that rainforest-sync regenerates each run, and nothing on the
+#  server consumes it. Don't try to commit it.)
 if [[ "${CATALOG_AUTO_COMMIT}" == "1" ]]; then
-  echo "→ Auto-committing CSV + state file..."
+  echo "→ Auto-committing CSV..."
 
-  if ! git diff --quiet -- data/manual_catalog.csv data/manual_catalog.sync_state.json 2>/dev/null \
-     || git ls-files --others --exclude-standard data/manual_catalog.sync_state.json | grep -q .; then
-    git add data/manual_catalog.csv data/manual_catalog.sync_state.json
+  if ! git diff --quiet -- data/manual_catalog.csv 2>/dev/null; then
+    git add data/manual_catalog.csv
     if git diff --cached --quiet; then
       echo "  (no changes to commit)"
     else
