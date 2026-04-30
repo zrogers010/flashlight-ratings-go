@@ -292,6 +292,17 @@ do_deploy() {
     echo "⚠ Some services may be unhealthy. Check logs:"
     echo "  ${COMPOSE} logs --tail=50"
   fi
+
+  # ── Reclaim disk: drop build cache older than a week ─────────────
+  # Each build adds layers to the docker build cache and they're not
+  # auto-pruned. On a 30 GB root volume this fills the disk in a few
+  # months. Keep a week's worth (so quick "redeploy yesterday's image"
+  # rebuilds stay cached) and drop everything older. Safe — does NOT
+  # touch named volumes (e.g. pgdata) or images currently in use.
+  echo ""
+  echo "→ Reclaiming docker build cache older than 7 days..."
+  reclaimed=$(docker builder prune -f --filter "until=168h" 2>&1 | grep -E "Total reclaimed|reclaimed space" || echo "  (nothing to reclaim)")
+  echo "  ${reclaimed}"
   echo ""
 }
 
