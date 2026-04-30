@@ -20,12 +20,15 @@ API_PUBLIC_URL="https://${DOMAIN}/api"
 
 # ─── Usage ──────────────────────────────────────────────────────────
 usage() {
-  echo "Usage: $0 [setup|deploy|install-cron|catalog-sync]"
+  echo "Usage: $0 [setup|deploy|install-cron|install-cron-rotated|catalog-sync]"
   echo ""
-  echo "  setup          First-time server setup (run as ec2-user with sudo)"
-  echo "  deploy         Pull latest code and deploy (run as deploy user)"
-  echo "  install-cron   Install weekly cron entry that runs catalog-sync"
-  echo "  catalog-sync   Run a one-off catalog refresh (sync + import + restart)"
+  echo "  setup                  First-time server setup (run as ec2-user with sudo)"
+  echo "  deploy                 Pull latest code and deploy (run as deploy user)"
+  echo "  install-cron           Install weekly cron that refreshes the FULL catalog"
+  echo "  install-cron-rotated   Install daily cron that refreshes 1/N of the catalog"
+  echo "                          (default N=3, full coverage every 3 days, prunes"
+  echo "                          dead listings after 2 misses ~= 6 days)"
+  echo "  catalog-sync           Run a one-off catalog refresh (sync + import + restart)"
   echo ""
   echo "If no argument given, defaults to 'deploy'."
   exit 0
@@ -54,6 +57,21 @@ do_setup() {
     echo "  ✓ Docker installed"
   else
     echo "  ✓ Docker already installed"
+  fi
+
+  # ── Install cron (Amazon Linux ships without it) ────────────────
+  echo "→ Installing cron..."
+  if ! command -v crontab >/dev/null 2>&1; then
+    yum install -y cronie
+    systemctl enable crond
+    systemctl start crond
+    echo "  ✓ cronie installed and crond started"
+  else
+    echo "  ✓ cron already installed"
+    if ! systemctl is-active --quiet crond 2>/dev/null; then
+      systemctl enable crond 2>/dev/null || true
+      systemctl start crond 2>/dev/null || true
+    fi
   fi
 
   # ── Install Docker Compose plugin ─────────────────────────────────
@@ -197,10 +215,37 @@ do_deploy() {
   set -a; source .env; set +a
 
   # ── Pull latest ──────────────────────────────────────────────────
+  # Before `git reset --hard` blows away the working tree, preserve any
+  # local refresh of data/manual_catalog.csv (written by the catalog-sync
+  # cron). After reset we restore it ONLY IF upstream's catalog blob is
+  # the same as the one we had before — i.e. the only diff was the cron's
+  # price/rating refresh, not a real upstream catalog edit. If upstream
+  # changed the catalog (added/removed ASINs, etc.), we keep upstream's
+  # version and the next cron tick will re-refresh those rows.
+  PRESERVED_CSV=""
+  OLD_CATALOG_BLOB=""
+  if [[ -f data/manual_catalog.csv ]] && ! git diff --quiet -- data/manual_catalog.csv 2>/dev/null; then
+    PRESERVED_CSV="$(mktemp)"
+    cp data/manual_catalog.csv "${PRESERVED_CSV}"
+    OLD_CATALOG_BLOB="$(git rev-parse HEAD:data/manual_catalog.csv 2>/dev/null || echo '')"
+    echo "→ Detected local CSV refresh; will restore if upstream catalog unchanged"
+  fi
+
   echo "→ Pulling latest from origin/${BRANCH}..."
   git fetch origin "${BRANCH}"
   git reset --hard "origin/${BRANCH}"
   echo "  commit: $(git rev-parse --short HEAD)"
+
+  if [[ -n "${PRESERVED_CSV}" ]]; then
+    NEW_CATALOG_BLOB="$(git rev-parse HEAD:data/manual_catalog.csv 2>/dev/null || echo '')"
+    if [[ "${NEW_CATALOG_BLOB}" == "${OLD_CATALOG_BLOB}" ]]; then
+      cp "${PRESERVED_CSV}" data/manual_catalog.csv
+      echo "  ✓ restored locally-refreshed CSV (upstream catalog unchanged)"
+    else
+      echo "  ⚠ upstream catalog changed — kept upstream version; next cron tick will re-refresh prices"
+    fi
+    rm -f "${PRESERVED_CSV}"
+  fi
   echo ""
 
   # ── Build ────────────────────────────────────────────────────────
@@ -277,6 +322,8 @@ do_catalog_sync() {
 do_install_cron() {
   if ! command -v crontab >/dev/null 2>&1; then
     echo "ERROR: crontab is not installed on this system."
+    echo "  On Amazon Linux:  sudo yum install -y cronie && sudo systemctl enable --now crond"
+    echo "  Or re-run setup:  sudo bash $0 setup"
     exit 1
   fi
   if [[ ! -f "${APP_DIR}/scripts/catalog-sync.sh" ]]; then
@@ -307,12 +354,73 @@ do_install_cron() {
   echo "    crontab -l | grep -vF '${CRON_TAG}' | crontab -"
 }
 
+# ═════════════════════════════════════════════════════════════════════
+# INSTALL-CRON-ROTATED — install a daily cron that refreshes 1/N of catalog
+#   Usage:  bash scripts/deploy.sh install-cron-rotated
+#
+# Installs (or replaces) a cron line that runs catalog-sync every day with
+# SYNC_ROTATE_DAYS=N. The script picks a different ~1/N slice of ASINs each
+# day based on UTC day-of-year, so the full catalog is refreshed every N days
+# while only spending ~1/N of the Rainforest credits per run.
+#
+# Override with env vars:
+#   ROTATE_DAYS=14   bash scripts/deploy.sh install-cron-rotated  # bi-weekly
+#   CRON_SCHEDULE="0 4 * * *" bash scripts/deploy.sh install-cron-rotated
+# ═════════════════════════════════════════════════════════════════════
+do_install_cron_rotated() {
+  if ! command -v crontab >/dev/null 2>&1; then
+    echo "ERROR: crontab is not installed on this system."
+    echo "  On Amazon Linux:  sudo yum install -y cronie && sudo systemctl enable --now crond"
+    echo "  Or re-run setup:  sudo bash $0 setup"
+    exit 1
+  fi
+  if [[ ! -f "${APP_DIR}/scripts/catalog-sync.sh" ]]; then
+    echo "ERROR: ${APP_DIR}/scripts/catalog-sync.sh not found. Pull latest code first."
+    exit 1
+  fi
+
+  # Defaults chosen for a ~100-300 ASIN catalog: every ASIN refreshed every
+  # ~3 days (~1/3 of catalog touched per run), and a dead listing is pruned
+  # after 2 consecutive misses (~6 days of being unavailable). Override with
+  # ROTATE_DAYS / PRUNE_THRESHOLD env vars at install time.
+  ROTATE_DAYS="${ROTATE_DAYS:-3}"
+  PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-2}"
+  CRON_SCHEDULE="${CRON_SCHEDULE:-0 9 * * *}"
+  CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
+  # Use a distinct tag from install-cron so the two are independent and
+  # uninstalling one doesn't clobber the other.
+  CRON_TAG="# flashlightratings-catalog-sync-rotated"
+  CRON_CMD="cd ${APP_DIR} && SYNC_ROTATE_DAYS=${ROTATE_DAYS} PRUNE_THRESHOLD=${PRUNE_THRESHOLD} bash scripts/catalog-sync.sh >> ${CRON_LOG} 2>&1"
+  CRON_LINE="${CRON_SCHEDULE} ${CRON_CMD} ${CRON_TAG}"
+
+  echo "→ Installing rotated cron entry:"
+  echo "    ${CRON_LINE}"
+  echo ""
+  echo "  This will refresh ~1/${ROTATE_DAYS}th of the catalog each day,"
+  echo "  giving full coverage every ${ROTATE_DAYS} days at ~1/${ROTATE_DAYS} the credit cost."
+  echo "  Listings unavailable for ${PRUNE_THRESHOLD} consecutive runs (~${PRUNE_THRESHOLD}× ${ROTATE_DAYS} days) get pruned."
+
+  ( crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" ; echo "${CRON_LINE}" ) | crontab -
+
+  echo ""
+  echo "✓ Rotated cron installed. Verify with:  crontab -l"
+  echo "  Logs will go to: ${CRON_LOG}"
+  echo ""
+  echo "  Heads-up: if you previously installed the weekly full-catalog cron"
+  echo "  (install-cron), it's still active. Remove it to avoid double-spending:"
+  echo "    crontab -l | grep -vF '# flashlightratings-catalog-sync ' | crontab -"
+  echo ""
+  echo "  To remove this rotated cron later:"
+  echo "    crontab -l | grep -vF '${CRON_TAG}' | crontab -"
+}
+
 # ─── Entrypoint ─────────────────────────────────────────────────────
 case "${1:-deploy}" in
-  setup)         do_setup         ;;
-  deploy)        do_deploy        ;;
-  install-cron)  do_install_cron  ;;
-  catalog-sync)  do_catalog_sync  ;;
+  setup)                 do_setup                 ;;
+  deploy)                do_deploy                ;;
+  install-cron)          do_install_cron          ;;
+  install-cron-rotated)  do_install_cron_rotated  ;;
+  catalog-sync)          do_catalog_sync          ;;
   -h|--help|help) usage ;;
   *) echo "Unknown command: $1"; usage ;;
 esac

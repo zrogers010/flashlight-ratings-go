@@ -28,6 +28,14 @@
 #   PRUNE_THRESHOLD        default: 3 (0 = never prune)
 #   SYNC_DELAY             default: 1s   (delay between Rainforest API calls)
 #   SYNC_MODE              default: update  (update | discover | both)
+#   SYNC_ROTATE_DAYS       default: 0   (when >1, shard catalog into N daily
+#                                         slices — only ~1/N of ASINs get
+#                                         refreshed per run, full coverage
+#                                         every N days. Use with daily cron
+#                                         to spread Rainforest cost.)
+#   SYNC_LIMIT             default: 0   (process at most N rows; 0 = all.
+#                                         Ignored when SYNC_ROTATE_DAYS > 1.)
+#   SYNC_OFFSET            default: 0   (skip first N rows; pairs with SYNC_LIMIT)
 #   CATALOG_AUTO_COMMIT    default: 0   (set to 1 to git add+commit+push the
 #                                         refreshed CSV after a successful run;
 #                                         requires push credentials in $HOME)
@@ -36,6 +44,7 @@
 #   bash scripts/catalog-sync.sh
 #   PRUNE_THRESHOLD=5 bash scripts/catalog-sync.sh
 #   CATALOG_AUTO_COMMIT=1 bash scripts/catalog-sync.sh
+#   SYNC_ROTATE_DAYS=7 bash scripts/catalog-sync.sh   # 1/7th of catalog today
 
 set -euo pipefail
 
@@ -66,14 +75,20 @@ fi
 PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-3}"
 SYNC_MODE="${SYNC_MODE:-update}"
 SYNC_DELAY="${SYNC_DELAY:-1s}"
+SYNC_ROTATE_DAYS="${SYNC_ROTATE_DAYS:-0}"
+SYNC_LIMIT="${SYNC_LIMIT:-0}"
+SYNC_OFFSET="${SYNC_OFFSET:-0}"
 CATALOG_AUTO_COMMIT="${CATALOG_AUTO_COMMIT:-0}"
 
 echo "═══ Catalog Sync ═══"
-echo "  app dir:    ${APP_DIR}"
-echo "  mode:       ${SYNC_MODE}"
-echo "  prune:      ${PRUNE_THRESHOLD} consecutive unavailable runs"
-echo "  delay:      ${SYNC_DELAY}"
-echo "  auto-commit ${CATALOG_AUTO_COMMIT}"
+echo "  app dir:     ${APP_DIR}"
+echo "  mode:        ${SYNC_MODE}"
+echo "  prune:       ${PRUNE_THRESHOLD} consecutive unavailable runs"
+echo "  delay:       ${SYNC_DELAY}"
+echo "  rotate-days: ${SYNC_ROTATE_DAYS}  (0 = full catalog each run)"
+echo "  limit:       ${SYNC_LIMIT}  (0 = no limit)"
+echo "  offset:      ${SYNC_OFFSET}"
+echo "  auto-commit: ${CATALOG_AUTO_COMMIT}"
 echo ""
 
 # ── 1. Build (cheap on subsequent runs thanks to docker layer cache) ─────
@@ -82,7 +97,11 @@ ${COMPOSE} --profile tools build rainforest-sync
 
 # ── 2. Run sync ──────────────────────────────────────────────────────────
 echo "→ Running rainforest-sync (mode=${SYNC_MODE}, prune=${PRUNE_THRESHOLD})..."
-${COMPOSE} --profile tools run --rm rainforest-sync \
+${COMPOSE} --profile tools run --rm \
+  -e SYNC_ROTATE_DAYS="${SYNC_ROTATE_DAYS}" \
+  -e SYNC_LIMIT="${SYNC_LIMIT}" \
+  -e SYNC_OFFSET="${SYNC_OFFSET}" \
+  rainforest-sync \
   -mode="${SYNC_MODE}" \
   -delay="${SYNC_DELAY}" \
   -prune-unavailable="${PRUNE_THRESHOLD}" \

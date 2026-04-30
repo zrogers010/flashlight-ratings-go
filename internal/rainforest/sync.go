@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // CSV column indices (0-based) matching manual_catalog.csv header.
@@ -22,7 +23,8 @@ const (
 )
 
 type SyncResult struct {
-	Total       int
+	Total       int // rows considered (after slice/rotation filtering)
+	Skipped     int // rows skipped due to slice/rotation
 	Updated     int
 	Unavailable int
 	Errors      int
@@ -33,11 +35,48 @@ type SyncResult struct {
 	State *SyncState
 }
 
+// SyncOptions controls how SyncCSV processes rows. Zero value = process every
+// row (legacy behavior). Slice/rotation options let callers refresh only a
+// subset per run, which is how the daily-rotation cron stays under Rainforest
+// usage limits.
+type SyncOptions struct {
+	PartnerTag string
+	DryRun     bool
+
+	// RotateDays > 0 enables auto-rotation: the catalog is sharded into
+	// RotateDays groups by row index, and only the shard for "today" (based
+	// on UTC day-of-year) is processed. With RotateDays=7 a 110-row catalog
+	// touches ~16 ASINs per daily run and every ASIN is refreshed once a week.
+	// Mutually exclusive with Limit/Offset (RotateDays takes precedence).
+	RotateDays int
+
+	// Limit / Offset give explicit slice control. When Limit > 0, only rows
+	// with index in [Offset, Offset+Limit) (0-based, excluding header) are
+	// processed. Useful for one-off batch refreshes.
+	Limit  int
+	Offset int
+
+	// Now lets tests inject a deterministic time for rotation. Defaults to
+	// time.Now when nil.
+	Now func() time.Time
+}
+
 // SyncCSV reads the CSV, looks up each ASIN via Rainforest, updates
 // price/rating/image fields, and writes the CSV back. It also loads/updates
 // a sidecar JSON state file (StatePathFor(csvPath)) that tracks each ASIN's
 // consecutive-unavailable streak so callers can prune chronic-dead listings.
+//
+// Deprecated: prefer SyncCSVWithOptions for new callers. This wrapper preserves
+// the original 5-arg signature for tests / older entrypoints.
 func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag string, dryRun bool) (*SyncResult, error) {
+	return SyncCSVWithOptions(ctx, client, csvPath, SyncOptions{
+		PartnerTag: partnerTag,
+		DryRun:     dryRun,
+	})
+}
+
+// SyncCSVWithOptions is the slice/rotation-aware entrypoint. See SyncCSV docs.
+func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opts SyncOptions) (*SyncResult, error) {
 	f, err := os.Open(csvPath)
 	if err != nil {
 		return nil, fmt.Errorf("open csv: %w", err)
@@ -61,7 +100,13 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 		return nil, fmt.Errorf("load sync state: %w", err)
 	}
 
-	result := &SyncResult{Total: len(records) - 1, State: state}
+	dataRowCount := len(records) - 1
+	selector := newRowSelector(opts, dataRowCount)
+	if selector.label != "" {
+		log.Printf("Slice: %s (%d/%d rows will be processed)", selector.label, selector.selectedCount, dataRowCount)
+	}
+
+	result := &SyncResult{State: state}
 
 	for i := 1; i < len(records); i++ {
 		row := records[i]
@@ -71,7 +116,13 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 			continue
 		}
 
-		log.Printf("[%d/%d] Looking up %s %s (ASIN: %s)...", i, result.Total, brandName, strings.TrimSpace(row[5]), asin)
+		if !selector.includes(i - 1) {
+			result.Skipped++
+			continue
+		}
+		result.Total++
+
+		log.Printf("[%d/%d] Looking up %s %s (ASIN: %s)...", i, dataRowCount, brandName, strings.TrimSpace(row[5]), asin)
 
 		product, err := client.LookupProduct(ctx, asin)
 		if err != nil {
@@ -143,9 +194,8 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 			row[colImageURL] = product.MainImage
 		}
 
-		// Update amazon_url with current partner tag
-		if partnerTag != "" {
-			canonicalURL := fmt.Sprintf("https://www.amazon.com/dp/%s?tag=%s", asin, partnerTag)
+		if opts.PartnerTag != "" {
+			canonicalURL := fmt.Sprintf("https://www.amazon.com/dp/%s?tag=%s", asin, opts.PartnerTag)
 			if row[colAmazonURL] != canonicalURL {
 				row[colAmazonURL] = canonicalURL
 			}
@@ -183,16 +233,16 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 		log.Printf("State: garbage-collected %d entries for ASINs no longer in CSV", removed)
 	}
 
-	if !dryRun && result.Updated > 0 {
+	if !opts.DryRun && result.Updated > 0 {
 		if err := writeCSV(csvPath, records); err != nil {
 			return result, fmt.Errorf("write csv: %w", err)
 		}
 		log.Printf("Wrote updated CSV to %s", csvPath)
-	} else if dryRun && result.Updated > 0 {
+	} else if opts.DryRun && result.Updated > 0 {
 		log.Printf("DRY RUN: would have written %d changes to %s", result.Updated, csvPath)
 	}
 
-	if !dryRun {
+	if !opts.DryRun {
 		if err := state.Save(statePath); err != nil {
 			return result, fmt.Errorf("save sync state: %w", err)
 		}
@@ -202,6 +252,68 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 	}
 
 	return result, nil
+}
+
+// rowSelector encapsulates the slice/rotation predicate so SyncCSVWithOptions
+// can decide row-by-row whether to spend an API credit. Index is 0-based over
+// data rows (header excluded).
+type rowSelector struct {
+	includes      func(idx int) bool
+	selectedCount int
+	label         string
+}
+
+func newRowSelector(opts SyncOptions, dataRowCount int) rowSelector {
+	if dataRowCount <= 0 {
+		return rowSelector{includes: func(int) bool { return true }}
+	}
+
+	if opts.RotateDays > 1 {
+		now := time.Now
+		if opts.Now != nil {
+			now = opts.Now
+		}
+		shard := (now().UTC().YearDay() - 1) % opts.RotateDays
+		count := 0
+		for i := 0; i < dataRowCount; i++ {
+			if i%opts.RotateDays == shard {
+				count++
+			}
+		}
+		return rowSelector{
+			includes: func(idx int) bool {
+				return idx%opts.RotateDays == shard
+			},
+			selectedCount: count,
+			label: fmt.Sprintf("rotate-days=%d shard=%d/%d (UTC day-of-year)",
+				opts.RotateDays, shard, opts.RotateDays),
+		}
+	}
+
+	if opts.Limit > 0 {
+		start := opts.Offset
+		if start < 0 {
+			start = 0
+		}
+		end := start + opts.Limit
+		if end > dataRowCount {
+			end = dataRowCount
+		}
+		count := end - start
+		if count < 0 {
+			count = 0
+		}
+		return rowSelector{
+			includes:      func(idx int) bool { return idx >= start && idx < end },
+			selectedCount: count,
+			label:         fmt.Sprintf("limit=%d offset=%d", opts.Limit, opts.Offset),
+		}
+	}
+
+	return rowSelector{
+		includes:      func(int) bool { return true },
+		selectedCount: dataRowCount,
+	}
 }
 
 // PruneResult summarizes a prune-unavailable run.
