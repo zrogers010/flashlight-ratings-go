@@ -351,8 +351,15 @@ do_install_cron() {
   echo "→ Installing cron entry:"
   echo "    ${CRON_LINE}"
 
-  # Replace any existing entry with the same tag, then append the new one
-  ( crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" ; echo "${CRON_LINE}" ) | crontab -
+  # Replace any existing entry with the same tag, then append the new one.
+  # Build the new crontab in a temp file so we don't rely on subshell exit
+  # semantics — `set -euo pipefail` plus an empty existing crontab caused
+  # earlier versions to silently install nothing.
+  CRON_TMP="$(mktemp)"
+  crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" > "${CRON_TMP}" || true
+  echo "${CRON_LINE}" >> "${CRON_TMP}"
+  crontab "${CRON_TMP}"
+  rm -f "${CRON_TMP}"
 
   echo ""
   echo "✓ Cron installed. Verify with:  crontab -l"
@@ -411,7 +418,12 @@ do_install_cron_rotated() {
   echo "  giving full coverage every ${ROTATE_DAYS} days at ~1/${ROTATE_DAYS} the credit cost."
   echo "  Listings unavailable for ${PRUNE_THRESHOLD} consecutive runs (~${PRUNE_THRESHOLD}× ${ROTATE_DAYS} days) get pruned."
 
-  ( crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" ; echo "${CRON_LINE}" ) | crontab -
+  # Build the new crontab in a temp file (see do_install_cron for why).
+  CRON_TMP="$(mktemp)"
+  crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" > "${CRON_TMP}" || true
+  echo "${CRON_LINE}" >> "${CRON_TMP}"
+  crontab "${CRON_TMP}"
+  rm -f "${CRON_TMP}"
 
   echo ""
   echo "✓ Rotated cron installed. Verify with:  crontab -l"
