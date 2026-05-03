@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { FlashlightCard } from "@/components/FlashlightCard";
+import { CategoryStrip } from "@/components/CategoryStrip";
 import { FAQ } from "@/components/FAQ";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchRankings } from "@/lib/api";
@@ -183,18 +183,17 @@ const DASHBOARD_USE_CASES: {
 ];
 
 export default async function HomePage() {
-  const [rankings, flashlights] = await Promise.all([
-    fetchRankings("tactical"),
+  const [tacticalRanks, edcRanks, valueRanks, flashlights] = await Promise.all([
+    fetchRankings("tactical", 4),
+    fetchRankings("edc", 4),
+    fetchRankings("value", 4),
     fetchFlashlights({ pageSize: 500 })
   ]);
 
-  const topRanked = rankings.items.slice(0, 5);
   const catalogSize = flashlights.total;
-  const topScore = topRanked[0]?.score;
+  const topScore = tacticalRanks.items[0]?.score;
   const prices = flashlights.items.map((x) => x.price_usd).filter((p): p is number => p !== undefined);
   const minPrice = prices.length ? Math.min(...prices) : 0;
-
-  const compareIds = topRanked.map((r) => r.flashlight.id).join(",");
 
   return (
     <section className="grid">
@@ -236,6 +235,30 @@ export default async function HomePage() {
         </div>
       </div>
 
+      <CategoryStrip
+        kicker="Top Picks"
+        title="Top Tactical Flashlights"
+        description="Highest-scoring tactical lights — built for high-output bursts, durability, and quick deployment."
+        viewAllHref="/best-flashlights/tactical"
+        items={tacticalRanks.items}
+      />
+
+      <CategoryStrip
+        kicker="Top Picks"
+        title="Top Everyday Carry Flashlights"
+        description="Pocket-sized, balanced runtime, and instant access. Picks optimized for daily use."
+        viewAllHref="/best-flashlights/edc"
+        items={edcRanks.items}
+      />
+
+      <CategoryStrip
+        kicker="Top Picks"
+        title="Best Value Flashlights"
+        description="Most performance per dollar. Strong specs, low price, no compromise on the essentials."
+        viewAllHref="/best-flashlights/value"
+        items={valueRanks.items}
+      />
+
       <div className="stat-grid stat-grid--metrics">
         <div className="stat-card">
           <p className="kicker">Catalog</p>
@@ -269,44 +292,6 @@ export default async function HomePage() {
           <Link href="/best-flashlights/throw" className="chip">Max Throw</Link>
           <Link href="/best-flashlights/flood" className="chip">Max Flood</Link>
         </div>
-      </div>
-
-      <div className="panel">
-        <div className="section-header">
-          <h2>Top Ranked Tactical</h2>
-          <Link href="/best-flashlights/tactical">View all →</Link>
-        </div>
-        <p className="muted dashboard-section-lead">
-          Highest tactical profile scores in the current ranking run.
-        </p>
-        <div className="card-grid">
-          {topRanked.map((item) => (
-            <FlashlightCard
-              key={item.flashlight.id}
-              item={{
-                id: item.flashlight.id,
-                brand: item.flashlight.brand,
-                name: item.flashlight.name,
-                slug: item.flashlight.slug,
-                image_url: item.flashlight.image_url,
-                amazon_url: item.flashlight.amazon_url,
-                max_lumens: item.flashlight.max_lumens,
-                beam_distance_m: item.flashlight.beam_distance_m,
-                waterproof_rating: item.flashlight.waterproof_rating,
-                price_usd: item.flashlight.price_usd,
-                tactical_score: item.score
-              }}
-              rank={item.rank}
-            />
-          ))}
-        </div>
-        {compareIds ? (
-          <div className="dashboard-compare-row">
-            <Link href={`/compare?ids=${compareIds}`} className="btn btn-ghost">
-              Compare top {topRanked.length} →
-            </Link>
-          </div>
-        ) : null}
       </div>
 
       <div className="panel">

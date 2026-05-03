@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useCompareStore } from "@/lib/compare-store";
-import { CompareOverlayTrigger } from "./CompareOverlay";
 
 export function CompareTray() {
   const items = useCompareStore((s) => s.items);
@@ -13,6 +13,9 @@ export function CompareTray() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted || items.length === 0) return null;
+
+  const canCompare = items.length >= 2;
+  const compareHref = `/compare?ids=${items.map((i) => i.id).join(",")}`;
 
   return (
     <div className="compare-tray">
@@ -47,9 +50,15 @@ export function CompareTray() {
           <button className="btn btn-ghost btn-sm" onClick={clear}>
             Clear
           </button>
-          <CompareOverlayTrigger>
-            Compare {items.length}
-          </CompareOverlayTrigger>
+          {canCompare ? (
+            <Link href={compareHref} className="button-link btn-sm">
+              Compare {items.length}
+            </Link>
+          ) : (
+            <button type="button" className="button-link btn-sm" disabled>
+              Compare {items.length}
+            </button>
+          )}
         </div>
       </div>
     </div>

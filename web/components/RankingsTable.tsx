@@ -16,7 +16,19 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   return <span>{dir === "asc" ? "↑" : "↓"}</span>;
 }
 
-export function RankingsTable({ items }: { items: RankingItem[] }) {
+export function RankingsTable({
+  items,
+  preselectTopN = 0,
+}: {
+  items: RankingItem[];
+  /**
+   * If > 0, replace the global compare cart with the top N ranked items from
+   * this list whenever those top N change (initial mount + use-case switches).
+   * This makes /compare land with a meaningful checked example so the user can
+   * see what a comparison looks like and tweak from there.
+   */
+  preselectTopN?: number;
+}) {
   const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -25,8 +37,39 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
   const compareItems = useCompareStore((s) => s.items);
   const addCompare = useCompareStore((s) => s.add);
   const removeCompare = useCompareStore((s) => s.remove);
+  const clearCompare = useCompareStore((s) => s.clear);
 
   useEffect(() => setMounted(true), []);
+
+  // Stable signature of the items we'd seed. Re-seed whenever it changes
+  // (e.g. user switches use-case filter and the top 4 differ).
+  const seedSignature = useMemo(() => {
+    if (preselectTopN <= 0) return "";
+    return [...items]
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, preselectTopN)
+      .map((i) => i.flashlight.id)
+      .join(",");
+  }, [items, preselectTopN]);
+
+  useEffect(() => {
+    if (!mounted || !seedSignature) return;
+
+    const seed = [...items]
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, preselectTopN)
+      .map((i) => ({
+        id: i.flashlight.id,
+        brand: i.flashlight.brand,
+        name: i.flashlight.name,
+        image_url: i.flashlight.image_url,
+      }));
+
+    clearCompare();
+    for (const item of seed) addCompare(item);
+    // Items + preselectTopN are captured via seedSignature.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, seedSignature]);
 
   function onSort(next: SortKey) {
     if (next === sortKey) {
@@ -152,7 +195,7 @@ export function RankingsTable({ items }: { items: RankingItem[] }) {
                   <span style={{
                     fontFamily: "var(--font-mono)",
                     fontWeight: 700,
-                    color: item.rank <= 3 ? "var(--accent)" : "var(--text-secondary)"
+                    color: "var(--text-secondary)",
                   }}>
                     #{item.rank}
                   </span>

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RankingsTable } from "@/components/RankingsTable";
-import { CompareTable } from "@/components/CompareTable";
-import { fetchRankings, fetchFlashlightByID, type FlashlightDetail } from "@/lib/api";
+import { CompareCardView } from "@/components/CompareCardView";
+import { PopularComparisons } from "@/components/PopularComparisons";
+import { fetchRankings, fetchFlashlightByID, type FlashlightDetail, type RankingItem } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ const useCaseLabel: Record<(typeof useCases)[number], string> = {
 };
 
 const useCaseDesc: Record<(typeof useCases)[number], string> = {
-  overall: "Select flashlights to compare side by side, or browse all rankings by category.",
+  overall: "Pick flashlights to compare side by side, or browse all rankings by category.",
   tactical: "Ranked by candela, runtime, durability, and throw — optimized for tactical and defense.",
   edc: "Ranked by runtime, flood, price, and size — optimized for everyday pocket carry.",
   value: "Ranked by performance-per-dollar — the best specs for the lowest price.",
@@ -65,7 +66,47 @@ export default async function ComparePage({
   const selected = useCases.includes((sp.use_case || "") as (typeof useCases)[number])
     ? (sp.use_case as (typeof useCases)[number])
     : "overall";
-  const data = await fetchRankings(selected, 500);
+
+  // Pull rankings for the active use case PLUS the three popular profiles so
+  // we can build the "Popular Comparisons" tiles dynamically. All in parallel.
+  const [activeData, tactical, edc, value] = await Promise.all([
+    fetchRankings(selected, 500),
+    selected === "tactical" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("tactical", 2),
+    selected === "edc" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("edc", 2),
+    selected === "value" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("value", 2),
+  ]);
+
+  // For the active use case, derive its top-2 from the same payload (avoids a 5th call).
+  const activeTop2 = activeData.items.slice(0, 2);
+
+  const pairs = [
+    {
+      label: `Top ${useCaseLabel[selected]}`,
+      description: `The two highest-scoring ${useCaseLabel[selected].toLowerCase()} flashlights, head to head.`,
+      items: activeTop2,
+    },
+    selected !== "tactical"
+      ? {
+          label: "Top Tactical",
+          description: "Highest-scoring tactical lights — bright, durable, fast deployment.",
+          items: tactical.items,
+        }
+      : null,
+    selected !== "edc"
+      ? {
+          label: "Top EDC",
+          description: "Best everyday-carry picks — pocket-friendly with balanced runtime.",
+          items: edc.items,
+        }
+      : null,
+    selected !== "value"
+      ? {
+          label: "Top Value",
+          description: "Most performance per dollar — strong specs at low prices.",
+          items: value.items,
+        }
+      : null,
+  ].filter((p): p is NonNullable<typeof p> => p !== null);
 
   return (
     <section className="grid">
@@ -94,8 +135,16 @@ export default async function ComparePage({
         </div>
       </div>
 
+      <PopularComparisons pairs={pairs} />
+
       <div className="panel panel-flush">
-        <RankingsTable items={data.items} />
+        <div className="panel-section-intro">
+          <h2 style={{ fontSize: "1.1rem", margin: "0 0 4px" }}>Or build your own comparison</h2>
+          <p className="muted" style={{ margin: 0, fontSize: "0.88rem" }}>
+            Tick the box on any row to add it to the compare cart. Compare up to 4 at a time.
+          </p>
+        </div>
+        <RankingsTable items={activeData.items} preselectTopN={3} />
       </div>
 
       <AmazonDisclosure />
@@ -104,7 +153,11 @@ export default async function ComparePage({
 }
 
 async function DetailComparison({ ids: idStr }: { ids: string }) {
-  const ids = idStr.split(",").map((s) => s.trim()).filter(Boolean);
+  const ids = idStr
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 4); // hard cap at 4 for layout sanity
 
   const results = await Promise.allSettled(ids.map((id) => fetchFlashlightByID(id)));
   const items = results
@@ -132,21 +185,19 @@ async function DetailComparison({ ids: idStr }: { ids: string }) {
   }
 
   return (
-    <section className="grid">
+    <section className="grid compare-detail-section">
       <Breadcrumbs items={[{ label: "Compare", href: "/compare" }, { label: "Side by Side" }]} />
 
       <div className="panel hero">
         <p className="kicker">Side-by-Side Comparison</p>
         <h1>Compare {items.length} Flashlights</h1>
         <p className="muted">
-          Full specs, beam visualization, and scores compared. Best value in each row is highlighted.
-          Toggle &quot;Hide identical specs&quot; to focus on differences.
+          Key specs, scores, and Amazon prices at a glance. Winner badges show which model leads each profile.
+          Expand the full spec comparison below for the deep dive.
         </p>
       </div>
 
-      <div className="panel panel-flush">
-        <CompareTable items={items} />
-      </div>
+      <CompareCardView items={items} showFullSpecsToggle />
 
       <div className="panel" style={{ textAlign: "center" }}>
         <Link href="/compare" className="button-link button-secondary">
