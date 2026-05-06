@@ -8,7 +8,7 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { ItemListStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "All Flashlights — Full Catalog with Specs & Prices",
@@ -196,7 +196,7 @@ export default async function FlashlightsPage({
         items={data.items.slice(0, 10).map((item, i) => ({
           position: i + 1,
           name: `${item.brand} ${item.name}`,
-          url: `/flashlights/${item.id}`,
+          url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
         }))}

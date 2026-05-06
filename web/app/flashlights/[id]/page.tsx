@@ -10,7 +10,7 @@ import { FlashlightCard } from "@/components/FlashlightCard";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchFlashlightByID, fetchFlashlights, fetchRankings } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
@@ -102,10 +102,18 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   const desc = `${name} review: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100.`;
 
+  // The slug-based /reviews/[slug] page is the canonical URL for SEO. This
+  // numeric-ID page exists for backward compatibility (old bookmarks, internal
+  // links) but is marked noindex so Google consolidates ranking signals on
+  // the slug URL instead of treating the two as duplicate content.
+  const canonicalSlug = data.slug;
   return {
     title: `${name} Review — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
     description: desc,
-    alternates: { canonical: `/flashlights/${params.id}` },
+    alternates: canonicalSlug
+      ? { canonical: `/reviews/${canonicalSlug}` }
+      : { canonical: `/flashlights/${params.id}` },
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${name} — Flashlight Review & Score`,
       description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)}`,

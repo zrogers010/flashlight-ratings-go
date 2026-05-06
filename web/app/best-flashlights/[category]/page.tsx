@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/StructuredData";
-import { fetchRankings, fetchFlashlights } from "@/lib/api";
+import { fetchRankings, fetchFlashlights, fetchBrandsDetailed, type FlashlightItem } from "@/lib/api";
+import {
+  parseCompositeFilter,
+  composeCompositeSlug,
+  renderCompositeTitle,
+  renderCompositeDescription,
+  renderCompositeH1,
+  CURATED_COMPOSITE_SEEDS,
+  type CompositeFilter,
+} from "./composite";
 
 type CategoryConfig = {
   label: string;
@@ -145,18 +155,84 @@ const categoryMap: Record<string, CategoryConfig> = {
   }
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+// Pre-render: the 9 hand-curated category pages PLUS a curated set of
+// composite-filter combos (brand × use_case, use_case × budget, use_case ×
+// battery). Composite combos beyond this list still resolve via ISR.
+export async function generateStaticParams() {
+  const categoryParams = Object.keys(categoryMap).map((category) => ({ category }));
+
+  let brandSlugs: string[] = [];
+  try {
+    const brands = await fetchBrandsDetailed();
+    brandSlugs = brands.map((b) => b.slug).filter(Boolean);
+  } catch {
+    // API offline at build → ship just the static categories. Composite
+    // pages will still build on first hit via ISR.
+    return categoryParams;
+  }
+
+  const compositeParams: { category: string }[] = [];
+  const useCases = ["tactical", "edc", "camping", "search-rescue", "survival", "diving"];
+
+  // Brand × use_case (highest-value combos: "best fenix tactical flashlight")
+  for (const brand of brandSlugs) {
+    for (const uc of useCases) {
+      compositeParams.push({ category: `${brand}-${uc}` });
+    }
+  }
+
+  // Use_case × budget ("best edc flashlight under $100")
+  for (const uc of useCases) {
+    for (const budget of CURATED_COMPOSITE_SEEDS.budgets) {
+      compositeParams.push({ category: `${uc}-under-${budget}` });
+    }
+  }
+
+  // Use_case × battery ("best 21700 tactical flashlight")
+  for (const uc of useCases) {
+    for (const battery of CURATED_COMPOSITE_SEEDS.batteries) {
+      compositeParams.push({ category: `${uc}-${battery}` });
+    }
+  }
+
+  return [...categoryParams, ...compositeParams];
+}
+
+// resolveBrandSlugs fetches the {slug -> display name} map used by the
+// composite parser. Cached by Next's fetch revalidation.
+async function resolveBrandSlugs(): Promise<Map<string, string>> {
+  try {
+    const brands = await fetchBrandsDetailed();
+    return new Map(brands.map((b) => [b.slug, b.name]));
+  } catch {
+    return new Map();
+  }
+}
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   const config = categoryMap[params.category];
-  if (!config) {
-    return { title: "Category Not Found" };
+  if (config) {
+    return {
+      title: `${config.h1} 2026 — Ranked by Expert Score`,
+      description: config.description,
+      alternates: { canonical: `/best-flashlights/${params.category}` }
+    };
   }
-  return {
-    title: `${config.h1} 2026 — Ranked by Expert Score`,
-    description: config.description,
-    alternates: { canonical: `/best-flashlights/${params.category}` }
-  };
+
+  const brandSlugs = await resolveBrandSlugs();
+  const composite = parseCompositeFilter(params.category, brandSlugs);
+  if (composite) {
+    const canonicalSlug = composeCompositeSlug(composite);
+    return {
+      title: renderCompositeTitle(composite),
+      description: renderCompositeDescription(composite),
+      alternates: { canonical: `/best-flashlights/${canonicalSlug}` },
+    };
+  }
+
+  return { title: "Category Not Found" };
 }
 
 type ScoredCard = {
@@ -193,24 +269,33 @@ export default async function CategoryPage({ params }: { params: { category: str
   const config = categoryMap[params.category];
 
   if (!config) {
-    return (
-      <section className="grid">
-        <div className="panel hero">
-          <h1>Category Not Found</h1>
-          <p className="muted">
-            This category doesn&apos;t exist. <Link href="/best-flashlights">Browse all categories.</Link>
-          </p>
-        </div>
-      </section>
-    );
+    // Not a hand-curated category — try parsing as a composite filter
+    // (e.g. "olight-edc-under-100"). If that fails too, 404.
+    const brandSlugs = await resolveBrandSlugs();
+    const composite = parseCompositeFilter(params.category, brandSlugs);
+    if (composite) {
+      return <CompositePage filter={composite} />;
+    }
+    notFound();
   }
 
   const useFiltered = !!config.useCaseFilter;
 
   const [rankingData, filteredData] = await Promise.all([
-    fetchRankings(config.rankingKey, 200),
+    fetchRankings(config.rankingKey, 200).catch(() => ({ items: [] as never[] })),
     useFiltered
-      ? fetchFlashlights({ useCase: config.useCaseFilter, pageSize: 200, sortBy: config.sortField, order: "desc" })
+      ? fetchFlashlights({
+          useCase: config.useCaseFilter,
+          pageSize: 200,
+          sortBy: config.sortField,
+          order: "desc",
+        }).catch(() => ({
+          page: 1,
+          page_size: 0,
+          total: 0,
+          total_pages: 0,
+          items: [] as never[],
+        }))
       : Promise.resolve(null),
   ]);
 
@@ -264,7 +349,7 @@ export default async function CategoryPage({ params }: { params: { category: str
         items={cards.slice(0, 10).map((item, i) => ({
           position: i + 1,
           name: `${item.brand} ${item.name}`,
-          url: `/flashlights/${item.id}`,
+          url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd
         }))}
@@ -328,6 +413,125 @@ export default async function CategoryPage({ params }: { params: { category: str
             ))}
         </div>
       </div>
+
+      <AmazonDisclosure />
+    </section>
+  );
+}
+
+// ─── Composite filter renderer ──────────────────────────────────────────
+// Generic landing page for parsed composite filter slugs. Re-uses the
+// FlashlightCard grid + ItemList schema so SEO surface is consistent with
+// hand-curated category pages.
+async function CompositePage({ filter }: { filter: CompositeFilter }) {
+  const canonicalSlug = composeCompositeSlug(filter);
+  const h1 = renderCompositeH1(filter);
+  const description = renderCompositeDescription(filter);
+
+  // Map composite filter dimensions onto the API's flashlight listing.
+  // Sort heuristic: when a use_case is set, sort by that profile's score.
+  // Otherwise default to overall_score desc.
+  const sortField = filter.useCase ? `${filter.useCase}_score` : "overall_score";
+  let items: FlashlightItem[] = [];
+  try {
+    const res = await fetchFlashlights({
+      brand: filter.brandName,
+      useCase: filter.useCase,
+      batteryType: filter.batteryType,
+      maxPrice: filter.maxPrice,
+      minPrice: filter.minPrice,
+      sortBy: sortField,
+      order: "desc",
+      pageSize: 100,
+    });
+    items = res.items;
+  } catch {
+    items = [];
+  }
+
+  // Internal-link suggestions: drop one filter dimension at a time so users
+  // (and crawlers) can click "broader" search variants. This forms the
+  // composite-page link graph that helps Google discover the long tail.
+  const broaderLinks: { label: string; href: string }[] = [];
+  if (filter.brandName) {
+    const without = { ...filter, brandSlug: undefined, brandName: undefined };
+    const slug = composeCompositeSlug(without);
+    if (slug) broaderLinks.push({ label: `All ${renderCompositeH1(without)}`, href: `/best-flashlights/${slug}` });
+  }
+  if (filter.useCase) {
+    const without = { ...filter, useCase: undefined };
+    const slug = composeCompositeSlug(without);
+    if (slug) broaderLinks.push({ label: renderCompositeH1(without), href: `/best-flashlights/${slug}` });
+  }
+  if (filter.maxPrice !== undefined) {
+    const without = { ...filter, maxPrice: undefined };
+    const slug = composeCompositeSlug(without);
+    if (slug) broaderLinks.push({ label: `${renderCompositeH1(without)} (any price)`, href: `/best-flashlights/${slug}` });
+  }
+  if (filter.batteryType) {
+    const without = { ...filter, batteryType: undefined };
+    const slug = composeCompositeSlug(without);
+    if (slug) broaderLinks.push({ label: renderCompositeH1(without), href: `/best-flashlights/${slug}` });
+  }
+
+  return (
+    <section className="grid">
+      <BreadcrumbStructuredData
+        items={[
+          { name: "Best Flashlights", href: "/best-flashlights" },
+          { name: h1 },
+        ]}
+      />
+      <ItemListStructuredData
+        name={h1}
+        items={items.slice(0, 10).map((item, i) => ({
+          position: i + 1,
+          name: `${item.brand} ${item.name}`,
+          url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
+          image: item.image_url,
+          price: item.price_usd,
+        }))}
+      />
+      <Breadcrumbs
+        items={[
+          { label: "Best Flashlights", href: "/best-flashlights" },
+          { label: h1 },
+        ]}
+      />
+
+      <div className="panel hero">
+        <p className="kicker">Filtered Picks</p>
+        <h1>{h1}</h1>
+        <p className="muted" style={{ maxWidth: 620 }}>{description}</p>
+      </div>
+
+      <div className="card-grid">
+        {items.map((item) => (
+          <FlashlightCard key={item.id} item={item} />
+        ))}
+      </div>
+
+      {items.length === 0 && (
+        <div className="panel" style={{ textAlign: "center", padding: 40 }}>
+          <p className="muted">
+            No flashlights match this filter combination yet.{" "}
+            <Link href="/best-flashlights">Browse all categories.</Link>
+          </p>
+        </div>
+      )}
+
+      {broaderLinks.length > 0 && (
+        <div className="panel">
+          <h3 style={{ marginBottom: 12 }}>Broaden Your Search</h3>
+          <div className="spec-row" style={{ flexWrap: "wrap", gap: 8 }}>
+            {broaderLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="chip">
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <AmazonDisclosure />
     </section>

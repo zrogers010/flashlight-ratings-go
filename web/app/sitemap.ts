@@ -30,10 +30,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85
   }));
 
-  let productPages: MetadataRoute.Sitemap = [];
+  // Note: /flashlights/[id] is intentionally NOT in the sitemap. Each product
+  // has both a /flashlights/[id] page (kept for back-compat / internal navigation)
+  // and a /reviews/[slug] page (the canonical, editorial, slug-based URL).
+  // Including both would create duplicate-content signals; the numeric-ID page
+  // is noindexed and canonicals to its slug review.
   let reviewPages: MetadataRoute.Sitemap = [];
   let vsPages: MetadataRoute.Sitemap = [];
   let brandPages: MetadataRoute.Sitemap = [];
+  const compositePages: MetadataRoute.Sitemap = [];
   try {
     const API_BASE = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
     const controller = new AbortController();
@@ -54,29 +59,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (flashlightsRes.ok) {
       const data = await flashlightsRes.json();
       const items: { id: number; slug: string }[] = data.items || [];
-      productPages = items.map((item) => ({
-        url: `${BASE_URL}/flashlights/${item.id}`,
-        lastModified: now,
-        changeFrequency: "weekly" as const,
-        priority: 0.8
-      }));
       reviewPages = items
         .filter((item) => item.slug)
         .map((item) => ({
           url: `${BASE_URL}/reviews/${item.slug}`,
           lastModified: now,
           changeFrequency: "weekly" as const,
-          priority: 0.8
+          priority: 0.85
         }));
 
-      const topIds = items.slice(0, 10).map((i) => i.id);
-      for (let i = 0; i < topIds.length; i++) {
-        for (let j = i + 1; j < topIds.length; j++) {
+      // Generate vs-pages for the top-30 by listing position (post-scoring sort).
+      // 30 x 30 with i<j = 435 pairs, slug-based for SEO. Google won't crawl them
+      // all but having them in the sitemap signals which combos to prioritize.
+      const top = items.slice(0, 30).filter((i) => i.slug);
+      for (let i = 0; i < top.length; i++) {
+        for (let j = i + 1; j < top.length; j++) {
           vsPages.push({
-            url: `${BASE_URL}/compare/${topIds[i]}-vs-${topIds[j]}`,
+            url: `${BASE_URL}/compare/${top[i].slug}-vs-${top[j].slug}`,
             lastModified: now,
             changeFrequency: "weekly" as const,
-            priority: 0.7
+            priority: 0.65
           });
         }
       }
@@ -90,6 +92,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly" as const,
         priority: 0.75,
       }));
+
+      // Composite-filter landing pages: brand × use_case, use_case × budget,
+      // use_case × battery. These cover high-intent long-tail queries like
+      // "best fenix tactical flashlight" and "best edc flashlight under $100".
+      const compositeUseCases = ["tactical", "edc", "camping", "search-rescue", "survival", "diving"];
+      const compositeBudgets = [50, 75, 100, 150, 200];
+      const compositeBatteries = ["18650", "21700"];
+      for (const brand of brands) {
+        for (const uc of compositeUseCases) {
+          compositePages.push({
+            url: `${BASE_URL}/best-flashlights/${brand.slug}-${uc}`,
+            lastModified: now,
+            changeFrequency: "weekly" as const,
+            priority: 0.7,
+          });
+        }
+      }
+      for (const uc of compositeUseCases) {
+        for (const budget of compositeBudgets) {
+          compositePages.push({
+            url: `${BASE_URL}/best-flashlights/${uc}-under-${budget}`,
+            lastModified: now,
+            changeFrequency: "weekly" as const,
+            priority: 0.75,
+          });
+        }
+        for (const battery of compositeBatteries) {
+          compositePages.push({
+            url: `${BASE_URL}/best-flashlights/${uc}-${battery}`,
+            lastModified: now,
+            changeFrequency: "weekly" as const,
+            priority: 0.7,
+          });
+        }
+      }
     }
   } catch {
     // API unavailable — static pages still generated; products added on next revalidation
@@ -102,5 +139,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  return [...staticPages, ...categoryPages, ...guidePages, ...brandPages, ...productPages, ...reviewPages, ...vsPages];
+  return [
+    ...staticPages,
+    ...categoryPages,
+    ...compositePages,
+    ...guidePages,
+    ...brandPages,
+    ...reviewPages,
+    ...vsPages,
+  ];
 }

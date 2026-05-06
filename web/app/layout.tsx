@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: "%s | FlashlightRatings"
   },
   description:
-    "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
+    "Compare 100+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
   keywords: [
     "best flashlights 2026",
     "flashlight rankings",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews",
     description:
-      "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing.",
+      "Compare 100+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing.",
     images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "FlashlightRatings — Data-Driven Flashlight Rankings & Reviews" }]
   },
   twitter: {
@@ -165,10 +165,10 @@ export default function RootLayout({
               </div>
               <div className="footer-section">
                 <h4>Categories</h4>
-                <Link href="/flashlights?use_case=tactical">Tactical</Link>
-                <Link href="/flashlights?use_case=edc">EDC</Link>
-                <Link href="/flashlights?use_case=camping">Camping</Link>
-                <Link href="/flashlights?use_case=value">Best Value</Link>
+                <Link href="/best-flashlights/tactical">Tactical</Link>
+                <Link href="/best-flashlights/edc">EDC</Link>
+                <Link href="/best-flashlights/camping">Camping</Link>
+                <Link href="/best-flashlights/value">Best Value</Link>
               </div>
               <div className="footer-section">
                 <h4>Resources</h4>

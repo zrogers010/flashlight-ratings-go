@@ -161,7 +161,11 @@ export function RankingsTable({
                 onClick={(e) => {
                   const target = e.target as HTMLElement;
                   if (target.closest("a") || target.closest(".compare-cell")) return;
-                  router.push(`/flashlights/${item.flashlight.id}`);
+                  router.push(
+                    item.flashlight.slug
+                      ? `/reviews/${item.flashlight.slug}`
+                      : `/flashlights/${item.flashlight.id}`
+                  );
                 }}
               >
                 <td
@@ -211,7 +215,13 @@ export function RankingsTable({
                 </td>
                 <td>
                   <div style={{ fontWeight: 600 }}>
-                    <Link href={`/flashlights/${item.flashlight.id}`}>
+                    <Link
+                      href={
+                        item.flashlight.slug
+                          ? `/reviews/${item.flashlight.slug}`
+                          : `/flashlights/${item.flashlight.id}`
+                      }
+                    >
                       {item.flashlight.name}
                     </Link>
                   </div>

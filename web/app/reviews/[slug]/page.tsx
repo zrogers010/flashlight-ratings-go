@@ -6,7 +6,8 @@ import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
-import { BreadcrumbStructuredData } from "@/components/StructuredData";
+import { ArticleStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
+import { AuthorByline } from "@/components/AuthorByline";
 import {
   fetchFlashlightBySlug,
   fetchAllSlugs,
@@ -15,7 +16,22 @@ import {
   type FlashlightItem,
 } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+// Pre-render the entire catalog at build time so /reviews/[slug] is served
+// from the static cache for every product. ISR will revalidate each page
+// every `revalidate` seconds. fetchAllSlugs hits the API once at build,
+// then every page is essentially free for Googlebot to crawl.
+export async function generateStaticParams() {
+  try {
+    const slugs = await fetchAllSlugs();
+    return slugs
+      .filter((s) => s.slug)
+      .map((s) => ({ slug: s.slug }));
+  } catch {
+    return [];
+  }
+}
 
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
@@ -155,34 +171,33 @@ function generateCompetitorContext(data: FlashlightDetail, catalog: FlashlightIt
   return [...picked.values()].slice(0, 4);
 }
 
-function articleStructuredData(data: FlashlightDetail, slug: string) {
-  const name = `${data.brand} ${data.name}`;
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: `${name} Breakdown: Performance, Specs & Value Analysis`,
-    description: `Data-driven analysis of the ${name} — ${fmt(data.max_lumens)} lumens, ${fmt(data.beam_distance_m)}m throw. Scores, specs, and comparisons.`,
-    author: { "@type": "Organization", name: "FlashlightRatings" },
-    publisher: {
-      "@type": "Organization",
-      name: "FlashlightRatings",
-      url: "https://flashlightratings.com",
-    },
-    mainEntityOfPage: `https://flashlightratings.com/reviews/${slug}`,
-    datePublished: new Date().toISOString().split("T")[0],
-    dateModified: new Date().toISOString().split("T")[0],
-    ...(data.image_urls?.length
-      ? { image: data.image_urls }
-      : data.image_url
-        ? { image: [data.image_url] }
-        : {}),
-  };
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+// reviewDates derives stable publish + modified dates for a review.
+//
+//   datePublished: pinned to the site/catalog bootstrap date below — a
+//                  single stable value for every review. We deliberately
+//                  do NOT use product release year here: that's when the
+//                  flashlight launched, not when the article was published,
+//                  and surfacing it as "Published 2020" in the byline both
+//                  misleads readers and triggers Google's stale-content
+//                  signals.
+//   dateModified:  the most recent Amazon sync timestamp (when prices,
+//                  ratings, and stock state were last refreshed), falling
+//                  back to the bootstrap date when no sync has run yet.
+//
+// Both are emitted as ISO-8601 (YYYY-MM-DD), which is what schema.org
+// expects and what Google surfaces in "Reviewed [date]" rich results.
+//
+// The visible byline only shows the "Updated" date — there's no honest
+// per-article published date to render, and the freshness signal is what
+// matters for SEO.
+const REVIEW_BOOTSTRAP_DATE = "2026-01-01";
+
+function reviewDates(data: FlashlightDetail): { publishedAt: string; updatedAt: string } {
+  const publishedAt = REVIEW_BOOTSTRAP_DATE;
+  const updatedAt = data.amazon_last_synced_at
+    ? data.amazon_last_synced_at.split("T")[0]
+    : publishedAt;
+  return { publishedAt, updatedAt };
 }
 
 export async function generateMetadata({
@@ -201,11 +216,8 @@ export async function generateMetadata({
       openGraph: {
         title: `${name} — In-Depth Breakdown & Analysis`,
         description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)} · Score ${score.toFixed(0)}/100`,
-        images: data.image_urls?.length
-          ? [data.image_urls[0]]
-          : data.image_url
-            ? [data.image_url]
-            : undefined,
+        // OG image is rendered by `opengraph-image.tsx` in this route folder
+        // (per-product custom image with score, photo, and key specs).
       },
     };
   } catch {
@@ -256,9 +268,20 @@ export default async function BreakdownArticlePage({
     : "Unknown";
   const rechargeLabel = data.recharge_type || (data.usb_c_rechargeable ? "USB-C" : "None");
 
+  const { publishedAt, updatedAt } = reviewDates(data);
+  const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
+
   return (
     <article className="grid review-article">
-      {articleStructuredData(data, params.slug)}
+      <ArticleStructuredData
+        url={`${SITE_URL}/reviews/${params.slug}`}
+        headline={`${name} Breakdown: Performance, Specs & Value Analysis`}
+        description={`Data-driven analysis of the ${name} — ${fmt(data.max_lumens)} lumens, ${fmt(data.beam_distance_m)}m throw. Scores, specs, and comparisons.`}
+        imageUrls={data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : undefined}
+        publishedAt={publishedAt}
+        updatedAt={updatedAt}
+        reviewedItem={{ name: data.name, brand: data.brand }}
+      />
       <BreadcrumbStructuredData
         items={[
           { name: "Reviews", href: "/reviews" },
@@ -272,6 +295,8 @@ export default async function BreakdownArticlePage({
           { label: `${name}` },
         ]}
       />
+
+      <AuthorByline updatedAt={updatedAt} />
 
       {/* ── Hero ─────────────────────────────── */}
       <header className="panel hero review-hero">

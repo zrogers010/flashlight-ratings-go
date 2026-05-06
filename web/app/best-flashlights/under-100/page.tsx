@@ -6,7 +6,7 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Best Flashlights Under $100 in 2026 — Mid-Range Picks Ranked",
@@ -16,7 +16,17 @@ export const metadata: Metadata = {
 };
 
 export default async function Under100Page() {
-  const data = await fetchFlashlights({ maxPrice: 100, sortBy: "value_score", order: "desc" });
+  const data = await fetchFlashlights({
+    maxPrice: 100,
+    sortBy: "value_score",
+    order: "desc",
+  }).catch(() => ({
+    page: 1,
+    page_size: 0,
+    total: 0,
+    total_pages: 0,
+    items: [] as never[],
+  }));
 
   return (
     <section className="grid">
