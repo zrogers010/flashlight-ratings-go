@@ -193,7 +193,7 @@ async function DetailComparison({ ids: idStr }: { ids: string }) {
         <h1>Compare {items.length} Flashlights</h1>
         <p className="muted">
           Key specs, scores, and Amazon prices at a glance. Winner badges show which model leads each profile.
-          Expand the full spec comparison below for the deep dive.
+          Full spec comparison is included below.
         </p>
       </div>
 

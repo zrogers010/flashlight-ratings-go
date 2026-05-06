@@ -277,6 +277,27 @@ do_deploy() {
   ${COMPOSE} restart worker
   sleep 5
 
+  # ── Re-prerender web with live data ─────────────────────────────
+  # The web image's `npm run build` ran during `docker compose build`
+  # above, when the build container had no network path to the api
+  # container — every fetch failed and our prerenders got baked with
+  # empty data (catch-fallback). Now that the api is up AND the db has
+  # been populated by catalog-build + worker, re-run the build *inside*
+  # the running web container, where it can reach `http://api:8080` on
+  # the compose network, then restart Next to load the new .next/.
+  # Without this, ISR-cached pages (/reviews, /brands, the homepage
+  # CategoryStrips, etc.) stay empty until their 1-hour revalidate
+  # window finally fires. Costs ~30-60s of extra deploy time.
+  echo "→ Waiting for api to respond..."
+  timeout 60 bash -c \
+    'until curl -sf -o /dev/null http://localhost:8080/rankings; do sleep 2; done' \
+    || echo "WARNING: api did not respond in time; web rebuild may produce empty pages"
+  echo "→ Re-prerendering web with live api data..."
+  ${COMPOSE} exec -T web npm run build
+  echo "→ Restarting web to pick up fresh prerenders..."
+  ${COMPOSE} restart web
+  sleep 5
+
   # ── Health check ─────────────────────────────────────────────────
   echo ""
   echo "→ Health checks:"

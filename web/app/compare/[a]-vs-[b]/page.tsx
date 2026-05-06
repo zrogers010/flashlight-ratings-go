@@ -177,8 +177,8 @@ export default async function VsPage({ params }: { params: Params }) {
         <p className="kicker">Head-to-Head Comparison</p>
         <h1>{nameA} vs {nameB}</h1>
         <p className="muted" style={{ maxWidth: 620 }}>
-          Side-by-side specs, scores, and Amazon pricing. Winner badges show which model leads each profile;
-          expand the full spec comparison for the deep dive.
+          Side-by-side specs, scores, and Amazon pricing. Winner badges show which model leads each profile.
+          Full spec comparison is included below.
         </p>
       </div>
 
