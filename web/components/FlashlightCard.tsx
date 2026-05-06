@@ -49,7 +49,10 @@ const TAG_LABELS: Record<string, string> = {
 
 export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: number }) {
   const score = bestScore(item);
-  const href = `/flashlights/${item.id}`;
+  // Link to the slug-based review page (canonical URL). Falling back to the
+  // numeric-ID page is only for legacy items missing a slug; that page now
+  // noindexes itself, so we'd rather always reach the indexable URL.
+  const href = item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`;
   const primaryBattery = item.battery_types?.[0];
   const tags = (item.use_case_tags || []).slice(0, 2);
 

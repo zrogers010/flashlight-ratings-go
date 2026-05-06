@@ -1,4 +1,7 @@
 import type { FlashlightDetail } from "@/lib/api";
+import { SITE_AUTHOR, type Author } from "@/lib/author";
+
+const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
 export function ProductStructuredData({ data }: { data: FlashlightDetail }) {
   const schema: Record<string, unknown> = {
@@ -113,6 +116,78 @@ export function ItemListStructuredData({
       return entry;
     })
   };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+// ArticleStructuredData renders schema.org Article (or Review) markup
+// with an organization-level author, publish/modified dates, and a
+// publisher reference. This carries the E-E-A-T signals Google's product
+// reviews update looks for — accountable editorial source + verifiable
+// update history — while keeping attribution at the brand level.
+//
+// Usage: include alongside ProductStructuredData on a /reviews/[slug] page.
+// Both schemas can co-exist — Article describes the editorial wrapper,
+// Product describes the thing being reviewed.
+export function ArticleStructuredData({
+  url,
+  headline,
+  description,
+  imageUrls,
+  publishedAt,
+  updatedAt,
+  author = SITE_AUTHOR,
+  reviewedItem,
+}: {
+  url: string;
+  headline: string;
+  description: string;
+  imageUrls?: string[];
+  publishedAt?: string;
+  updatedAt?: string;
+  author?: Author;
+  // Optional: when the article is a product review, include the canonical
+  // product name so Google can link the Article to the Product entity.
+  reviewedItem?: { name: string; brand: string };
+}) {
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": reviewedItem ? "Review" : "Article",
+    headline,
+    description,
+    url,
+    author: {
+      "@type": "Organization",
+      "@id": `${author.url}#org`,
+      name: author.name,
+      url: author.url,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "FlashlightRatings",
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/icon.svg`,
+      },
+    },
+  };
+
+  if (imageUrls && imageUrls.length > 0) schema.image = imageUrls;
+  if (publishedAt) schema.datePublished = publishedAt;
+  if (updatedAt) schema.dateModified = updatedAt;
+  if (reviewedItem) {
+    schema.itemReviewed = {
+      "@type": "Product",
+      name: `${reviewedItem.brand} ${reviewedItem.name}`,
+      brand: { "@type": "Brand", name: reviewedItem.brand },
+    };
+  }
 
   return (
     <script

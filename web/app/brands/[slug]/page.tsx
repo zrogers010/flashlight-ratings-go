@@ -7,9 +7,18 @@ import {
   BreadcrumbStructuredData,
   ItemListStructuredData,
 } from "@/components/StructuredData";
-import { fetchBrandBySlug } from "@/lib/api";
+import { fetchBrandBySlug, fetchBrandsDetailed } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  try {
+    const brands = await fetchBrandsDetailed();
+    return brands.map((b) => ({ slug: b.slug }));
+  } catch {
+    return [];
+  }
+}
 
 const COUNTRY_NAMES: Record<string, string> = {
   US: "United States",
@@ -56,7 +65,7 @@ export default async function BrandDetailPage({
         items={brand.products.slice(0, 10).map((item, i) => ({
           position: i + 1,
           name: `${item.brand} ${item.name}`,
-          url: `/flashlights/${item.id}`,
+          url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
         }))}

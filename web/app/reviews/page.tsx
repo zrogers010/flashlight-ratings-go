@@ -6,7 +6,7 @@ import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Flashlight Breakdowns — Data-Driven Analysis for Every Model",
@@ -32,7 +32,17 @@ function fmt(v?: number, digits = 0) {
 }
 
 export default async function ReviewsIndexPage() {
-  const catalog = await fetchFlashlights({ pageSize: 200, sortBy: "overall_score", order: "desc" });
+  const catalog = await fetchFlashlights({
+    pageSize: 200,
+    sortBy: "overall_score",
+    order: "desc",
+  }).catch(() => ({
+    page: 1,
+    page_size: 0,
+    total: 0,
+    total_pages: 0,
+    items: [] as never[],
+  }));
   const items = catalog.items;
 
   return (

@@ -31,13 +31,13 @@ export function MobileNav() {
         <Link href="/find-yours" onClick={close}>Find Yours</Link>
         <Link href="/guides" onClick={close}>Guides</Link>
         <hr />
-        <Link href="/flashlights?use_case=edc" onClick={close} className="mobile-sub">Everyday Carry</Link>
-        <Link href="/flashlights?use_case=tactical" onClick={close} className="mobile-sub">Tactical</Link>
-        <Link href="/flashlights?use_case=camping" onClick={close} className="mobile-sub">Camping &amp; Outdoors</Link>
-        <Link href="/flashlights?use_case=survival" onClick={close} className="mobile-sub">Survival</Link>
-        <Link href="/flashlights?use_case=diving" onClick={close} className="mobile-sub">Diving &amp; Maritime</Link>
-        <Link href="/flashlights?use_case=search-rescue" onClick={close} className="mobile-sub">Search &amp; Rescue</Link>
-        <Link href="/flashlights?use_case=value" onClick={close} className="mobile-sub">Best Value</Link>
+        <Link href="/best-flashlights/edc" onClick={close} className="mobile-sub">Everyday Carry</Link>
+        <Link href="/best-flashlights/tactical" onClick={close} className="mobile-sub">Tactical</Link>
+        <Link href="/best-flashlights/camping" onClick={close} className="mobile-sub">Camping &amp; Outdoors</Link>
+        <Link href="/best-flashlights/survival" onClick={close} className="mobile-sub">Survival</Link>
+        <Link href="/best-flashlights/diving" onClick={close} className="mobile-sub">Diving &amp; Maritime</Link>
+        <Link href="/best-flashlights/search-rescue" onClick={close} className="mobile-sub">Search &amp; Rescue</Link>
+        <Link href="/best-flashlights/value" onClick={close} className="mobile-sub">Best Value</Link>
       </nav>
     </>
   );

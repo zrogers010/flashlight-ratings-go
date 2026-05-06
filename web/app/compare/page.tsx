@@ -7,7 +7,7 @@ import { CompareCardView } from "@/components/CompareCardView";
 import { PopularComparisons } from "@/components/PopularComparisons";
 import { fetchRankings, fetchFlashlightByID, type FlashlightDetail, type RankingItem } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const useCases = ["overall", "tactical", "edc", "value", "throw", "flood"] as const;
 const useCaseLabel: Record<(typeof useCases)[number], string> = {

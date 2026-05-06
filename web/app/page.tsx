@@ -7,12 +7,12 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { fetchFlashlights, fetchRankings } from "@/lib/api";
 import type { FlashlightItem } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800;
 
 export const metadata: Metadata = {
   title: "Best Flashlights 2026 — Data-Driven Rankings & Reviews | FlashlightRatings",
   description:
-    "Compare 40+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
+    "Compare 100+ flashlights ranked by algorithm across tactical, EDC, camping & more. Real specs, independent scoring, and live Amazon pricing. Find the perfect flashlight in minutes.",
   alternates: { canonical: "/" }
 };
 
@@ -23,7 +23,7 @@ const faq = [
   },
   {
     q: "How often are rankings and prices updated?",
-    a: "Our sync worker pulls fresh data from the Amazon Product Advertising API on a regular schedule. Scores are recalculated with each sync. Prices may lag live Amazon listings by a few hours."
+    a: "Our sync worker pulls fresh price, rating, and availability data from Amazon on a rotating daily schedule and recalculates scores after each sync. Most listings are refreshed within a 5-7 day cycle. The 'Check Price on Amazon' button always sends you to the live listing — your displayed price is just a guide."
   },
   {
     q: "Are these affiliate links?",
@@ -182,13 +182,29 @@ const DASHBOARD_USE_CASES: {
   { slug: "value", label: "Best Value", icon: <IconDollar /> }
 ];
 
-export default async function HomePage() {
+// safeAll runs the API fetches with graceful empty-result fallbacks. The
+// homepage prerenders at build time (revalidate=1800) and we don't want a
+// brief API outage during deploy to crash the entire build — ISR will
+// re-fetch and replace the empty render on the next request.
+async function loadHome() {
+  const empty = { items: [] as never[] };
   const [tacticalRanks, edcRanks, valueRanks, flashlights] = await Promise.all([
-    fetchRankings("tactical", 4),
-    fetchRankings("edc", 4),
-    fetchRankings("value", 4),
-    fetchFlashlights({ pageSize: 500 })
+    fetchRankings("tactical", 4).catch(() => empty),
+    fetchRankings("edc", 4).catch(() => empty),
+    fetchRankings("value", 4).catch(() => empty),
+    fetchFlashlights({ pageSize: 500 }).catch(() => ({
+      page: 1,
+      page_size: 0,
+      total: 0,
+      total_pages: 0,
+      items: [] as never[],
+    })),
   ]);
+  return { tacticalRanks, edcRanks, valueRanks, flashlights };
+}
+
+export default async function HomePage() {
+  const { tacticalRanks, edcRanks, valueRanks, flashlights } = await loadHome();
 
   const catalogSize = flashlights.total;
   const topScore = tacticalRanks.items[0]?.score;
@@ -225,7 +241,7 @@ export default async function HomePage() {
           {DASHBOARD_USE_CASES.map((uc) => {
             const n = countTagged(flashlights.items, uc.slug);
             return (
-              <Link key={uc.slug} href={`/flashlights?use_case=${encodeURIComponent(uc.slug)}`} className="tile-card">
+              <Link key={uc.slug} href={`/best-flashlights/${uc.slug}`} className="tile-card">
                 <span className="tile-icon">{uc.icon}</span>
                 <span className="tile-label">{uc.label}</span>
                 <span className="tile-count">{n} indexed</span>

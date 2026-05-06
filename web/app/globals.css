@@ -589,6 +589,57 @@ h4 { font-size: 1rem; font-weight: 600; }
   font-family: var(--font-mono);
 }
 
+/* ── Author Byline (E-E-A-T attribution) ──────────────────────── */
+
+.byline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.byline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+}
+
+.byline-prefix {
+  color: var(--text-secondary);
+}
+
+.byline-author {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.byline-author:hover {
+  text-decoration: underline;
+}
+
+.byline-dates {
+  font-size: 0.82rem;
+}
+
+@media (max-width: 768px) {
+  .byline {
+    font-size: 0.82rem;
+    margin: 10px 0 14px;
+    padding-bottom: 10px;
+  }
+
+  .byline-dates {
+    font-size: 0.78rem;
+  }
+}
+
 .clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1534,11 +1585,23 @@ select:focus, input:focus {
 
 .breadcrumbs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px 6px;
   font-size: 0.82rem;
   color: var(--text-tertiary);
   padding: 0 0 4px;
+}
+
+.breadcrumbs > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.breadcrumbs .sep {
+  color: var(--text-tertiary);
+  opacity: 0.6;
 }
 
 .breadcrumbs a {

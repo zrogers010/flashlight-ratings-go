@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchBrandsDetailed } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const COUNTRY_NAMES: Record<string, string> = {
   US: "United States",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BrandsPage() {
-  const brands = await fetchBrandsDetailed();
+  const brands = await fetchBrandsDetailed().catch(() => []);
 
   return (
     <section className="grid">
