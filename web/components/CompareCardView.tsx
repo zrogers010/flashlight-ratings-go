@@ -68,7 +68,7 @@ function winnerProfilesForItem(itemId: number, winners: WinnerEntry[]): WinnerEn
 }
 
 export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
-  const [showFullSpecs, setShowFullSpecs] = useState(false);
+  const [showFullSpecs, setShowFullSpecs] = useState(true);
 
   const winners = useMemo(() => computeWinners(items), [items]);
   const columnCount = items.length;
