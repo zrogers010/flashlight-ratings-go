@@ -154,6 +154,42 @@ do_setup() {
     echo "  ✓ Caddy already installed, Caddyfile updated"
   fi
 
+  # ── Install certbot renewal timer (only if certbot is installed) ──
+  # If you front the site with nginx + a pip-installed certbot (instead
+  # of Caddy), certbot does NOT ship a renewal timer and certs silently
+  # expire after 90 days. Install one ourselves so renewals are
+  # automatic. No-op if certbot isn't on the box (e.g. pure Caddy setup).
+  if command -v certbot >/dev/null 2>&1; then
+    echo "→ Installing certbot renewal timer..."
+    cat > /etc/systemd/system/certbot-renew.service << 'EOF'
+[Unit]
+Description=Renew Let's Encrypt certificates
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/certbot renew --quiet --deploy-hook "systemctl reload nginx"
+EOF
+    cat > /etc/systemd/system/certbot-renew.timer << 'EOF'
+[Unit]
+Description=Run certbot renew twice daily
+
+[Timer]
+OnCalendar=*-*-* 03,15:00:00
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now certbot-renew.timer
+    echo "  ✓ certbot-renew.timer enabled (runs twice daily)"
+  else
+    echo "  (skipping certbot renewal timer — certbot not installed)"
+  fi
+
   echo ""
   echo "═══ Setup complete ═══"
   echo ""
