@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";
 import { CompareTray } from "@/components/CompareTray";
+import { AffiliateClickTracker } from "@/components/AffiliateClickTracker";
 import "./globals.css";
 
 const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
@@ -75,9 +76,11 @@ export const metadata: Metadata = {
     "max-snippet": -1,
     "max-video-preview": -1
   },
-  other: {
-    "google-site-verification": process.env.GOOGLE_SITE_VERIFICATION || ""
-  }
+  // Only emit the verification meta when the token is actually set, so we
+  // don't ship an empty <meta name="google-site-verification" content="">.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {})
 };
 
 export default function RootLayout({
@@ -143,6 +146,7 @@ export default function RootLayout({
 
         <main className="main container">{children}</main>
 
+        <AffiliateClickTracker />
         <CompareTray />
 
         <footer className="site-footer">

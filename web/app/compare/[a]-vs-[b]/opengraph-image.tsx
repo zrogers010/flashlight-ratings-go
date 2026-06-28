@@ -56,9 +56,9 @@ function extractHalves(params: Record<string, string>): { a: string; b: string }
 export default async function OpengraphImage({
   params,
 }: {
-  params: Record<string, string>;
+  params: Promise<Record<string, string>>;
 }) {
-  const halves = extractHalves(params);
+  const halves = extractHalves(await params);
   if (!halves) return fallback();
 
   let a: FlashlightDetail;

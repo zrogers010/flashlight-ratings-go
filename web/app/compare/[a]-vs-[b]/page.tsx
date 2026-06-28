@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { BreadcrumbStructuredData } from "@/components/StructuredData";
 import { CompareCardView } from "@/components/CompareCardView";
+import { PageEventTracker } from "@/components/PageEventTracker";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import {
   fetchFlashlightByID,
@@ -116,8 +117,8 @@ async function loadPair(params: Params) {
   }
 }
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const pair = await loadPair(params);
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const pair = await loadPair(await params);
   if (!pair) return { title: "Comparison Not Found" };
   const { a, b, canonicalA, canonicalB } = pair;
   const nameA = `${a.brand} ${a.name}`;
@@ -150,8 +151,8 @@ function verdictText(a: FlashlightDetail, b: FlashlightDetail): string {
   return `These two are closely matched. The ${nameA} scores ${fmt(scoreA, 1)} (best for ${bestA.toLowerCase()}) while the ${nameB} scores ${fmt(scoreB, 1)} (best for ${bestB.toLowerCase()}). Your decision should come down to which use case matters more to you.`;
 }
 
-export default async function VsPage({ params }: { params: Params }) {
-  const pair = await loadPair(params);
+export default async function VsPage({ params }: { params: Promise<Params> }) {
+  const pair = await loadPair(await params);
   if (!pair) notFound();
   const { a, b } = pair;
 
@@ -160,6 +161,11 @@ export default async function VsPage({ params }: { params: Params }) {
 
   return (
     <section className="grid compare-detail-section">
+      <PageEventTracker
+        event="compare_view"
+        dedupeKey={`${a.slug}-vs-${b.slug}`}
+        params={{ pair: `${a.slug}-vs-${b.slug}`, count: 2 }}
+      />
       <BreadcrumbStructuredData
         items={[
           { name: "Compare", href: "/compare" },

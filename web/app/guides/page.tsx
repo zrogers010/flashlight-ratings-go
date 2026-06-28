@@ -45,6 +45,12 @@ const guides = [
     title: "Best Weight Range for EDC Flashlights",
     excerpt: "Why 60-110g is the sweet spot for pocket carry, and how body shape and clip quality factor in.",
     category: "EDC"
+  },
+  {
+    slug: "color-temperature-cri",
+    title: "Color Temperature & CRI Explained",
+    excerpt: "What CCT (Kelvin) and CRI mean, how warm vs cool white changes what you see, and which to pick for EDC, outdoors, and work.",
+    category: "Fundamentals"
   }
 ];
 

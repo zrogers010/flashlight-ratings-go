@@ -203,16 +203,17 @@ function reviewDates(data: FlashlightDetail): { publishedAt: string; updatedAt: 
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const { slug } = await params;
   try {
-    const data = await fetchFlashlightBySlug(params.slug);
+    const data = await fetchFlashlightBySlug(slug);
     const name = `${data.brand} ${data.name}`;
     const score = topScore(data);
     return {
       title: `${name} Breakdown — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
       description: `In-depth analysis of the ${name}: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100. See how it compares.`,
-      alternates: { canonical: `/reviews/${params.slug}` },
+      alternates: { canonical: `/reviews/${slug}` },
       openGraph: {
         title: `${name} — In-Depth Breakdown & Analysis`,
         description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)} · Score ${score.toFixed(0)}/100`,
@@ -228,11 +229,12 @@ export async function generateMetadata({
 export default async function BreakdownArticlePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let data: FlashlightDetail;
   try {
-    data = await fetchFlashlightBySlug(params.slug);
+    data = await fetchFlashlightBySlug(slug);
   } catch {
     return notFound();
   }
@@ -274,7 +276,7 @@ export default async function BreakdownArticlePage({
   return (
     <article className="grid review-article">
       <ArticleStructuredData
-        url={`${SITE_URL}/reviews/${params.slug}`}
+        url={`${SITE_URL}/reviews/${slug}`}
         headline={`${name} Breakdown: Performance, Specs & Value Analysis`}
         description={`Data-driven analysis of the ${name} — ${fmt(data.max_lumens)} lumens, ${fmt(data.beam_distance_m)}m throw. Scores, specs, and comparisons.`}
         imageUrls={data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : undefined}

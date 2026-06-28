@@ -206,11 +206,15 @@ export async function fetchFlashlights(opts?: {
   maxThrow?: number;
   sortBy?: string;
   order?: string;
+  page?: number;
   pageSize?: number;
   useCase?: string;
   batteryType?: string;
 }) {
-  const params = new URLSearchParams({ page: "1", page_size: String(opts?.pageSize ?? 100) });
+  const params = new URLSearchParams({
+    page: String(opts?.page ?? 1),
+    page_size: String(opts?.pageSize ?? 100),
+  });
   if (opts?.brand) params.set("brand", opts.brand);
   if (opts?.maxPrice) params.set("max_price", String(opts.maxPrice));
   if (opts?.minPrice) params.set("min_price", String(opts.minPrice));

@@ -5,10 +5,15 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { SpecBar, SortDropdown } from "@/components/FacetedSearch";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
+import { Pagination } from "@/components/Pagination";
 import { ItemListStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
 import { fetchFlashlights, fetchBrands } from "@/lib/api";
 
 export const revalidate = 3600;
+
+// Page size for the catalog grid. Keeps initial HTML small (was rendering up
+// to 100 cards per request) while staying crawlable via real pagination links.
+const PAGE_SIZE = 24;
 
 export const metadata: Metadata = {
   title: "All Flashlights — Full Catalog with Specs & Prices",
@@ -29,6 +34,7 @@ type CatalogSearchParams = {
   max_throw?: string;
   sort_by?: string;
   order?: string;
+  page?: string;
 };
 
 const CATALOG_QUERY_KEYS: (keyof CatalogSearchParams)[] = [
@@ -68,6 +74,19 @@ function catalogHref(sp: CatalogSearchParams): string {
     const v = sp[k];
     if (v) p.set(k, v);
   }
+  const q = p.toString();
+  return q ? `/flashlights?${q}` : "/flashlights";
+}
+
+// Like catalogHref but preserves the active filters AND sets a page number.
+// Page 1 omits the param so it maps to the canonical /flashlights URL.
+function pageHref(sp: CatalogSearchParams, page: number): string {
+  const p = new URLSearchParams();
+  for (const k of CATALOG_QUERY_KEYS) {
+    const v = sp[k];
+    if (v) p.set(k, v);
+  }
+  if (page > 1) p.set("page", String(page));
   const q = p.toString();
   return q ? `/flashlights?${q}` : "/flashlights";
 }
@@ -153,9 +172,10 @@ function buildActiveFilterChips(sp: CatalogSearchParams): { label: string; href:
 export default async function FlashlightsPage({
   searchParams
 }: {
-  searchParams?: CatalogSearchParams;
+  searchParams?: Promise<CatalogSearchParams>;
 }) {
-  const sp: CatalogSearchParams = searchParams ?? {};
+  const sp: CatalogSearchParams = (await searchParams) ?? {};
+  const currentPage = Math.max(1, parseQueryInt(sp.page) ?? 1);
 
   const [data, brands] = await Promise.all([
     fetchFlashlights({
@@ -169,10 +189,14 @@ export default async function FlashlightsPage({
       minThrow: parseQueryInt(sp.min_throw),
       maxThrow: parseQueryInt(sp.max_throw),
       sortBy: sp.sort_by,
-      order: sp.order
+      order: sp.order,
+      page: currentPage,
+      pageSize: PAGE_SIZE
     }),
     fetchBrands()
   ]);
+
+  const totalPages = data.total_pages || 1;
 
   const hasFilters = Boolean(
     sp.use_case ||
@@ -253,6 +277,12 @@ export default async function FlashlightsPage({
               <p className="muted">No flashlights match your filters. Try adjusting or clearing them.</p>
             </div>
           )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hrefForPage={(p) => pageHref(sp, p)}
+          />
         </div>
       </div>
 

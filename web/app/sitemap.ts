@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { parseCompositeFilter, composeCompositeSlug } from "./best-flashlights/[category]/composite";
 
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
 const categories = ["tactical", "edc", "camping", "search-rescue", "survival", "diving", "value", "throw", "flood"];
-const guideSlugs = ["how-we-score", "throw-vs-flood", "battery-guide", "runtime-explained", "ip-ratings", "best-edc-weight"];
+const guideSlugs = ["how-we-score", "throw-vs-flood", "battery-guide", "runtime-explained", "ip-ratings", "best-edc-weight", "color-temperature-cri"];
 
 export const revalidate = 3600;
 
@@ -85,7 +86,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (brandsRes.ok) {
-      const brands: { slug: string }[] = await brandsRes.json();
+      const brands: { slug: string; name: string }[] = await brandsRes.json();
       brandPages = brands.map((b) => ({
         url: `${BASE_URL}/brands/${b.slug}`,
         lastModified: now,
@@ -96,35 +97,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // Composite-filter landing pages: brand × use_case, use_case × budget,
       // use_case × battery. These cover high-intent long-tail queries like
       // "best fenix tactical flashlight" and "best edc flashlight under $100".
+      //
+      // Every candidate slug is validated through the SAME parser the page
+      // uses (parseCompositeFilter) and emitted in its canonical form
+      // (composeCompositeSlug). This guarantees we never list a URL the page
+      // would 404 on — e.g. multi-word brand slugs like "cloud-defensive-edc"
+      // are now parseable, and any unparseable combo is silently skipped.
+      const brandSlugMap = new Map(brands.map((b) => [b.slug, b.name]));
       const compositeUseCases = ["tactical", "edc", "camping", "search-rescue", "survival", "diving"];
       const compositeBudgets = [50, 75, 100, 150, 200];
       const compositeBatteries = ["18650", "21700"];
+      const seen = new Set<string>();
+      const addComposite = (rawSlug: string, priority: number) => {
+        const parsed = parseCompositeFilter(rawSlug, brandSlugMap);
+        if (!parsed) return; // page would 404 — don't emit
+        const canonical = composeCompositeSlug(parsed);
+        if (!canonical || seen.has(canonical)) return;
+        seen.add(canonical);
+        compositePages.push({
+          url: `${BASE_URL}/best-flashlights/${canonical}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority,
+        });
+      };
+
       for (const brand of brands) {
         for (const uc of compositeUseCases) {
-          compositePages.push({
-            url: `${BASE_URL}/best-flashlights/${brand.slug}-${uc}`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.7,
-          });
+          addComposite(`${brand.slug}-${uc}`, 0.7);
         }
       }
       for (const uc of compositeUseCases) {
         for (const budget of compositeBudgets) {
-          compositePages.push({
-            url: `${BASE_URL}/best-flashlights/${uc}-under-${budget}`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.75,
-          });
+          addComposite(`${uc}-under-${budget}`, 0.75);
         }
         for (const battery of compositeBatteries) {
-          compositePages.push({
-            url: `${BASE_URL}/best-flashlights/${uc}-${battery}`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.7,
-          });
+          addComposite(`${uc}-${battery}`, 0.7);
         }
       }
     }

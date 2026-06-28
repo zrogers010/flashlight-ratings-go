@@ -57,7 +57,11 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
   const tags = (item.use_case_tags || []).slice(0, 2);
 
   return (
-    <article className="product-card product-card--tooltip">
+    <article
+      className="product-card product-card--tooltip"
+      data-product={`${item.brand} ${item.name}`}
+      data-brand={item.brand}
+    >
       <Link href={href} className="card-link-overlay" aria-label={`View ${item.brand} ${item.name} details`} />
 
       <div className="image-card">
