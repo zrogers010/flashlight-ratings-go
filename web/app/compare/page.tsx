@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { RankingsTable } from "@/components/RankingsTable";
 import { CompareCardView } from "@/components/CompareCardView";
 import { PopularComparisons } from "@/components/PopularComparisons";
+import { PageEventTracker } from "@/components/PageEventTracker";
 import { fetchRankings, fetchFlashlightByID, type FlashlightDetail, type RankingItem } from "@/lib/api";
 
 export const revalidate = 3600;
@@ -31,9 +32,10 @@ const useCaseDesc: Record<(typeof useCases)[number], string> = {
 export async function generateMetadata({
   searchParams
 }: {
-  searchParams?: { use_case?: string; ids?: string };
+  searchParams?: Promise<{ use_case?: string; ids?: string }>;
 }): Promise<Metadata> {
-  if (searchParams?.ids) {
+  const sp = (await searchParams) ?? {};
+  if (sp.ids) {
     return {
       title: "Compare Flashlights Side by Side — Specs, Scores & Prices",
       description:
@@ -41,8 +43,8 @@ export async function generateMetadata({
     };
   }
 
-  const selected = useCases.includes((searchParams?.use_case || "") as (typeof useCases)[number])
-    ? (searchParams!.use_case as (typeof useCases)[number])
+  const selected = useCases.includes((sp.use_case || "") as (typeof useCases)[number])
+    ? (sp.use_case as (typeof useCases)[number])
     : "overall";
 
   return {
@@ -55,9 +57,9 @@ export async function generateMetadata({
 export default async function ComparePage({
   searchParams
 }: {
-  searchParams?: { use_case?: string; ids?: string };
+  searchParams?: Promise<{ use_case?: string; ids?: string }>;
 }) {
-  const sp = searchParams || {};
+  const sp = (await searchParams) || {};
 
   if (sp.ids) {
     return <DetailComparison ids={sp.ids} />;
@@ -70,7 +72,11 @@ export default async function ComparePage({
   // Pull rankings for the active use case PLUS the three popular profiles so
   // we can build the "Popular Comparisons" tiles dynamically. All in parallel.
   const [activeData, tactical, edc, value] = await Promise.all([
-    fetchRankings(selected, 500),
+    // Cap the rankings table at 100 rows. RankingsTable renders every row
+    // (image + buy button each), so the full catalog made /compare a heavy
+    // payload. Top 100 by score is ample for a comparison picker; any model
+    // is still reachable via /flashlights and the compare tray.
+    fetchRankings(selected, 100),
     selected === "tactical" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("tactical", 2),
     selected === "edc" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("edc", 2),
     selected === "value" ? Promise.resolve({ items: [] as RankingItem[] }) : fetchRankings("value", 2),
@@ -186,6 +192,11 @@ async function DetailComparison({ ids: idStr }: { ids: string }) {
 
   return (
     <section className="grid compare-detail-section">
+      <PageEventTracker
+        event="compare_view"
+        dedupeKey={items.map((i) => i.id).join(",")}
+        params={{ ids: items.map((i) => i.id).join(","), count: items.length }}
+      />
       <Breadcrumbs items={[{ label: "Compare", href: "/compare" }, { label: "Side by Side" }]} />
 
       <div className="panel hero">

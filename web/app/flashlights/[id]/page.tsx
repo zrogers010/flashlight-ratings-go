@@ -95,8 +95,9 @@ function generateFAQ(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
   return items;
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const data = await fetchFlashlightByID(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const data = await fetchFlashlightByID(id);
   const name = `${data.brand} ${data.name}`;
   const score = topScore(data);
 
@@ -112,7 +113,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description: desc,
     alternates: canonicalSlug
       ? { canonical: `/reviews/${canonicalSlug}` }
-      : { canonical: `/flashlights/${params.id}` },
+      : { canonical: `/flashlights/${id}` },
     robots: { index: false, follow: true },
     openGraph: {
       title: `${name} — Flashlight Review & Score`,
@@ -130,9 +131,10 @@ function scoreTier(v: number) {
   return v >= 80 ? "high" : v >= 60 ? "mid" : "low";
 }
 
-export default async function FlashlightDetailPage({ params }: { params: { id: string } }) {
+export default async function FlashlightDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [data, catalog, tacticalRanks, edcRanks, valueRanks, throwRanks, floodRanks] = await Promise.all([
-    fetchFlashlightByID(params.id),
+    fetchFlashlightByID(id),
     fetchFlashlights(),
     fetchRankings("tactical", 3),
     fetchRankings("edc", 3),

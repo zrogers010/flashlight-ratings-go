@@ -74,9 +74,9 @@ const categories = [
 export default async function BestFlashlightsPage({
   searchParams,
 }: {
-  searchParams?: { brand?: string };
+  searchParams?: Promise<{ brand?: string }>;
 }) {
-  const sp = searchParams || {};
+  const sp = (await searchParams) || {};
   const selectedBrand = sp.brand || "";
 
   const [data, brands] = await Promise.all([

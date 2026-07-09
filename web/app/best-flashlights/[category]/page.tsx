@@ -157,6 +157,12 @@ const categoryMap: Record<string, CategoryConfig> = {
 
 export const revalidate = 3600;
 
+// Cap the number of cards rendered on "best of" category/composite pages.
+// These are top-N rankings — beyond ~48 the marginal SEO/UX value is near
+// zero and it just bloats the HTML payload. The ItemList schema only ever
+// emits the top 10 regardless.
+const CATEGORY_CARD_LIMIT = 48;
+
 // Pre-render: the 9 hand-curated category pages PLUS a curated set of
 // composite-filter combos (brand × use_case, use_case × budget, use_case ×
 // battery). Composite combos beyond this list still resolve via ISR.
@@ -211,24 +217,60 @@ async function resolveBrandSlugs(): Promise<Map<string, string>> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
-  const config = categoryMap[params.category];
+// fetchCompositeItems runs a composite filter against the catalog. Shared by
+// generateMetadata (for the noindex-when-empty decision) and CompositePage
+// (for rendering) — Next dedupes the identical underlying fetch so this is a
+// single round trip per request.
+async function fetchCompositeItems(filter: CompositeFilter): Promise<FlashlightItem[]> {
+  const sortField = filter.useCase ? `${filter.useCase}_score` : "overall_score";
+  try {
+    const res = await fetchFlashlights({
+      brand: filter.brandName,
+      useCase: filter.useCase,
+      batteryType: filter.batteryType,
+      maxPrice: filter.maxPrice,
+      minPrice: filter.minPrice,
+      sortBy: sortField,
+      order: "desc",
+      pageSize: 100,
+    });
+    return res.items;
+  } catch {
+    return [];
+  }
+}
+
+async function countCompositeMatches(filter: CompositeFilter): Promise<number> {
+  const items = await fetchCompositeItems(filter);
+  return items.length;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
+  const { category } = await params;
+  const config = categoryMap[category];
   if (config) {
     return {
       title: `${config.h1} 2026 — Ranked by Expert Score`,
       description: config.description,
-      alternates: { canonical: `/best-flashlights/${params.category}` }
+      alternates: { canonical: `/best-flashlights/${category}` }
     };
   }
 
   const brandSlugs = await resolveBrandSlugs();
-  const composite = parseCompositeFilter(params.category, brandSlugs);
+  const composite = parseCompositeFilter(category, brandSlugs);
   if (composite) {
     const canonicalSlug = composeCompositeSlug(composite);
+    // A composite filter that currently matches zero products is a thin page.
+    // Keep it reachable (follow) but noindex it so we never get thin landing
+    // pages into the index — they get indexed again automatically once the
+    // catalog grows to match the filter. (fetch() is deduped with the page
+    // body's identical query, so this doesn't cost an extra round trip.)
+    const count = await countCompositeMatches(composite);
     return {
       title: renderCompositeTitle(composite),
       description: renderCompositeDescription(composite),
       alternates: { canonical: `/best-flashlights/${canonicalSlug}` },
+      robots: count === 0 ? { index: false, follow: true } : undefined,
     };
   }
 
@@ -265,14 +307,15 @@ function getScore(item: ScoredCard, field?: string): number {
   }
 }
 
-export default async function CategoryPage({ params }: { params: { category: string } }) {
-  const config = categoryMap[params.category];
+export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category } = await params;
+  const config = categoryMap[category];
 
   if (!config) {
     // Not a hand-curated category — try parsing as a composite filter
     // (e.g. "olight-edc-under-100"). If that fails too, 404.
     const brandSlugs = await resolveBrandSlugs();
-    const composite = parseCompositeFilter(params.category, brandSlugs);
+    const composite = parseCompositeFilter(category, brandSlugs);
     if (composite) {
       return <CompositePage filter={composite} />;
     }
@@ -363,7 +406,7 @@ export default async function CategoryPage({ params }: { params: { category: str
       </div>
 
       <div className="card-grid">
-        {cards.map((item, i) => (
+        {cards.slice(0, CATEGORY_CARD_LIMIT).map((item, i) => (
           <FlashlightCard
             key={item.id}
             rank={i + 1}
@@ -405,7 +448,7 @@ export default async function CategoryPage({ params }: { params: { category: str
         <h3 style={{ marginBottom: 12 }}>Explore Other Categories</h3>
         <div className="spec-row">
           {Object.entries(categoryMap)
-            .filter(([slug]) => slug !== params.category)
+            .filter(([slug]) => slug !== category)
             .map(([slug, cat]) => (
               <Link key={slug} href={`/best-flashlights/${slug}`} className="chip">
                 {cat.label}
@@ -428,26 +471,9 @@ async function CompositePage({ filter }: { filter: CompositeFilter }) {
   const h1 = renderCompositeH1(filter);
   const description = renderCompositeDescription(filter);
 
-  // Map composite filter dimensions onto the API's flashlight listing.
-  // Sort heuristic: when a use_case is set, sort by that profile's score.
-  // Otherwise default to overall_score desc.
-  const sortField = filter.useCase ? `${filter.useCase}_score` : "overall_score";
-  let items: FlashlightItem[] = [];
-  try {
-    const res = await fetchFlashlights({
-      brand: filter.brandName,
-      useCase: filter.useCase,
-      batteryType: filter.batteryType,
-      maxPrice: filter.maxPrice,
-      minPrice: filter.minPrice,
-      sortBy: sortField,
-      order: "desc",
-      pageSize: 100,
-    });
-    items = res.items;
-  } catch {
-    items = [];
-  }
+  // Map composite filter dimensions onto the API's flashlight listing via the
+  // shared helper (deduped with the generateMetadata count query).
+  const items = await fetchCompositeItems(filter);
 
   // Internal-link suggestions: drop one filter dimension at a time so users
   // (and crawlers) can click "broader" search variants. This forms the
@@ -506,7 +532,7 @@ async function CompositePage({ filter }: { filter: CompositeFilter }) {
       </div>
 
       <div className="card-grid">
-        {items.map((item) => (
+        {items.slice(0, CATEGORY_CARD_LIMIT).map((item) => (
           <FlashlightCard key={item.id} item={item} />
         ))}
       </div>

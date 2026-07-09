@@ -50,11 +50,12 @@ function bestForLabel(d: {
 export default async function OpengraphImage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   let data;
   try {
-    data = await fetchFlashlightBySlug(params.slug);
+    data = await fetchFlashlightBySlug(slug);
   } catch {
     return fallback();
   }

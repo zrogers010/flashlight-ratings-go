@@ -49,20 +49,28 @@ const BATTERY_TOKENS: Record<string, string> = {
 };
 
 // MULTI_TOKEN_KEYWORDS: known multi-word tokens that contain hyphens and
-// must be re-fused after splitting on "-". Order matters — longer tokens
-// first so we don't accidentally match a prefix.
+// must be re-fused after splitting on "-". Brand slugs that contain hyphens
+// (e.g. "cloud-defensive", "princeton-tec") are added dynamically at parse
+// time — without them, "cloud-defensive-edc" would tokenize to
+// ["cloud","defensive","edc"], fail to match any known brand, and 404.
 const MULTI_TOKEN_KEYWORDS = ["search-rescue"];
 
-// Normalize: split on '-', then re-fuse known multi-token keywords. So
-// "search-rescue-under-100" tokenizes to ["search-rescue", "under", "100"]
-// rather than ["search", "rescue", "under", "100"].
-function tokenize(slug: string): string[] {
+// Normalize: split on '-', then greedily re-fuse known multi-token keywords.
+// So "search-rescue-under-100" tokenizes to ["search-rescue","under","100"]
+// and "cloud-defensive-edc" (given the brand keyword) to
+// ["cloud-defensive","edc"]. `extraKeywords` carries the hyphenated brand
+// slugs. Keywords are matched longest-first so overlapping prefixes resolve
+// to the longest valid token.
+function tokenize(slug: string, extraKeywords: string[] = []): string[] {
+  const keywords = [...MULTI_TOKEN_KEYWORDS, ...extraKeywords]
+    .filter((k) => k.includes("-"))
+    .sort((a, b) => b.split("-").length - a.split("-").length);
   const parts = slug.split("-");
   const out: string[] = [];
   let i = 0;
   while (i < parts.length) {
     let matched = false;
-    for (const keyword of MULTI_TOKEN_KEYWORDS) {
+    for (const keyword of keywords) {
       const kparts = keyword.split("-");
       if (
         i + kparts.length <= parts.length &&
@@ -90,7 +98,10 @@ export function parseCompositeFilter(
   brandSlugs: Map<string, string>, // slug -> display name
 ): CompositeFilter | null {
   if (!slug) return null;
-  const tokens = tokenize(slug.toLowerCase());
+  // Feed hyphenated brand slugs in as multi-token keywords so brands like
+  // "cloud-defensive" survive tokenization instead of splitting apart.
+  const hyphenatedBrandSlugs = Array.from(brandSlugs.keys()).filter((s) => s.includes("-"));
+  const tokens = tokenize(slug.toLowerCase(), hyphenatedBrandSlugs);
   if (tokens.length < 2) {
     // Single-token slugs are handled by the categoryMap, not us. (A bare
     // brand slug should hit /brands/[slug], not /best-flashlights/[brand].)

@@ -638,6 +638,105 @@ const guides: Record<string, GuideContent> = {
       { href: "/flashlights", label: "Browse All Flashlights" },
     ],
   },
+  "color-temperature-cri": {
+    title: "Color Temperature & CRI: Reading Flashlight Beam Color",
+    description:
+      "What CCT (Kelvin) and CRI mean on a flashlight spec sheet, how warm vs cool white affects what you see, and which to choose for EDC, outdoors, and work.",
+    category: "Fundamentals",
+    body: (
+      <>
+        <p>
+          Two flashlights with identical lumens and candela can still look
+          completely different — because <strong>beam color</strong> is a
+          separate dimension from brightness. Two numbers describe it:{" "}
+          <strong>CCT</strong> (how warm or cool the light is) and{" "}
+          <strong>CRI</strong> (how accurately it renders color). Both are easy
+          to overlook and both dramatically change real-world usability.
+        </p>
+
+        <h2>CCT: Correlated Color Temperature</h2>
+        <p>
+          CCT is measured in <strong>kelvin (K)</strong> and describes where the
+          white sits on the warm-to-cool scale. Counterintuitively, lower
+          numbers are <em>warmer</em> (more yellow) and higher numbers are{" "}
+          <em>cooler</em> (more blue).
+        </p>
+        <table className="spec-table" style={{ marginBottom: 24 }}>
+          <thead>
+            <tr>
+              <th>CCT Range</th>
+              <th>Appearance</th>
+              <th>Best For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2700–3500K</td>
+              <td>Warm white (incandescent-like)</td>
+              <td>Close-up tasks, fog/rain, preserving night vision, cozy feel</td>
+            </tr>
+            <tr>
+              <td>4000–5000K</td>
+              <td>Neutral white (daylight-like)</td>
+              <td>EDC, photography, accurate color, all-around use</td>
+            </tr>
+            <tr>
+              <td>5700–6500K+</td>
+              <td>Cool white (bluish)</td>
+              <td>Maximum measured output, throw, search at distance</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Manufacturers favor cool white because it produces the highest lumen
+          numbers from the same emitter — it sells specs. But most enthusiasts
+          prefer <strong>neutral (4000–5000K)</strong> for everyday use because
+          it looks natural and reduces eye strain. Warm tints cut through fog,
+          rain, and dust better, which is why they're popular for the outdoors.
+        </p>
+
+        <h2>CRI: Color Rendering Index</h2>
+        <p>
+          CRI is a 0–100 score for how faithfully a light reveals the true color
+          of objects compared to natural daylight. A low-CRI light (70–75, the
+          default for many bright emitters) makes reds look muddy and skin look
+          sickly. A <strong>high-CRI light (90+)</strong> renders blood, wood
+          grain, wiring, skin, and fabric accurately.
+        </p>
+        <ul>
+          <li><strong>CRI 70–80</strong> — Typical for max-output lights. Fine for throw and raw brightness; colors look washed out.</li>
+          <li><strong>CRI 90–95 (often labeled &ldquo;high-CRI&rdquo; or Ra90)</strong> — Noticeably richer, more natural color. Worth it for EDC, mechanics, medical, photography, and anyone inspecting detail.</li>
+        </ul>
+        <p>
+          The trade-off: high-CRI emitters typically give up roughly 10–15% in
+          lumens and a little throw versus their low-CRI siblings. For most
+          everyday tasks that's an easy trade — the light simply looks better.
+        </p>
+
+        <h2>How to Choose</h2>
+        <ul>
+          <li><strong>EDC / general use:</strong> 4000–5000K neutral white, CRI 90+. The most pleasant and useful all-rounder.</li>
+          <li><strong>Search &amp; rescue / throw:</strong> 5700–6500K cool white, CRI 70+. Prioritize raw output and distance.</li>
+          <li><strong>Outdoors / fog / rain:</strong> 2700–4000K warm-neutral. Better contrast in poor weather, easier on night-adapted eyes.</li>
+          <li><strong>Work / inspection:</strong> High CRI (95+) at a neutral CCT so colors and materials read true.</li>
+        </ul>
+
+        <h2>Where We Show This</h2>
+        <p>
+          When a manufacturer publishes CCT and CRI figures, you&rsquo;ll find
+          them on the individual review pages alongside lumens, candela, and
+          runtime. Where a spec is a manufacturer claim rather than an
+          independently measured value, we label it as such — beam color in
+          particular is frequently rounded or idealized on packaging.
+        </p>
+      </>
+    ),
+    relatedLinks: [
+      { href: "/guides/throw-vs-flood", label: "Throw vs Flood Explained" },
+      { href: "/best-flashlights/edc", label: "Best EDC Flashlights" },
+      { href: "/flashlights", label: "Browse All Flashlights" },
+    ],
+  },
 };
 
 const guideSlugs = Object.keys(guides);

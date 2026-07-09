@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCompareStore } from "@/lib/compare-store";
+import { trackEvent } from "@/lib/analytics";
 
 type Props = {
   id: number;
@@ -38,6 +39,7 @@ export function CompareToggle({ id, brand, name, image_url }: Props) {
             remove(id);
           } else if (!isFull) {
             add({ id, brand, name, image_url });
+            trackEvent("compare_add", { product: `${brand} ${name}`, brand });
           }
         }}
       />

@@ -5,6 +5,7 @@ import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
+import { PageEventTracker } from "@/components/PageEventTracker";
 import { fetchIntelligenceRecommendations } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -53,12 +54,16 @@ function pct(v: number) {
 export default async function FindYoursPage({
   searchParams
 }: {
-  searchParams?: { use?: string; budget?: string; battery?: string; size?: string };
+  searchParams?: Promise<{ use?: string; budget?: string; battery?: string; size?: string }>;
 }) {
-  const useCase = parseUseCase(searchParams?.use);
-  const budget = parseBudget(searchParams?.budget);
-  const battery = parseBattery(searchParams?.battery);
-  const size = parseSize(searchParams?.size);
+  const sp = (await searchParams) ?? {};
+  const useCase = parseUseCase(sp.use);
+  const budget = parseBudget(sp.budget);
+  const battery = parseBattery(sp.battery);
+  const size = parseSize(sp.size);
+
+  // A submission is a GET navigation that carries at least one answer param.
+  const submitted = Boolean(sp.use || sp.budget || sp.battery || sp.size);
 
   const run = await fetchIntelligenceRecommendations({
     intended_use: useCase,
@@ -69,6 +74,19 @@ export default async function FindYoursPage({
 
   return (
     <section className="grid">
+      {submitted && (
+        <PageEventTracker
+          event="finder_submit"
+          dedupeKey={`${useCase}|${budget}|${battery}|${size}`}
+          params={{
+            use_case: useCase,
+            budget,
+            battery,
+            size,
+            results: run.top_results.length,
+          }}
+        />
+      )}
       <Breadcrumbs items={[{ label: "Find Yours" }]} />
 
       <div className="panel hero" style={{ textAlign: "center" }}>

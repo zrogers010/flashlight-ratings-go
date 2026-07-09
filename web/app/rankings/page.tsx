@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 
-export default function RankingsRedirect({
+export default async function RankingsRedirect({
   searchParams
 }: {
-  searchParams?: { use_case?: string };
+  searchParams?: Promise<{ use_case?: string }>;
 }) {
-  const uc = searchParams?.use_case;
+  const uc = (await searchParams)?.use_case;
   redirect(uc ? `/compare?use_case=${uc}` : "/compare");
 }

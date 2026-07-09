@@ -32,22 +32,24 @@ const COUNTRY_NAMES: Record<string, string> = {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const brand = await fetchBrandBySlug(params.slug);
+  const { slug } = await params;
+  const brand = await fetchBrandBySlug(slug);
   return {
     title: `${brand.name} Flashlights — All ${brand.product_count} Models Rated & Reviewed`,
     description: `Browse all ${brand.product_count} ${brand.name} flashlights with algorithmic scores, verified specs, and real-time Amazon pricing. Find the best ${brand.name} flashlight for your needs.`,
-    alternates: { canonical: `/brands/${params.slug}` },
+    alternates: { canonical: `/brands/${slug}` },
   };
 }
 
 export default async function BrandDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const brand = await fetchBrandBySlug(params.slug);
+  const { slug } = await params;
+  const brand = await fetchBrandBySlug(slug);
   const country = brand.country_code
     ? COUNTRY_NAMES[brand.country_code] || brand.country_code
     : null;
