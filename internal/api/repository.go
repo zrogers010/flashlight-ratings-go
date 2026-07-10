@@ -282,11 +282,22 @@ latest_affiliate AS (
 ),
 latest_scores AS (
 	SELECT
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
 		MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
 		MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
 		MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
 		MAX(CASE WHEN sp.slug = 'throw' THEN fs.score END) AS throw_score,
-		MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score
+		MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score,
+		-- Breakdown JSON is identical across profiles for a given run.
+		(
+			SELECT fs2.metric_breakdown
+			FROM flashlight_scores fs2
+			JOIN scoring_profiles sp2 ON sp2.id = fs2.profile_id
+			WHERE fs2.run_id = (SELECT id FROM latest_run)
+			  AND fs2.flashlight_id = $1
+			  AND sp2.slug = 'overall'
+			LIMIT 1
+		) AS metric_breakdown
 	FROM flashlight_scores fs
 	JOIN scoring_profiles sp ON sp.id = fs.profile_id
 	JOIN latest_run lr ON lr.id = fs.run_id
@@ -353,11 +364,13 @@ SELECT
 	(SELECT rating_count FROM latest_amazon),
 	(SELECT average_rating FROM latest_amazon),
 	(SELECT captured_at FROM latest_amazon),
+	(SELECT overall_score FROM latest_scores),
 	(SELECT tactical_score FROM latest_scores),
 	(SELECT edc_score FROM latest_scores),
 	(SELECT value_score FROM latest_scores),
 	(SELECT throw_score FROM latest_scores),
 	(SELECT flood_score FROM latest_scores),
+	(SELECT metric_breakdown FROM latest_scores),
 	COALESCE(
 		(
 			SELECT json_agg(bt.code ORDER BY bt.code)
@@ -413,12 +426,12 @@ WHERE f.id = $1
 		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode sql.NullString
 		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri               sql.NullInt64
 		cctMinK, cctMaxK                                                                                                                                            sql.NullInt64
-		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, tactical, edc, value, throw, flood                                               sql.NullFloat64
+		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, overall, tactical, edc, value, throw, flood                                               sql.NullFloat64
 		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable                                                                                               sql.NullBool
 		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                                             sql.NullBool
 		priceUpdatedAt, amazonSyncedAt                                                                                                                               sql.NullTime
 		amazonRatingCount                                                                                                                                            sql.NullInt64
-		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON                                                                                                  []byte
+		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON, metricBreakdownJSON                                                                             []byte
 	)
 
 	if err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -475,11 +488,13 @@ WHERE f.id = $1
 		&amazonRatingCount,
 		&amazonAvgRating,
 		&amazonSyncedAt,
+		&overall,
 		&tactical,
 		&edc,
 		&value,
 		&throw,
 		&flood,
+		&metricBreakdownJSON,
 		&batteryTypesJSON,
 		&imageURLsJSON,
 		&modesJSON,
@@ -539,11 +554,13 @@ WHERE f.id = $1
 	item.AmazonAverageRating = nullFloat(amazonAvgRating)
 	item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
 	item.AmazonLastSyncedAt = nullTimeString(amazonSyncedAt)
+	item.OverallScore = nullFloat(overall)
 	item.TacticalScore = nullFloat(tactical)
 	item.EDCScore = nullFloat(edc)
 	item.ValueScore = nullFloat(value)
 	item.ThrowScore = nullFloat(throw)
 	item.FloodScore = nullFloat(flood)
+	item.MetricBreakdown = decodeMetricBreakdown(metricBreakdownJSON)
 	item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
 	item.ImageURLs = decodeJSONStringArray(imageURLsJSON)
 	item.Modes = decodeModesJSON(modesJSON)
@@ -1683,6 +1700,20 @@ func decodeModesJSON(raw []byte) []flashlightMode {
 		return []flashlightMode{}
 	}
 	return out
+}
+
+func decodeMetricBreakdown(raw []byte) *metricBreakdown {
+	if len(raw) == 0 || string(raw) == "{}" || string(raw) == "null" {
+		return nil
+	}
+	var out metricBreakdown
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil
+	}
+	if len(out.Raw) == 0 && len(out.Normalized) == 0 && len(out.Weighted) == 0 {
+		return nil
+	}
+	return &out
 }
 
 func switchHas(s *string, needle string) *bool {

@@ -232,12 +232,51 @@ WHERE f.slug = 'sofirn-if22a';
 
 WITH run AS (
     INSERT INTO scoring_runs (run_label, formula_version, status, initiated_by, completed_at, notes)
-    VALUES ('demo-seed', 'v1', 'completed', 'seed', NOW(), 'Demo data for local development')
+    VALUES ('demo-seed', 'v2', 'completed', 'seed', NOW(), 'Demo data for local development')
     RETURNING id
+),
+demo_breakdown AS (
+    SELECT '{
+      "raw": {
+        "max_lumens": 1300,
+        "max_candela": 8500,
+        "beam_distance_m": 185,
+        "runtime_high_min": 90,
+        "runtime_medium_min": 300,
+        "durability": 87.25,
+        "price_usd": 39.99,
+        "amazon_avg_rating": 4.6,
+        "amazon_rating_count": 1200
+      },
+      "normalized": {
+        "max_lumens": 65.0,
+        "max_candela": 48.0,
+        "beam_distance_m": 55.0,
+        "runtime_high_min": 58.0,
+        "runtime_medium_min": 52.0,
+        "durability": 87.25,
+        "price": 78.0,
+        "amazon_avg_rating": 73.3,
+        "amazon_rating_count": 70.0
+      },
+      "weighted": {
+        "amazon_trust": {"amazon_avg_rating": 44.0, "amazon_rating_count": 28.0},
+        "performance": {"max_lumens": 22.75, "max_candela": 12.0, "beam_distance_m": 11.0, "runtime_high_min": 11.6},
+        "perf_blend": {"max_lumens": 26.0, "runtime_high_min": 17.4, "max_candela": 14.4},
+        "value": {"perf_blend": 31.9, "price": 35.1},
+        "overall": {"amazon_trust": 25.2, "value": 16.75, "performance": 14.34, "durability": 13.09},
+        "throw": {"max_candela": 16.8, "beam_distance_m": 13.75, "amazon_trust": 10.8, "runtime_high_min": 8.7, "durability": 8.73},
+        "flood": {"max_lumens": 22.75, "runtime_medium_min": 10.4, "amazon_trust": 10.8, "price": 11.7, "durability": 13.09},
+        "tactical": {"max_candela": 12.0, "durability": 17.45, "amazon_trust": 10.8, "runtime_high_min": 8.7, "throw": 10.5, "max_lumens": 6.5},
+        "edc": {"runtime_medium_min": 13.0, "price": 15.6, "amazon_trust": 10.8, "max_lumens": 9.75, "flood": 10.5, "durability": 8.73}
+      },
+      "formula_version": "v2"
+    }'::jsonb AS payload
 )
 INSERT INTO flashlight_scores (run_id, flashlight_id, profile_id, score, rank_position, metric_breakdown)
-SELECT run.id, f.id, p.id, s.score, s.rank_position, '{}'::jsonb
+SELECT run.id, f.id, p.id, s.score, s.rank_position, demo_breakdown.payload
 FROM run
+CROSS JOIN demo_breakdown
 CROSS JOIN (
     VALUES
         ('wurkkos-fc11c', 'tactical', 78.4::numeric, 2),

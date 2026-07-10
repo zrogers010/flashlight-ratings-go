@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go tests & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build binaries
+        run: |
+          go build -o /tmp/api ./cmd/api
+          go build -o /tmp/worker ./cmd/worker
+          go build -o /tmp/scorejob ./cmd/scorejob
+
+  web:
+    name: Web typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+  api-smoke:
+    name: API + Postgres smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Postgres + API
+        run: |
+          # worker.env is required by compose even if we only start db/api
+          touch worker.env
+          docker compose up -d --build db api
+
+      - name: Wait for API
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf "http://127.0.0.1:8080/flashlights?page=1&page_size=1" >/dev/null; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become ready"
+          docker compose logs api db
+          exit 1
+
+      - name: Smoke endpoints
+        run: bash scripts/ci-api-smoke.sh
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { ScoreBreakdown } from "@/components/ScoreBreakdown";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { ArticleStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
@@ -39,10 +40,6 @@ function fmt(v?: number, digits = 0) {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
-}
-
-function scoreTier(v: number) {
-  return v >= 80 ? "high" : v >= 60 ? "mid" : "low";
 }
 
 function bestForLabel(data: FlashlightDetail) {
@@ -257,14 +254,6 @@ export default async function BreakdownArticlePage({
     .filter((u) => !u.includes("._SCLZZZZZZZ_"))
     .slice(0, 3);
 
-  const scoreBreakdown = [
-    { label: "Tactical", value: data.tactical_score || 0 },
-    { label: "EDC", value: data.edc_score || 0 },
-    { label: "Value", value: data.value_score || 0 },
-    { label: "Throw", value: data.throw_score || 0 },
-    { label: "Flood", value: data.flood_score || 0 },
-  ];
-
   const batteryLabel = data.battery_types?.length
     ? data.battery_types.join(" / ")
     : "Unknown";
@@ -395,38 +384,17 @@ export default async function BreakdownArticlePage({
       </div>
 
       {/* ── Score Breakdown ──────────────────── */}
-      <div className="panel">
-        <h2 style={{ marginBottom: 8 }}>How It Scores</h2>
-        <p className="muted" style={{ marginBottom: 20, fontSize: "0.88rem" }}>
-          Our algorithm evaluates every flashlight across five categories. Each
-          score reflects a weighted analysis of specs, runtime efficiency, and
-          price-to-performance ratio.
-        </p>
-        <div className="score-bars">
-          {scoreBreakdown.map((s) => (
-            <div className="bar-row" key={s.label}>
-              <label>
-                <span>{s.label}</span>
-                <strong
-                  style={{
-                    color: `var(--score-${scoreTier(s.value)})`,
-                  }}
-                >
-                  {s.value > 0 ? s.value.toFixed(1) : "—"}
-                </strong>
-              </label>
-              <div className="bar-track">
-                <span
-                  className="bar-fill"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, Math.round(s.value)))}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ScoreBreakdown
+        scores={{
+          overall: data.overall_score,
+          tactical: data.tactical_score,
+          edc: data.edc_score,
+          value: data.value_score,
+          throw: data.throw_score,
+          flood: data.flood_score,
+        }}
+        breakdown={data.metric_breakdown}
+      />
 
       {/* ── Strengths & Weaknesses ────────── */}
       {(strengths.length > 0 || weaknesses.length > 0) && (
