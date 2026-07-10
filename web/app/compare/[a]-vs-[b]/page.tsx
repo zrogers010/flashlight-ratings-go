@@ -12,6 +12,7 @@ import {
   fetchAllSlugs,
   type FlashlightDetail,
 } from "@/lib/api";
+import { compareUrl } from "@/lib/compare-url";
 
 export const revalidate = 3600;
 
@@ -25,10 +26,11 @@ export async function generateStaticParams() {
     const params: Record<string, string>[] = [];
     for (let i = 0; i < top.length; i++) {
       for (let j = i + 1; j < top.length; j++) {
+        const [a, b] = [top[i].slug, top[j].slug].sort();
         // Folder is `[a]-vs-[b]` which Next 14 collapses into a single
         // segment captured under whichever key matches first. We provide
         // both a/b and the collapsed shape so Next can pick the right one.
-        params.push({ a: top[i].slug, b: top[j].slug });
+        params.push({ a, b });
       }
     }
     return params;
@@ -106,12 +108,7 @@ async function loadPair(params: Params) {
       resolveOne(halves.a),
       resolveOne(halves.b),
     ]);
-    // Canonical URL always uses slugs. If we resolved by ID, fall back to
-    // the resolved slug so old /compare/24-vs-37 links still emit a slug
-    // canonical (and signal Google to consolidate ranking on the slug URL).
-    const canonicalA = a.slug || halves.a;
-    const canonicalB = b.slug || halves.b;
-    return { a, b, halves, canonicalA, canonicalB };
+    return { a, b, halves };
   } catch {
     return null;
   }
@@ -120,13 +117,13 @@ async function loadPair(params: Params) {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const pair = await loadPair(await params);
   if (!pair) return { title: "Comparison Not Found" };
-  const { a, b, canonicalA, canonicalB } = pair;
+  const { a, b } = pair;
   const nameA = `${a.brand} ${a.name}`;
   const nameB = `${b.brand} ${b.name}`;
   return {
     title: `${nameA} vs ${nameB} — Side by Side Comparison 2026`,
     description: `Compare the ${nameA} (${fmt(a.max_lumens)} lm, ${fmt(a.beam_distance_m)}m throw) against the ${nameB} (${fmt(b.max_lumens)} lm, ${fmt(b.beam_distance_m)}m throw). Specs, scores, and pricing compared.`,
-    alternates: { canonical: `/compare/${canonicalA}-vs-${canonicalB}` },
+    alternates: { canonical: compareUrl([a, b]) },
     openGraph: {
       title: `${nameA} vs ${nameB} — Which Is Better?`,
       description: `Head-to-head comparison of specs, scores, and value.`,

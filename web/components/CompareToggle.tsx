@@ -6,12 +6,13 @@ import { trackEvent } from "@/lib/analytics";
 
 type Props = {
   id: number;
+  slug?: string;
   brand: string;
   name: string;
   image_url?: string;
 };
 
-export function CompareToggle({ id, brand, name, image_url }: Props) {
+export function CompareToggle({ id, slug, brand, name, image_url }: Props) {
   const items = useCompareStore((s) => s.items);
   const add = useCompareStore((s) => s.add);
   const remove = useCompareStore((s) => s.remove);
@@ -38,7 +39,7 @@ export function CompareToggle({ id, brand, name, image_url }: Props) {
           if (isActive) {
             remove(id);
           } else if (!isFull) {
-            add({ id, brand, name, image_url });
+            add({ id, slug, brand, name, image_url });
             trackEvent("compare_add", { product: `${brand} ${name}`, brand });
           }
         }}

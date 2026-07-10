@@ -7,6 +7,7 @@ import { BuyOnAmazonButton } from "./BuyOnAmazonButton";
 import { ScoreBadge } from "./ScoreBadge";
 import { CompareTable } from "./CompareTable";
 import type { FlashlightDetail } from "@/lib/api";
+import { productUrl } from "@/lib/compare-url";
 
 type Props = {
   items: FlashlightDetail[];
@@ -102,7 +103,7 @@ export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
               <div className="compare-card-headline">
                 <p className="kicker" style={{ marginBottom: 2 }}>{item.brand}</p>
                 <h3 style={{ fontSize: "1.05rem", margin: 0 }}>
-                  <Link href={`/flashlights/${item.id}`}>{item.name}</Link>
+                  <Link href={productUrl(item)}>{item.name}</Link>
                 </h3>
               </div>
               <div className="compare-card-meta">
@@ -169,7 +170,7 @@ export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
               return (
                 <li key={w.profileKey}>
                   <span className="compare-verdict-label">{w.profileLabel}:</span>{" "}
-                  <Link href={`/flashlights/${winnerItem.id}`}>
+                  <Link href={productUrl(winnerItem)}>
                     {winnerItem.brand} {winnerItem.name}
                   </Link>
                   <span className="muted compare-verdict-margin">{margin}</span>

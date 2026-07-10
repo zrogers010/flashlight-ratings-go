@@ -16,6 +16,7 @@ import {
   type FlashlightDetail,
   type FlashlightItem,
 } from "@/lib/api";
+import { compareUrl } from "@/lib/compare-url";
 import { getPriceFreshness } from "@/lib/price-freshness";
 
 export const revalidate = 3600;
@@ -655,7 +656,7 @@ export default async function BreakdownArticlePage({
             Full Spec Sheet →
           </Link>
           <Link
-            href={`/compare?ids=${data.id}${competitors[0] ? `,${competitors[0].id}` : ""}`}
+            href={compareUrl(competitors[0] ? [data, competitors[0]] : [data])}
             className="btn btn-ghost"
             style={{ textDecoration: "none" }}
           >
@@ -675,8 +676,9 @@ export default async function BreakdownArticlePage({
             {competitors.map((alt) => (
               <Link
                 key={alt.id}
-                href={`/reviews/${alt.slug}`}
+                href={compareUrl([data, alt])}
                 className="review-competitor-card"
+                aria-label={`Compare ${data.brand} ${data.name} with ${alt.brand} ${alt.name}`}
               >
                 <div className="review-competitor-name">
                   {alt.brand} {alt.name}
