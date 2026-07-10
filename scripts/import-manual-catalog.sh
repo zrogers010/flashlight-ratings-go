@@ -77,7 +77,9 @@ CREATE TEMP TABLE tmp_manual_catalog (
   waterproof_rating TEXT,
   impact_resistance_m NUMERIC(8,2),
   body_material TEXT,
-  use_case_tags TEXT
+  use_case_tags TEXT,
+  amazon_purchasable BOOLEAN,
+  amazon_availability_checked_at TIMESTAMPTZ
 );
 \copy tmp_manual_catalog FROM STDIN WITH (FORMAT csv, HEADER true);
 SQL
@@ -122,7 +124,9 @@ CREATE TEMP VIEW cleaned AS
     NULLIF(upper(trim(waterproof_rating)), '') AS waterproof_rating,
     impact_resistance_m,
     NULLIF(trim(body_material), '') AS body_material,
-    COALESCE(use_case_tags, '') AS use_case_tags
+    COALESCE(use_case_tags, '') AS use_case_tags,
+    COALESCE(amazon_purchasable, TRUE) AS amazon_purchasable,
+    amazon_availability_checked_at
   FROM tmp_manual_catalog;
 
 -- Step 1: Upsert brands (separate statement so flashlights can see them)
@@ -258,7 +262,7 @@ SET
   affiliate_url = c.amazon_url,
   asin = c.asin,
   is_primary = TRUE,
-  is_active = TRUE,
+  is_active = c.amazon_purchasable,
   updated_at = NOW()
 FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
@@ -276,7 +280,7 @@ SELECT
   c.amazon_url,
   c.asin,
   TRUE,
-  TRUE,
+  c.amazon_purchasable,
   NOW()
 FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
@@ -298,8 +302,8 @@ SELECT
   c.asin,
   'USD',
   c.current_price_usd,
-  TRUE,
-  NOW()
+  c.amazon_purchasable,
+  COALESCE(c.amazon_availability_checked_at, NOW())
 FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
 WHERE c.current_price_usd IS NOT NULL;

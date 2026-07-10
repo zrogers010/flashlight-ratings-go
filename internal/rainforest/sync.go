@@ -13,13 +13,15 @@ import (
 
 // CSV column indices (0-based) matching manual_catalog.csv header.
 const (
-	colBrandName        = 0
-	colASIN             = 10
-	colAmazonURL        = 11
-	colCurrentPriceUSD  = 12
-	colRatingCount      = 13
-	colAverageRating    = 14
-	colImageURL         = 15
+	colBrandName         = 0
+	colASIN              = 10
+	colAmazonURL         = 11
+	colCurrentPriceUSD   = 12
+	colRatingCount       = 13
+	colAverageRating     = 14
+	colImageURL          = 15
+	colAmazonPurchasable = 36
+	colAmazonCheckedAt   = 37
 )
 
 type SyncResult struct {
@@ -29,8 +31,8 @@ type SyncResult struct {
 	Unavailable int
 	Errors      int
 	Changes     []string
-	// State is the post-run sidecar state, returned so the caller can decide
-	// whether to invoke pruning, save it, or inspect chronic-unavailable streaks.
+	// State is the post-run sidecar state, returned for inspection of
+	// chronic-unavailable streaks.
 	// May be nil when no state path was provided.
 	State *SyncState
 }
@@ -42,6 +44,10 @@ type SyncResult struct {
 type SyncOptions struct {
 	PartnerTag string
 	DryRun     bool
+	// AvailabilityThreshold is the number of consecutive non-purchasable
+	// responses required before the Amazon offer is soft-disabled. A later
+	// purchasable response re-enables it automatically.
+	AvailabilityThreshold int
 
 	// RotateDays > 0 enables auto-rotation: the catalog is sharded into
 	// RotateDays groups by row index, and only the shard for "today" (based
@@ -64,7 +70,7 @@ type SyncOptions struct {
 // SyncCSV reads the CSV, looks up each ASIN via Rainforest, updates
 // price/rating/image fields, and writes the CSV back. It also loads/updates
 // a sidecar JSON state file (StatePathFor(csvPath)) that tracks each ASIN's
-// consecutive-unavailable streak so callers can prune chronic-dead listings.
+// consecutive-unavailable streak so offers can be soft-disabled and recovered.
 //
 // Deprecated: prefer SyncCSVWithOptions for new callers. This wrapper preserves
 // the original 5-arg signature for tests / older entrypoints.
@@ -93,6 +99,7 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 	if len(records) < 2 {
 		return nil, fmt.Errorf("csv has no data rows")
 	}
+	ensureAvailabilityColumns(records)
 
 	statePath := StatePathFor(csvPath)
 	state, err := LoadState(statePath)
@@ -136,25 +143,14 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 
 		var changes []string
 
-		// Update price + track availability for sidecar state
-		oldPrice := strings.TrimSpace(row[colCurrentPriceUSD])
-		if product.Price > 0 {
-			state.MarkAvailable(asin, brandName, modelName)
-			newPrice := formatFloat(product.Price)
-			if oldPrice != newPrice {
-				changes = append(changes, fmt.Sprintf("price %s -> %s", oldPrice, newPrice))
-				row[colCurrentPriceUSD] = newPrice
-			}
-		} else if !product.InStock {
-			state.MarkUnavailable(asin, brandName, modelName, "no price + not in stock")
-			streak := state.Entries[asin].UnavailableRuns
-			changes = append(changes, fmt.Sprintf("UNAVAILABLE (was $%s) [streak=%d]", oldPrice, streak))
+		offerChanges, unavailable := updateOfferState(
+			row, state, asin, brandName, modelName, product, opts.AvailabilityThreshold,
+		)
+		changes = append(changes, offerChanges...)
+		if unavailable {
 			result.Unavailable++
-		} else {
-			// In stock but no price returned (e.g. coming-soon / variant-only listing).
-			// Treat as available to avoid false positives in prune logic.
-			state.MarkAvailable(asin, brandName, modelName)
 		}
+		row[colAmazonCheckedAt] = syncNow(opts).Format(time.RFC3339)
 
 		// Update rating count
 		oldCount := strings.TrimSpace(row[colRatingCount])
@@ -233,13 +229,15 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 		log.Printf("State: garbage-collected %d entries for ASINs no longer in CSV", removed)
 	}
 
-	if !opts.DryRun && result.Updated > 0 {
+	// Every processed row receives a fresh availability timestamp, even when
+	// price and rating values are unchanged.
+	if !opts.DryRun && result.Total > 0 {
 		if err := writeCSV(csvPath, records); err != nil {
 			return result, fmt.Errorf("write csv: %w", err)
 		}
 		log.Printf("Wrote updated CSV to %s", csvPath)
-	} else if opts.DryRun && result.Updated > 0 {
-		log.Printf("DRY RUN: would have written %d changes to %s", result.Updated, csvPath)
+	} else if opts.DryRun && result.Total > 0 {
+		log.Printf("DRY RUN: would have refreshed %d rows in %s", result.Total, csvPath)
 	}
 
 	if !opts.DryRun {
@@ -316,88 +314,6 @@ func newRowSelector(opts SyncOptions, dataRowCount int) rowSelector {
 	}
 }
 
-// PruneResult summarizes a prune-unavailable run.
-type PruneResult struct {
-	Threshold int
-	Pruned    []PrunedEntry
-}
-
-type PrunedEntry struct {
-	ASIN  string
-	Brand string
-	Model string
-	Runs  int
-}
-
-// PruneUnavailable removes rows whose ASIN has a consecutive-unavailable
-// streak >= threshold (per the sidecar state file). It returns the list of
-// pruned entries. When dryRun is true, the CSV is not modified.
-func PruneUnavailable(csvPath string, threshold int, dryRun bool) (*PruneResult, error) {
-	if threshold < 1 {
-		return &PruneResult{Threshold: threshold}, nil
-	}
-
-	statePath := StatePathFor(csvPath)
-	state, err := LoadState(statePath)
-	if err != nil {
-		return nil, err
-	}
-
-	dropASINs := make(map[string]bool)
-	for _, asin := range state.ASINsUnavailableFor(threshold) {
-		dropASINs[asin] = true
-	}
-	if len(dropASINs) == 0 {
-		return &PruneResult{Threshold: threshold}, nil
-	}
-
-	f, err := os.Open(csvPath)
-	if err != nil {
-		return nil, fmt.Errorf("open csv: %w", err)
-	}
-	r := csv.NewReader(f)
-	r.LazyQuotes = true
-	records, err := r.ReadAll()
-	f.Close()
-	if err != nil {
-		return nil, fmt.Errorf("read csv: %w", err)
-	}
-	if len(records) < 2 {
-		return nil, fmt.Errorf("csv has no data rows")
-	}
-
-	header := records[0]
-	out := [][]string{header}
-	res := &PruneResult{Threshold: threshold}
-	for i := 1; i < len(records); i++ {
-		row := records[i]
-		asin := strings.TrimSpace(row[colASIN])
-		if asin != "" && dropASINs[asin] {
-			e := state.Entries[asin]
-			res.Pruned = append(res.Pruned, PrunedEntry{
-				ASIN: asin, Brand: row[colBrandName], Model: row[5], Runs: e.UnavailableRuns,
-			})
-			continue
-		}
-		out = append(out, row)
-	}
-
-	if !dryRun && len(res.Pruned) > 0 {
-		if err := writeCSV(csvPath, out); err != nil {
-			return res, fmt.Errorf("write pruned csv: %w", err)
-		}
-		// Drop pruned ASINs from state too so we don't keep tracking them.
-		for _, p := range res.Pruned {
-			delete(state.Entries, p.ASIN)
-		}
-		if err := state.Save(statePath); err != nil {
-			return res, fmt.Errorf("save sync state after prune: %w", err)
-		}
-	}
-
-	return res, nil
-}
-
 func writeCSV(path string, records [][]string) error {
 	f, err := os.Create(path)
 	if err != nil {
@@ -413,6 +329,78 @@ func writeCSV(path string, records [][]string) error {
 	}
 	w.Flush()
 	return w.Error()
+}
+
+func ensureAvailabilityColumns(records [][]string) {
+	if len(records) == 0 {
+		return
+	}
+	for len(records[0]) <= colAmazonPurchasable {
+		records[0] = append(records[0], "")
+	}
+	records[0][colAmazonPurchasable] = "amazon_purchasable"
+	for len(records[0]) <= colAmazonCheckedAt {
+		records[0] = append(records[0], "")
+	}
+	records[0][colAmazonCheckedAt] = "amazon_availability_checked_at"
+
+	for i := 1; i < len(records); i++ {
+		for len(records[i]) <= colAmazonCheckedAt {
+			records[i] = append(records[i], "")
+		}
+		if strings.TrimSpace(records[i][colAmazonPurchasable]) == "" {
+			// Existing catalogs predate availability tracking. Preserve their
+			// current links until Rainforest supplies repeated contrary evidence.
+			records[i][colAmazonPurchasable] = "true"
+		}
+	}
+}
+
+func updateOfferState(
+	row []string,
+	state *SyncState,
+	asin, brandName, modelName string,
+	product *ProductResult,
+	threshold int,
+) ([]string, bool) {
+	// A usable offer needs both a positive buy-box price and an explicit
+	// in-stock signal. Prime and seller identity are informational only:
+	// legitimate third-party offers remain eligible.
+	oldPrice := strings.TrimSpace(row[colCurrentPriceUSD])
+	if strings.EqualFold(strings.TrimSpace(product.ASIN), strings.TrimSpace(asin)) &&
+		product.Price > 0 &&
+		product.InStock {
+		state.MarkAvailable(asin, brandName, modelName)
+		var changes []string
+		newPrice := formatFloat(product.Price)
+		if oldPrice != newPrice {
+			changes = append(changes, fmt.Sprintf("price %s -> %s", oldPrice, newPrice))
+			row[colCurrentPriceUSD] = newPrice
+		}
+		if row[colAmazonPurchasable] != "true" {
+			changes = append(changes, "Amazon offer re-enabled")
+			row[colAmazonPurchasable] = "true"
+		}
+		return changes, false
+	}
+
+	state.MarkUnavailable(asin, brandName, modelName, "no purchasable buy box")
+	streak := state.Entries[asin].UnavailableRuns
+	changes := []string{
+		fmt.Sprintf("UNAVAILABLE (was $%s) [streak=%d]", oldPrice, streak),
+	}
+	if threshold > 0 && streak >= threshold && row[colAmazonPurchasable] != "false" {
+		changes = append(changes, "Amazon offer soft-disabled")
+		row[colAmazonPurchasable] = "false"
+	}
+	return changes, true
+}
+
+func syncNow(opts SyncOptions) time.Time {
+	if opts.Now != nil {
+		return opts.Now().UTC()
+	}
+	return time.Now().UTC()
 }
 
 // isAmazonHostedImage reports whether the URL is served from one of Amazon's

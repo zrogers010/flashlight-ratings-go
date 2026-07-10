@@ -10,10 +10,10 @@
 #   1. Run the rainforest-sync container in `update` mode, which rewrites
 #      data/manual_catalog.csv with current prices/ratings/images. It also
 #      writes a local-only sidecar (data/manual_catalog.sync_state.json,
-#      gitignored) tracking per-ASIN unavailable streaks for the optional
-#      auto-prune feature; nothing else in the app or deploy reads it.
-#   2. Optionally prune any ASIN that has been unavailable for N consecutive
-#      runs (PRUNE_THRESHOLD env var, default 3).
+#      gitignored) tracking per-ASIN unavailable streaks.
+#   2. Soft-disable Amazon CTAs after N consecutive non-purchasable runs
+#      (PRUNE_THRESHOLD legacy env var). Listings remain in the catalog and
+#      automatically recover after a successful check.
 #   3. Re-import the freshly-updated CSV into Postgres.
 #   4. Restart the worker so scoring picks up the new data.
 #
@@ -25,7 +25,7 @@
 # Environment:
 #   RAINFOREST_API_KEY     required (read from .env if present)
 #   AMAZON_PARTNER_TAG     default: flashlightrat-20
-#   PRUNE_THRESHOLD        default: 3 (0 = never prune)
+#   PRUNE_THRESHOLD        default: 2 (0 = never disable; legacy name)
 #   SYNC_DELAY             default: 1s   (delay between Rainforest API calls)
 #   SYNC_MODE              default: update  (update | discover | both)
 #   SYNC_ROTATE_DAYS       default: 0   (when >1, shard catalog into N daily
@@ -83,7 +83,7 @@ CATALOG_AUTO_COMMIT="${CATALOG_AUTO_COMMIT:-0}"
 echo "═══ Catalog Sync ═══"
 echo "  app dir:     ${APP_DIR}"
 echo "  mode:        ${SYNC_MODE}"
-echo "  prune:       ${PRUNE_THRESHOLD} consecutive unavailable runs"
+echo "  disable:     ${PRUNE_THRESHOLD} consecutive unavailable runs"
 echo "  delay:       ${SYNC_DELAY}"
 echo "  rotate-days: ${SYNC_ROTATE_DAYS}  (0 = full catalog each run)"
 echo "  limit:       ${SYNC_LIMIT}  (0 = no limit)"
@@ -96,7 +96,7 @@ echo "→ Building rainforest-sync image..."
 ${COMPOSE} --profile tools build rainforest-sync
 
 # ── 2. Run sync ──────────────────────────────────────────────────────────
-echo "→ Running rainforest-sync (mode=${SYNC_MODE}, prune=${PRUNE_THRESHOLD})..."
+echo "→ Running rainforest-sync (mode=${SYNC_MODE}, disable=${PRUNE_THRESHOLD})..."
 ${COMPOSE} --profile tools run --rm \
   -e SYNC_ROTATE_DAYS="${SYNC_ROTATE_DAYS}" \
   -e SYNC_LIMIT="${SYNC_LIMIT}" \

@@ -24,6 +24,10 @@ Fill `data/manual_catalog.csv` with real products:
 - `image_url`: official product image URL you are allowed to use.
 - `description` and specs: manufacturer spec sheet / official docs.
 - `use_case_tags`: comma-separated (example: `edc,camping,tactical`).
+- `amazon_purchasable`: use `true` for a manually verified offer. The
+  Rainforest sync manages this field automatically after the initial import.
+- `amazon_availability_checked_at`: leave blank for initial manual data; the
+  Rainforest sync writes the latest successful check time.
 
 ## 2) Import
 

@@ -56,6 +56,7 @@ export default async function ReviewsIndexPage() {
           url: `/reviews/${item.slug}`,
           image: item.image_url,
           price: item.price_usd,
+          available: item.amazon_in_stock,
         }))}
       />
 

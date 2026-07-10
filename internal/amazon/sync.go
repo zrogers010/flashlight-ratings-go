@@ -240,6 +240,7 @@ func (s *Syncer) persistSnapshot(ctx context.Context, flashlightID int64, p Prod
 	if p.CurrencyCode == "" {
 		p.CurrencyCode = "USD"
 	}
+	purchasable := productIsPurchasable(p)
 
 	const insertAmazon = `
 INSERT INTO amazon_product_snapshots (
@@ -273,9 +274,9 @@ VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NOW())
 INSERT INTO flashlight_price_snapshots (
 	flashlight_id, source, source_sku, currency_code, price, in_stock, captured_at
 )
-VALUES ($1, 'amazon', $2, $3, $4, TRUE, NOW())
+VALUES ($1, 'amazon', $2, $3, $4, $5, NOW())
 `
-		_, err = tx.ExecContext(ctx, insertPrice, flashlightID, p.ASIN, p.CurrencyCode, *p.OfferPrice)
+		_, err = tx.ExecContext(ctx, insertPrice, flashlightID, p.ASIN, p.CurrencyCode, *p.OfferPrice, purchasable)
 		if err != nil {
 			return err
 		}
@@ -284,7 +285,7 @@ VALUES ($1, 'amazon', $2, $3, $4, TRUE, NOW())
 	const upsertAffiliate = `
 UPDATE affiliate_links
 SET affiliate_url = $3,
-	is_active = TRUE,
+	is_active = $5,
 	updated_at = NOW()
 WHERE flashlight_id = $1
   AND provider = 'amazon'
@@ -292,7 +293,7 @@ WHERE flashlight_id = $1
   AND asin = $4
 `
 	canonicalURL := canonicalAmazonURL(s.cfg.Marketplace, p.ASIN, s.cfg.PartnerTag)
-	_, err = tx.ExecContext(ctx, upsertAffiliate, flashlightID, s.cfg.Region, canonicalURL, p.ASIN)
+	_, err = tx.ExecContext(ctx, upsertAffiliate, flashlightID, s.cfg.Region, canonicalURL, p.ASIN, purchasable)
 	if err != nil {
 		return err
 	}
@@ -339,6 +340,18 @@ WHERE id = $1
 	}
 
 	return tx.Commit()
+}
+
+func productIsPurchasable(p Product) bool {
+	if p.OfferPrice == nil || *p.OfferPrice <= 0 {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(p.Availability)) {
+	case "now", "in_stock", "available":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Syncer) markListingInactive(ctx context.Context, flashlightID int64, asin string) error {

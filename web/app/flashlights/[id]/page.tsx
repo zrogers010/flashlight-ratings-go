@@ -235,7 +235,13 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
               </div>
             </div>
           )}
-          <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" priceUpdatedAt={data.price_last_updated_at} />
+          <BuyOnAmazonButton
+            amazon_url={data.amazon_url}
+            price_usd={data.price_usd}
+            size="lg"
+            priceUpdatedAt={data.price_last_updated_at}
+            inStock={data.amazon_in_stock}
+          />
           <div className="buy-meta">
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
@@ -351,7 +357,12 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             ${fmt(data.price_usd, 2)}
           </p>
         )}
-        <BuyOnAmazonButton amazon_url={data.amazon_url} price_usd={data.price_usd} size="lg" />
+        <BuyOnAmazonButton
+          amazon_url={data.amazon_url}
+          price_usd={data.price_usd}
+          size="lg"
+          inStock={data.amazon_in_stock}
+        />
         <p className="muted" style={{ fontSize: "0.8rem", marginTop: 10 }}>
           As an Amazon Associate we earn from qualifying purchases.
         </p>

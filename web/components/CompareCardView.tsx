@@ -150,6 +150,7 @@ export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
                   price_usd={item.price_usd}
                   size="sm"
                   priceUpdatedAt={item.price_last_updated_at}
+                  inStock={item.amazon_in_stock}
                 />
               </div>
             </article>
@@ -211,6 +212,7 @@ export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
               price_usd={item.price_usd}
               size="sm"
               priceUpdatedAt={item.price_last_updated_at}
+              inStock={item.amazon_in_stock}
             />
           </div>
         ))}

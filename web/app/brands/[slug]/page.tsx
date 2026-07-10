@@ -70,6 +70,7 @@ export default async function BrandDetailPage({
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
+          available: item.amazon_in_stock,
         }))}
       />
 

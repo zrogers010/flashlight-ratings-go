@@ -40,32 +40,33 @@ type apiError struct {
 }
 
 type flashlightItem struct {
-	ID             int64    `json:"id"`
-	Brand          string   `json:"brand"`
-	Name           string   `json:"name"`
-	Slug           string   `json:"slug"`
-	ModelCode      *string  `json:"model_code,omitempty"`
-	Description    *string  `json:"description,omitempty"`
-	ImageURL       *string  `json:"image_url,omitempty"`
-	AmazonURL      *string  `json:"amazon_url,omitempty"`
-	MaxLumens      *int64   `json:"max_lumens,omitempty"`
-	MaxCandela     *int64   `json:"max_candela,omitempty"`
-	BeamDistanceM  *int64   `json:"beam_distance_m,omitempty"`
-	RuntimeHighMin *int64   `json:"runtime_high_min,omitempty"`
-	Waterproof     *string  `json:"waterproof_rating,omitempty"`
-	WeightG        *float64 `json:"weight_g,omitempty"`
-	SwitchType     *string  `json:"switch_type,omitempty"`
-	LEDModel       *string  `json:"led_model,omitempty"`
-	PriceUSD       *float64 `json:"price_usd,omitempty"`
-	PriceLastUpdatedAt *string `json:"price_last_updated_at,omitempty"`
-	OverallScore   *float64 `json:"overall_score,omitempty"`
-	TacticalScore  *float64 `json:"tactical_score,omitempty"`
-	EDCScore       *float64 `json:"edc_score,omitempty"`
-	ValueScore     *float64 `json:"value_score,omitempty"`
-	ThrowScore     *float64 `json:"throw_score,omitempty"`
-	FloodScore     *float64 `json:"flood_score,omitempty"`
-	BatteryTypes   []string `json:"battery_types"`
-	UseCaseTags    []string `json:"use_case_tags"`
+	ID                 int64    `json:"id"`
+	Brand              string   `json:"brand"`
+	Name               string   `json:"name"`
+	Slug               string   `json:"slug"`
+	ModelCode          *string  `json:"model_code,omitempty"`
+	Description        *string  `json:"description,omitempty"`
+	ImageURL           *string  `json:"image_url,omitempty"`
+	AmazonURL          *string  `json:"amazon_url,omitempty"`
+	MaxLumens          *int64   `json:"max_lumens,omitempty"`
+	MaxCandela         *int64   `json:"max_candela,omitempty"`
+	BeamDistanceM      *int64   `json:"beam_distance_m,omitempty"`
+	RuntimeHighMin     *int64   `json:"runtime_high_min,omitempty"`
+	Waterproof         *string  `json:"waterproof_rating,omitempty"`
+	WeightG            *float64 `json:"weight_g,omitempty"`
+	SwitchType         *string  `json:"switch_type,omitempty"`
+	LEDModel           *string  `json:"led_model,omitempty"`
+	PriceUSD           *float64 `json:"price_usd,omitempty"`
+	PriceLastUpdatedAt *string  `json:"price_last_updated_at,omitempty"`
+	AmazonInStock      *bool    `json:"amazon_in_stock,omitempty"`
+	OverallScore       *float64 `json:"overall_score,omitempty"`
+	TacticalScore      *float64 `json:"tactical_score,omitempty"`
+	EDCScore           *float64 `json:"edc_score,omitempty"`
+	ValueScore         *float64 `json:"value_score,omitempty"`
+	ThrowScore         *float64 `json:"throw_score,omitempty"`
+	FloodScore         *float64 `json:"flood_score,omitempty"`
+	BatteryTypes       []string `json:"battery_types"`
+	UseCaseTags        []string `json:"use_case_tags"`
 }
 
 type paginatedFlashlightsResponse struct {
@@ -115,14 +116,14 @@ type flashlightDetail struct {
 	CRI                 *int64           `json:"cri,omitempty"`
 	CCTMinK             *int64           `json:"cct_min_k,omitempty"`
 	CCTMaxK             *int64           `json:"cct_max_k,omitempty"`
-	AmazonRatingCount   *int64            `json:"amazon_rating_count,omitempty"`
-	AmazonAverageRating *float64          `json:"amazon_average_rating,omitempty"`
-	AmazonLastSyncedAt  *string           `json:"amazon_last_synced_at,omitempty"`
-	MetricBreakdown     *metricBreakdown  `json:"metric_breakdown,omitempty"`
-	Modes               []flashlightMode  `json:"modes"`
-	ImageURLs           []string          `json:"image_urls"`
-	BatteryTypes        []string          `json:"battery_types"`
-	UseCaseTags         []string          `json:"use_case_tags"`
+	AmazonRatingCount   *int64           `json:"amazon_rating_count,omitempty"`
+	AmazonAverageRating *float64         `json:"amazon_average_rating,omitempty"`
+	AmazonLastSyncedAt  *string          `json:"amazon_last_synced_at,omitempty"`
+	MetricBreakdown     *metricBreakdown `json:"metric_breakdown,omitempty"`
+	Modes               []flashlightMode `json:"modes"`
+	ImageURLs           []string         `json:"image_urls"`
+	BatteryTypes        []string         `json:"battery_types"`
+	UseCaseTags         []string         `json:"use_case_tags"`
 }
 
 // metricBreakdown mirrors the JSON written by the scoring engine.

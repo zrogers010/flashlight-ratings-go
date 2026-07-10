@@ -327,6 +327,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="lg"
               priceUpdatedAt={data.price_last_updated_at}
+              inStock={data.amazon_in_stock}
             />
             <Link
               href={`/flashlights/${data.id}`}
@@ -647,6 +648,7 @@ export default async function BreakdownArticlePage({
             price_usd={data.price_usd}
             size="lg"
             priceUpdatedAt={data.price_last_updated_at}
+            inStock={data.amazon_in_stock}
           />
           <Link
             href={`/flashlights/${data.id}`}
@@ -707,6 +709,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="sm"
               priceUpdatedAt={data.price_last_updated_at}
+              inStock={data.amazon_in_stock}
             />
           </div>
         </div>
