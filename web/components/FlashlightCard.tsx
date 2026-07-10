@@ -103,7 +103,13 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       </div>
 
       <div className="cta-row">
-        <CompareToggle id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} />
+        <CompareToggle
+          id={item.id}
+          slug={item.slug}
+          brand={item.brand}
+          name={item.name}
+          image_url={item.image_url}
+        />
         <div style={{ marginLeft: "auto" }}>
           <BuyOnAmazonButton
             amazon_url={item.amazon_url}

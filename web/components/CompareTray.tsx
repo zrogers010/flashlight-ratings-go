@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCompareStore } from "@/lib/compare-store";
+import { compareUrl } from "@/lib/compare-url";
 
 export function CompareTray() {
   const items = useCompareStore((s) => s.items);
@@ -15,7 +16,7 @@ export function CompareTray() {
   if (!mounted || items.length === 0) return null;
 
   const canCompare = items.length >= 2;
-  const compareHref = `/compare?ids=${items.map((i) => i.id).join(",")}`;
+  const compareHref = compareUrl(items);
 
   return (
     <div className="compare-tray">

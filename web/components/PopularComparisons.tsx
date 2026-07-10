@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImageWithFallback } from "./ImageWithFallback";
 import type { RankingItem } from "@/lib/api";
+import { compareUrl } from "@/lib/compare-url";
 
 type PairSource = {
   label: string;
@@ -14,8 +15,8 @@ type Props = {
 
 /**
  * PopularComparisons renders a row of pre-built "head-to-head" tiles, each
- * linking to /compare?ids=A,B. Pairs are derived dynamically from rankings
- * by the caller so we don't go stale when ASINs change.
+ * linking to an indexable /compare/a-vs-b page. Pairs are derived dynamically
+ * from rankings by the caller so we don't go stale when ASINs change.
  */
 export function PopularComparisons({ pairs }: Props) {
   // Filter to pairs that actually have 2 items.
@@ -36,13 +37,12 @@ export function PopularComparisons({ pairs }: Props) {
       <div className="popular-compare-grid">
         {valid.map((pair) => {
           const [a, b] = pair.items;
-          const ids = `${a.flashlight.id},${b.flashlight.id}`;
           const nameA = `${a.flashlight.brand} ${a.flashlight.name}`;
           const nameB = `${b.flashlight.brand} ${b.flashlight.name}`;
           return (
             <Link
               key={pair.label}
-              href={`/compare?ids=${ids}`}
+              href={compareUrl([a.flashlight, b.flashlight])}
               className="popular-compare-tile"
               aria-label={`Compare ${nameA} versus ${nameB}`}
             >

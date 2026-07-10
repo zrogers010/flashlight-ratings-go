@@ -5,6 +5,7 @@ const MAX_COMPARE = 4;
 
 type CompareItem = {
   id: number;
+  slug?: string;
   brand: string;
   name: string;
   image_url?: string;

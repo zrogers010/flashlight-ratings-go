@@ -8,6 +8,7 @@ import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { useCompareStore } from "@/lib/compare-store";
+import { compareUrl } from "@/lib/compare-url";
 
 type SortKey = "rank" | "score" | "brand" | "name";
 
@@ -60,6 +61,7 @@ export function RankingsTable({
       .slice(0, preselectTopN)
       .map((i) => ({
         id: i.flashlight.id,
+        slug: i.flashlight.slug,
         brand: i.flashlight.brand,
         name: i.flashlight.name,
         image_url: i.flashlight.image_url,
@@ -111,7 +113,7 @@ export function RankingsTable({
         <div className="table-compare-hint">
           {compareItems.length} selected
           {compareItems.length >= 2 && (
-            <Link href={`/compare?ids=${compareItems.map((i) => i.id).join(",")}`} className="button-link btn-sm">
+            <Link href={compareUrl(compareItems)} className="button-link btn-sm">
               Compare →
             </Link>
           )}
@@ -179,6 +181,7 @@ export function RankingsTable({
                     } else {
                       addCompare({
                         id: item.flashlight.id,
+                        slug: item.flashlight.slug,
                         brand: item.flashlight.brand,
                         name: item.flashlight.name,
                         image_url: item.flashlight.image_url,

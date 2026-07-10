@@ -10,6 +10,7 @@ import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/St
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { fetchFlashlightByID, fetchFlashlights, fetchRankings } from "@/lib/api";
+import { compareUrl } from "@/lib/compare-url";
 
 export const revalidate = 3600;
 
@@ -240,7 +241,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
           </div>
           <div style={{ marginTop: 12 }}>
             <Link
-              href={`/compare?ids=${data.id}${alternatives[0] ? `,${alternatives[0].id}` : ""}`}
+              href={compareUrl(alternatives[0] ? [data, alternatives[0]] : [data])}
               className="btn btn-ghost btn-sm"
               style={{ width: "100%", justifyContent: "center" }}
             >

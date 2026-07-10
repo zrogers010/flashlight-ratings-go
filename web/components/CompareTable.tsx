@@ -12,6 +12,7 @@ import {
   findBestIndex,
 } from "@/lib/spec-config";
 import type { FlashlightDetail } from "@/lib/api";
+import { productUrl } from "@/lib/compare-url";
 
 const BeamViz = lazy(() =>
   import("./BeamViz").then((m) => ({ default: m.BeamViz }))
@@ -112,7 +113,7 @@ export function CompareTable({ items }: Props) {
                       />
                     </div>
                     <h4>
-                      <Link href={`/flashlights/${item.id}`}>
+                      <Link href={productUrl(item)}>
                         {item.brand} {item.name}
                       </Link>
                     </h4>

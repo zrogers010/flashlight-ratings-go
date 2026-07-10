@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { parseCompositeFilter, composeCompositeSlug } from "./best-flashlights/[category]/composite";
+import { compareUrl } from "@/lib/compare-url";
 
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
@@ -76,7 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       for (let i = 0; i < top.length; i++) {
         for (let j = i + 1; j < top.length; j++) {
           vsPages.push({
-            url: `${BASE_URL}/compare/${top[i].slug}-vs-${top[j].slug}`,
+            url: `${BASE_URL}${compareUrl([top[i], top[j]])}`,
             lastModified: now,
             changeFrequency: "weekly" as const,
             priority: 0.65
