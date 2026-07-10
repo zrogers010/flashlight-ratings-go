@@ -18,108 +18,148 @@ const guides: Record<string, GuideContent> = {
   "how-we-score": {
     title: "How We Score Flashlights",
     description:
-      "A transparent breakdown of our 5-dimension scoring algorithm — what we measure, how we weight it, and why.",
+      "A transparent breakdown of our scoring algorithm — six profiles, Amazon Trust, and the weights behind every score.",
     category: "Methodology",
     body: (
       <>
         <p>
-          Every flashlight on this site is scored across five profiles:{" "}
-          <strong>Tactical</strong>, <strong>EDC</strong>, <strong>Value</strong>,{" "}
-          <strong>Throw</strong>, and <strong>Flood</strong>. Each profile uses a
-          weighted formula tuned to what actually matters for that use case. There
-          is no single &ldquo;best flashlight&rdquo; — only the best flashlight{" "}
-          <em>for a specific job</em>.
+          Every flashlight on this site is scored on a 0–100 scale across six
+          profiles: <strong>Overall</strong>, <strong>Tactical</strong>,{" "}
+          <strong>EDC</strong>, <strong>Value</strong>, <strong>Throw</strong>, and{" "}
+          <strong>Flood</strong>. Each profile uses a weighted formula tuned to
+          what matters for that job. There is no single &ldquo;best
+          flashlight&rdquo; — only the best flashlight <em>for a specific use</em>.
+        </p>
+        <p>
+          Scores are computed from manufacturer specs, current Amazon pricing, and
+          Amazon customer ratings. Analysis is algorithmic — not hands-on testing.
+          On each product page, <strong>How It Scores</strong> shows the live
+          breakdown for that model.
         </p>
 
-        <h2>The Five Scoring Profiles</h2>
+        <h2>Amazon Trust</h2>
+        <p>
+          Most profiles include <strong>Amazon Trust</strong> — buyer social proof
+          from Amazon, not a manufacturer claim:
+        </p>
+        <ul>
+          <li><strong>Star rating (60%)</strong> — Average customer rating (normalized from about 3.5–5.0 stars).</li>
+          <li><strong>Review volume (40%)</strong> — How many ratings exist (log-scaled). More buyers = more confidence.</li>
+        </ul>
+        <p>
+          A 4.9 with a handful of reviews scores lower than a 4.6 with thousands.
+          Quality and confidence both matter.
+        </p>
+
+        <h2>Overall Score</h2>
+        <p>
+          The headline FlashlightRatings score — an Amazon-anchored composite of
+          trust, value, capability, and build:
+        </p>
+        <ul>
+          <li><strong>Amazon Trust (35%)</strong> — Customer rating quality and volume.</li>
+          <li><strong>Value (25%)</strong> — Performance relative to price (see Value profile).</li>
+          <li><strong>Performance (25%)</strong> — Lumens (35%), candela (25%), beam distance (20%), high-mode runtime (20%).</li>
+          <li><strong>Durability (15%)</strong> — Waterproof rating and impact resistance.</li>
+        </ul>
+
+        <h2>Category Profiles</h2>
 
         <h3>Tactical Score</h3>
         <p>
-          Optimized for duty, defense, and law enforcement. This profile rewards
-          lights that can positively identify threats at distance and keep running
-          under harsh conditions.
+          Optimized for duty, defense, and high-stakes identification — lights that
+          throw hard and hold up under abuse.
         </p>
         <ul>
-          <li><strong>Candela (30%)</strong> — Peak beam intensity determines how far the hotspot reaches and how effectively it can disorient.</li>
-          <li><strong>Runtime on High (20%)</strong> — A tactical light that dies mid-shift is a liability.</li>
-          <li><strong>Durability (20%)</strong> — Composite of waterproof rating and impact resistance. IPX8 and 1m+ drop rating are baseline.</li>
-          <li><strong>Throw Sub-Score (20%)</strong> — Rewards lights with long effective beam distance, factoring in candela and beam reach together.</li>
-          <li><strong>Price (10%)</strong> — Lower price is better, but it&rsquo;s intentionally low-weighted — reliability matters more than savings on a duty light.</li>
+          <li><strong>Candela (25%)</strong> — Peak beam intensity for reach and target ID.</li>
+          <li><strong>Durability (20%)</strong> — IP rating and impact resistance.</li>
+          <li><strong>Amazon Trust (15%)</strong> — Real-world buyer confidence.</li>
+          <li><strong>High-mode runtime (15%)</strong> — Usable output that lasts.</li>
+          <li><strong>Throw subscore (15%)</strong> — Long-range intensity blend (see Throw).</li>
+          <li><strong>Lumens (10%)</strong> — Supporting flood for close work.</li>
         </ul>
 
         <h3>EDC Score</h3>
         <p>
-          Tuned for everyday pocket carry — the light you grab for dog walks,
-          checking the crawlspace, or navigating a parking garage.
+          Tuned for everyday pocket carry — dog walks, parking garages, and around
+          the house.
         </p>
         <ul>
-          <li><strong>Medium-Mode Runtime (30%)</strong> — EDC lights spend most of their life on medium. A 4+ hour medium mode means charging once a week instead of daily.</li>
-          <li><strong>Price (20%)</strong> — EDC users are more price-sensitive. You want good-enough performance without overpaying.</li>
-          <li><strong>Flood Sub-Score (20%)</strong> — Everyday tasks need wide, even illumination more than a pencil beam.</li>
-          <li><strong>Lumens (15%)</strong> — Enough output to light up a room, but diminishing returns past ~1500 lm for pocket use.</li>
-          <li><strong>Durability (15%)</strong> — A pocket light gets dropped. It needs to survive.</li>
-        </ul>
-
-        <h3>Throw Score</h3>
-        <p>
-          For search and rescue, long-range identification, and dedicated throwers.
-        </p>
-        <ul>
-          <li><strong>Candela (45%)</strong> — The dominant factor. Throw is fundamentally a function of beam intensity.</li>
-          <li><strong>Beam Distance (30%)</strong> — Rated ANSI throw distance in meters. Closely correlated with candela but penalizes inefficient reflectors.</li>
-          <li><strong>Runtime on High (15%)</strong> — Extended search operations need sustained output.</li>
-          <li><strong>Durability (10%)</strong> — Field use demands weather and impact resistance.</li>
-        </ul>
-
-        <h3>Flood Score</h3>
-        <p>
-          For camping, area illumination, and any scenario where you need to light
-          up a wide space evenly.
-        </p>
-        <ul>
-          <li><strong>Lumens (50%)</strong> — Raw output is king for flood. More lumens means more area covered.</li>
-          <li><strong>Medium-Mode Runtime (25%)</strong> — Camp lights run for hours. A short runtime on medium defeats the purpose.</li>
-          <li><strong>Price (15%)</strong> — Camping lights are often shared or left in a gear bag. Reasonable cost matters.</li>
-          <li><strong>Durability (10%)</strong> — Rain resistance and basic impact survival.</li>
+          <li><strong>Medium-mode runtime (25%)</strong> — Where EDC lights spend most of their life.</li>
+          <li><strong>Price (20%)</strong> — Good-enough performance without overpaying.</li>
+          <li><strong>Amazon Trust (15%)</strong> — Buyer confidence.</li>
+          <li><strong>Lumens (15%)</strong> — Enough output for rooms and paths.</li>
+          <li><strong>Flood subscore (15%)</strong> — Wide, usable beam (see Flood).</li>
+          <li><strong>Durability (10%)</strong> — Survives drops from pockets and bags.</li>
         </ul>
 
         <h3>Value Score</h3>
         <p>
-          A composite score that balances raw performance against price. It answers:
-          &ldquo;How much flashlight do I get per dollar?&rdquo;
+          Answers: &ldquo;How much flashlight do I get per dollar?&rdquo;
         </p>
         <ul>
-          <li><strong>Performance (60%)</strong> — An internal sub-score combining lumens (35%), candela (25%), high-mode runtime (20%), and durability (20%).</li>
-          <li><strong>Price (40%)</strong> — Lower price is heavily rewarded, making this the go-to ranking for budget-conscious buyers.</li>
+          <li><strong>Performance blend (55%)</strong> — Lumens (40%), high-mode runtime (30%), candela (30%).</li>
+          <li><strong>Price (45%)</strong> — Lower price scores higher on this axis.</li>
+        </ul>
+
+        <h3>Throw Score</h3>
+        <p>
+          For search, long-range ID, and dedicated throwers.
+        </p>
+        <ul>
+          <li><strong>Candela (35%)</strong> — Dominant factor for beam intensity.</li>
+          <li><strong>Beam distance (25%)</strong> — Rated ANSI throw in meters.</li>
+          <li><strong>Amazon Trust (15%)</strong> — Buyer confidence.</li>
+          <li><strong>High-mode runtime (15%)</strong> — Sustained output for longer searches.</li>
+          <li><strong>Durability (10%)</strong> — Field weather and impact resistance.</li>
+        </ul>
+
+        <h3>Flood Score</h3>
+        <p>
+          For camping, area lighting, and wide even coverage.
+        </p>
+        <ul>
+          <li><strong>Lumens (35%)</strong> — Total output for area coverage.</li>
+          <li><strong>Medium-mode runtime (20%)</strong> — Hours of practical use.</li>
+          <li><strong>Amazon Trust (15%)</strong> — Buyer confidence.</li>
+          <li><strong>Price (15%)</strong> — Reasonable cost for shared / bag lights.</li>
+          <li><strong>Durability (15%)</strong> — Rain and basic impact survival.</li>
         </ul>
 
         <h2>Normalization</h2>
         <p>
-          Raw specs vary wildly — 200 lumens vs 100,000 lumens, $25 vs $670. We
-          normalize every metric to a 0–1 scale before applying weights.
-          Performance metrics (lumens, candela, beam distance, runtime) use{" "}
-          <strong>logarithmic normalization</strong> to prevent extreme outliers
-          from dominating. Price uses{" "}
-          <strong>linear inverse normalization</strong> — cheaper is better, on a
-          straight scale.
+          Raw specs vary wildly — hundreds of lumens vs tens of thousands, $25 vs
+          $300+. We normalize metrics to a 0–100 scale before applying weights.
+          Performance metrics (lumens, candela, beam distance, runtime, review
+          count) use <strong>logarithmic normalization</strong> so extreme outliers
+          do not dominate. Price and star rating use{" "}
+          <strong>linear</strong> scales (price is lower-is-better).
         </p>
 
-        <h2>Durability Sub-Score</h2>
+        <h2>Durability</h2>
         <p>
-          Durability is a composite of two specs: waterproof rating and impact
-          resistance. An IPX8-rated light with 2m impact resistance scores
-          significantly higher than an IPX4-rated light with no drop rating. This
-          score feeds into every profile because a flashlight that breaks when you
-          need it most is worthless regardless of how bright it is.
+          Durability combines waterproof rating (IP map) and impact resistance.
+          An IPX8 / IP68 light with solid drop resistance scores much higher than
+          an IPX4 light with no rating. This feeds Overall and most category
+          profiles — a light that fails when you need it is a poor pick regardless
+          of peak lumens.
+        </p>
+
+        <h2>Score presentation</h2>
+        <p>
+          After the weighted mean is computed, scores are gently rescaled so typical
+          catalog products land in an intuitive ~70–90 band while staying capped at
+          100. The on-page breakdown shows which metrics drove the result for each
+          profile.
         </p>
 
         <h2>Why Not Just Sort by Lumens?</h2>
         <p>
           Lumens alone tell you almost nothing useful. A 10,000-lumen light with a
-          30-second turbo stepdown and no waterproofing is worse for camping than a
-          1,200-lumen light that runs for 6 hours and survives rain. Our scoring
-          system captures these tradeoffs so you can compare flashlights the way
-          they actually get used — not just by the biggest number on the box.
+          short turbo burst and weak sealing can lose to a 1,200-lumen light that
+          runs for hours and survives rain. Our scoring captures those tradeoffs —
+          plus what real buyers report on Amazon — so you can compare lights the way
+          they actually get used.
         </p>
       </>
     ),
