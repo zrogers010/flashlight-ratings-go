@@ -5,6 +5,7 @@ type Props = {
   price_usd?: number;
   size?: "sm" | "lg";
   priceUpdatedAt?: string;
+  inStock?: boolean;
   /** Show freshness subtext under the button. Default true. */
   showFreshness?: boolean;
 };
@@ -14,9 +15,12 @@ export function BuyOnAmazonButton({
   price_usd,
   size = "sm",
   priceUpdatedAt,
+  inStock,
   showFreshness = true,
 }: Props) {
-  if (!amazon_url) return <span className="badge">Unavailable</span>;
+  if (!amazon_url || inStock === false) {
+    return <span className="badge">Currently unavailable</span>;
+  }
 
   const safeHref =
     amazon_url.startsWith("http://") || amazon_url.startsWith("https://")

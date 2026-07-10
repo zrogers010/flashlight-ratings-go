@@ -10,17 +10,17 @@ import (
 )
 
 // SyncState is a sidecar JSON file that tracks per-ASIN sync metadata
-// across runs of `rainforest-sync`. It is currently used to record how
-// many consecutive sync runs an ASIN has come back as unavailable, so
-// that the --prune-unavailable=N flag can drop chronically-dead listings.
+// across runs of `rainforest-sync`. It records how many consecutive sync
+// runs an ASIN has come back as unavailable so the legacy
+// --prune-unavailable=N flag can soft-disable its offer without deleting it.
 //
 // The state file lives next to the CSV (e.g. data/manual_catalog.csv ->
 // data/manual_catalog.sync_state.json) and is intentionally separate from
 // the CSV so we don't have to migrate the CSV schema or coordinate with
 // the strict-column DB import (`scripts/import-manual-catalog.sh`).
 type SyncState struct {
-	Version   int                       `json:"version"`
-	UpdatedAt time.Time                 `json:"updated_at"`
+	Version   int                        `json:"version"`
+	UpdatedAt time.Time                  `json:"updated_at"`
 	Entries   map[string]*SyncStateEntry `json:"entries"`
 }
 

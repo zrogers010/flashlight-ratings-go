@@ -284,6 +284,7 @@ type ScoredCard = {
   slug: string;
   image_url?: string;
   amazon_url?: string;
+  amazon_in_stock?: boolean;
   max_lumens?: number;
   beam_distance_m?: number;
   waterproof_rating?: string;
@@ -351,6 +352,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       slug: item.slug,
       image_url: item.image_url,
       amazon_url: item.amazon_url,
+      amazon_in_stock: item.amazon_in_stock,
       max_lumens: item.max_lumens,
       beam_distance_m: item.beam_distance_m,
       waterproof_rating: item.waterproof_rating,
@@ -394,7 +396,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
           name: `${item.brand} ${item.name}`,
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
-          price: item.price_usd
+          price: item.price_usd,
+          available: item.amazon_in_stock,
         }))}
       />
       <Breadcrumbs items={[{ label: "Best Flashlights", href: "/best-flashlights" }, { label: config.label }]} />
@@ -417,6 +420,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
               slug: item.slug,
               image_url: item.image_url,
               amazon_url: item.amazon_url,
+              amazon_in_stock: item.amazon_in_stock,
               max_lumens: item.max_lumens,
               beam_distance_m: item.beam_distance_m,
               waterproof_rating: item.waterproof_rating,
@@ -516,6 +520,7 @@ async function CompositePage({ filter }: { filter: CompositeFilter }) {
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
+          available: item.amazon_in_stock,
         }))}
       />
       <Breadcrumbs

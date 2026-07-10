@@ -407,7 +407,7 @@ do_install_cron() {
   PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-2}"
   CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
   CRON_TAG="# flashlightratings-catalog-sync"
-  # Full catalog each run (no rotation). Prune after N consecutive unavailable hits.
+  # Full catalog each run (no rotation). Soft-disable offers after N misses.
   CRON_CMD="cd ${APP_DIR} && SYNC_ROTATE_DAYS=0 PRUNE_THRESHOLD=${PRUNE_THRESHOLD} bash scripts/catalog-sync.sh >> ${CRON_LOG} 2>&1"
   CRON_LINE="${CRON_SCHEDULE} ${CRON_CMD} ${CRON_TAG}"
 
@@ -415,7 +415,8 @@ do_install_cron() {
   echo "    ${CRON_LINE}"
   echo ""
   echo "  Each run refreshes the ENTIRE catalog (SYNC_ROTATE_DAYS=0)."
-  echo "  Dead listings are pruned after ${PRUNE_THRESHOLD} consecutive unavailable runs."
+  echo "  Amazon CTAs are disabled after ${PRUNE_THRESHOLD} consecutive unavailable runs."
+  echo "  Disabled listings stay monitored and recover automatically."
 
   # Replace any existing entry with the same tag, then append the new one.
   # Build the new crontab in a temp file so we don't rely on subshell exit
@@ -490,7 +491,8 @@ do_install_cron_rotated() {
     echo "  This will refresh ~1/${ROTATE_DAYS}th of the catalog each day,"
     echo "  giving full coverage every ${ROTATE_DAYS} days at ~1/${ROTATE_DAYS} the credit cost."
   fi
-  echo "  Listings unavailable for ${PRUNE_THRESHOLD} consecutive runs get pruned."
+  echo "  Amazon CTAs are disabled after ${PRUNE_THRESHOLD} consecutive unavailable runs."
+  echo "  Disabled listings stay monitored and recover automatically."
 
   # Build the new crontab in a temp file (see do_install_cron for why).
   CRON_TMP="$(mktemp)"

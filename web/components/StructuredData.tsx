@@ -19,7 +19,7 @@ export function ProductStructuredData({ data }: { data: FlashlightDetail }) {
     schema.image = [data.image_url];
   }
 
-  if (data.price_usd !== undefined && data.amazon_url) {
+  if (data.price_usd !== undefined && data.amazon_url && data.amazon_in_stock !== false) {
     schema.offers = {
       "@type": "Offer",
       price: data.price_usd.toFixed(2),
@@ -83,7 +83,7 @@ export function ItemListStructuredData({
   items,
   name
 }: {
-  items: { name: string; url: string; position: number; image?: string; price?: number }[];
+  items: { name: string; url: string; position: number; image?: string; price?: number; available?: boolean }[];
   name: string;
 }) {
   if (!items.length) return null;
@@ -101,7 +101,7 @@ export function ItemListStructuredData({
         url: item.url
       };
       if (item.image) entry.image = item.image;
-      if (item.price !== undefined) {
+      if (item.price !== undefined && item.available !== false) {
         entry.item = {
           "@type": "Product",
           name: item.name,

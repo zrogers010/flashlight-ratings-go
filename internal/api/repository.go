@@ -52,10 +52,11 @@ latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
 		p.price,
+		p.in_stock,
 		p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
-	ORDER BY p.flashlight_id, p.captured_at DESC
+	ORDER BY p.flashlight_id, p.captured_at DESC, p.id DESC
 ),
 latest_affiliate AS (
 	SELECT DISTINCT ON (a.flashlight_id)
@@ -123,6 +124,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	lp.in_stock,
 	lp.captured_at,
 	ls.overall_score,
 	ls.tactical_score,
@@ -155,14 +157,15 @@ LIMIT %d OFFSET %d
 	items := make([]flashlightItem, 0, f.PageSize)
 	for rows.Next() {
 		var (
-			item                                      flashlightItem
-			maxLumens, maxCandela, beam, runtimeHi    sql.NullInt64
-			modelCode, description, imageURL          sql.NullString
-			ip, amazonURL, switchType, ledModel       sql.NullString
-			weight                                    sql.NullFloat64
+			item                                               flashlightItem
+			maxLumens, maxCandela, beam, runtimeHi             sql.NullInt64
+			modelCode, description, imageURL                   sql.NullString
+			ip, amazonURL, switchType, ledModel                sql.NullString
+			weight                                             sql.NullFloat64
 			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
-			priceUpdatedAt                                       sql.NullTime
-			batteryTypesJSON, useCaseTagsJSON                    []byte
+			priceUpdatedAt                                     sql.NullTime
+			amazonInStock                                      sql.NullBool
+			batteryTypesJSON, useCaseTagsJSON                  []byte
 		)
 		if err := rows.Scan(
 			&item.ID,
@@ -182,6 +185,7 @@ LIMIT %d OFFSET %d
 			&switchType,
 			&ledModel,
 			&price,
+			&amazonInStock,
 			&priceUpdatedAt,
 			&overall,
 			&tactical,
@@ -208,6 +212,7 @@ LIMIT %d OFFSET %d
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
 		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
+		item.AmazonInStock = nullBool(amazonInStock)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
@@ -262,11 +267,11 @@ WITH latest_run AS (
 	LIMIT 1
 ),
 latest_price AS (
-	SELECT p.price, p.captured_at
+	SELECT p.price, p.in_stock, p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.flashlight_id = $1
 	  AND p.currency_code = 'USD'
-	ORDER BY p.captured_at DESC
+	ORDER BY p.captured_at DESC, p.id DESC
 	LIMIT 1
 ),
 latest_amazon AS (
@@ -366,6 +371,7 @@ SELECT
 	s.cct_min_k,
 	s.cct_max_k,
 	(SELECT price FROM latest_price),
+	(SELECT in_stock FROM latest_price),
 	(SELECT captured_at FROM latest_price),
 	(SELECT rating_count FROM latest_amazon),
 	(SELECT average_rating FROM latest_amazon),
@@ -428,16 +434,16 @@ WHERE f.id = $1
 `
 
 	var (
-		item                                                                                                                                                              flashlightDetail
+		item                                                                                                                                                        flashlightDetail
 		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode sql.NullString
 		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri               sql.NullInt64
 		cctMinK, cctMaxK                                                                                                                                            sql.NullInt64
-		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, overall, tactical, edc, value, throw, flood                                               sql.NullFloat64
-		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable                                                                                               sql.NullBool
-		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                                             sql.NullBool
-		priceUpdatedAt, amazonSyncedAt                                                                                                                               sql.NullTime
-		amazonRatingCount                                                                                                                                            sql.NullInt64
-		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON, metricBreakdownJSON                                                                             []byte
+		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, overall, tactical, edc, value, throw, flood                                      sql.NullFloat64
+		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable, amazonInStock                                                                               sql.NullBool
+		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                                            sql.NullBool
+		priceUpdatedAt, amazonSyncedAt                                                                                                                              sql.NullTime
+		amazonRatingCount                                                                                                                                           sql.NullInt64
+		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON, metricBreakdownJSON                                                                            []byte
 	)
 
 	if err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -490,6 +496,7 @@ WHERE f.id = $1
 		&cctMinK,
 		&cctMaxK,
 		&price,
+		&amazonInStock,
 		&priceUpdatedAt,
 		&amazonRatingCount,
 		&amazonAvgRating,
@@ -556,6 +563,7 @@ WHERE f.id = $1
 	item.CCTMinK = nullInt(cctMinK)
 	item.CCTMaxK = nullInt(cctMaxK)
 	item.PriceUSD = nullFloat(price)
+	item.AmazonInStock = nullBool(amazonInStock)
 	item.AmazonRatingCount = nullInt(amazonRatingCount)
 	item.AmazonAverageRating = nullFloat(amazonAvgRating)
 	item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
@@ -593,10 +601,11 @@ latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
 		p.price,
+		p.in_stock,
 		p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
-	ORDER BY p.flashlight_id, p.captured_at DESC
+	ORDER BY p.flashlight_id, p.captured_at DESC, p.id DESC
 ),
 latest_affiliate AS (
 	SELECT DISTINCT ON (a.flashlight_id)
@@ -664,6 +673,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	lp.in_stock,
 	lp.captured_at,
 	ls.overall_score,
 	ls.tactical_score,
@@ -695,13 +705,14 @@ ORDER BY f.id ASC
 	items := make([]flashlightItem, 0, len(ids))
 	for rows.Next() {
 		var (
-			item                                              flashlightItem
-			maxLumens, maxCandela, beam, runtimeHi            sql.NullInt64
-			modelCode, description, imageURL                  sql.NullString
-			ip, amazonURL, switchType, ledModel               sql.NullString
-			weight                                            sql.NullFloat64
+			item                                               flashlightItem
+			maxLumens, maxCandela, beam, runtimeHi             sql.NullInt64
+			modelCode, description, imageURL                   sql.NullString
+			ip, amazonURL, switchType, ledModel                sql.NullString
+			weight                                             sql.NullFloat64
 			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
 			priceUpdatedAt                                     sql.NullTime
+			amazonInStock                                      sql.NullBool
 			batteryTypesJSON, useCaseTagsJSON                  []byte
 		)
 		if err := rows.Scan(
@@ -722,6 +733,7 @@ ORDER BY f.id ASC
 			&switchType,
 			&ledModel,
 			&price,
+			&amazonInStock,
 			&priceUpdatedAt,
 			&overall,
 			&tactical,
@@ -747,6 +759,7 @@ ORDER BY f.id ASC
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
+		item.AmazonInStock = nullBool(amazonInStock)
 		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)

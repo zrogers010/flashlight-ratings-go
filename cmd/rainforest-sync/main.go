@@ -19,7 +19,7 @@ func main() {
 	delay := flag.Duration("delay", 1*time.Second, "delay between API requests")
 	dryRun := flag.Bool("dry-run", false, "print changes without writing CSV")
 	maxPerBrand := flag.Int("max-per-brand", 10, "max search results per brand in discover mode")
-	pruneUnavailable := flag.Int("prune-unavailable", 0, "after update, remove rows whose ASIN has been UNAVAILABLE for >= N consecutive sync runs (0 = never prune)")
+	pruneUnavailable := flag.Int("prune-unavailable", 0, "soft-disable Amazon offers after N consecutive non-purchasable checks (legacy flag name; rows are never deleted)")
 	rotateDays := flag.Int("rotate-days", envInt("SYNC_ROTATE_DAYS", 0), "shard the catalog into N daily slices (e.g. 7 = touch ~1/7th of ASINs per run, full coverage every N days). 0 disables rotation.")
 	limit := flag.Int("limit", envInt("SYNC_LIMIT", 0), "process at most N rows in update mode (0 = all). Ignored when -rotate-days is set.")
 	offset := flag.Int("offset", envInt("SYNC_OFFSET", 0), "skip the first N rows in update mode. Ignored when -rotate-days is set.")
@@ -43,48 +43,18 @@ func main() {
 
 	if *mode == "update" || *mode == "both" {
 		runUpdate(ctx, client, *csvPath, rainforest.SyncOptions{
-			PartnerTag: partnerTag,
-			DryRun:     *dryRun,
-			RotateDays: *rotateDays,
-			Limit:      *limit,
-			Offset:     *offset,
+			PartnerTag:            partnerTag,
+			DryRun:                *dryRun,
+			RotateDays:            *rotateDays,
+			Limit:                 *limit,
+			Offset:                *offset,
+			AvailabilityThreshold: *pruneUnavailable,
 		})
-	}
-
-	if *pruneUnavailable > 0 {
-		runPrune(*csvPath, *pruneUnavailable, *dryRun)
 	}
 
 	if *mode == "discover" || *mode == "both" {
 		runDiscover(ctx, client, *csvPath, *maxPerBrand)
 	}
-}
-
-func runPrune(csvPath string, threshold int, dryRun bool) {
-	log.Println("=== PRUNE: Removing chronically-unavailable listings ===")
-
-	res, err := rainforest.PruneUnavailable(csvPath, threshold, dryRun)
-	if err != nil {
-		log.Fatalf("prune failed: %v", err)
-	}
-
-	fmt.Println()
-	fmt.Println(strings.Repeat("-", 60))
-	fmt.Printf("PRUNE SUMMARY: %d listing(s) unavailable for >= %d consecutive sync runs\n",
-		len(res.Pruned), threshold)
-	fmt.Println(strings.Repeat("-", 60))
-	for _, p := range res.Pruned {
-		verb := "PRUNED"
-		if dryRun {
-			verb = "WOULD PRUNE"
-		}
-		fmt.Printf("  %s %s %s (ASIN: %s, %d consecutive unavailable runs)\n",
-			verb, p.Brand, p.Model, p.ASIN, p.Runs)
-	}
-	if len(res.Pruned) == 0 {
-		fmt.Println("  (no listings met the threshold)")
-	}
-	fmt.Println()
 }
 
 func runUpdate(ctx context.Context, client *rainforest.Client, csvPath string, opts rainforest.SyncOptions) {

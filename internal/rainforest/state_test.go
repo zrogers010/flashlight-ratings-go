@@ -1,10 +1,7 @@
 package rainforest
 
 import (
-	"encoding/csv"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -169,142 +166,24 @@ func TestIsAmazonHostedImage(t *testing.T) {
 	}
 }
 
-// minimal CSV with the same column count as data/manual_catalog.csv (36)
-// for testing PruneUnavailable end-to-end without the API.
-func writeFixtureCSV(t *testing.T, dir string, asins []string) string {
-	t.Helper()
-	path := filepath.Join(dir, "fixture.csv")
-	f, err := os.Create(path)
-	if err != nil {
-		t.Fatalf("create fixture: %v", err)
-	}
-	defer f.Close()
-	w := csv.NewWriter(f)
-	header := strings.Split("brand_name,brand_slug,brand_country_code,brand_website_url,model_name,model_slug,model_code,description,release_year,msrp_usd,asin,amazon_url,current_price_usd,amazon_rating_count,amazon_average_rating,image_url,max_lumens,sustained_lumens,max_candela,beam_distance_m,runtime_max_min,runtime_500_min,turbo_stepdown_sec,beam_pattern,battery_type,recharge_type,battery_replaceable,weight_g,length_mm,head_diameter_mm,body_diameter_mm,switch_type,waterproof_rating,impact_resistance_m,body_material,use_case_tags", ",")
-	if err := w.Write(header); err != nil {
-		t.Fatalf("write header: %v", err)
-	}
-	for i, asin := range asins {
-		row := make([]string, len(header))
-		row[0] = "TestBrand"
-		row[5] = "Model" + asin
-		row[10] = asin
-		row[11] = "https://www.amazon.com/dp/" + asin
-		row[12] = "10.00"
-		_ = i
-		if err := w.Write(row); err != nil {
-			t.Fatalf("write row: %v", err)
-		}
-	}
-	w.Flush()
-	if err := w.Error(); err != nil {
-		t.Fatalf("flush: %v", err)
-	}
-	return path
-}
-
-func TestPruneUnavailable_DropsRowsAboveThreshold(t *testing.T) {
-	dir := t.TempDir()
-	csvPath := writeFixtureCSV(t, dir, []string{"KEEP", "DROP1", "DROP2", "OKAY"})
-
-	state := &SyncState{Version: 1, Entries: map[string]*SyncStateEntry{
-		"DROP1": {UnavailableRuns: 3},
-		"DROP2": {UnavailableRuns: 5},
-		"KEEP":  {UnavailableRuns: 1},
-		"OKAY":  {UnavailableRuns: 0},
-	}}
-	if err := state.Save(StatePathFor(csvPath)); err != nil {
-		t.Fatalf("save state: %v", err)
+func TestEnsureAvailabilityColumnsMigratesLegacyRows(t *testing.T) {
+	records := [][]string{
+		make([]string, 36),
+		make([]string, 36),
 	}
 
-	res, err := PruneUnavailable(csvPath, 3, false)
-	if err != nil {
-		t.Fatalf("PruneUnavailable: %v", err)
-	}
-	if len(res.Pruned) != 2 {
-		t.Fatalf("pruned %d, want 2", len(res.Pruned))
-	}
-	pruned := map[string]bool{}
-	for _, p := range res.Pruned {
-		pruned[p.ASIN] = true
-	}
-	if !pruned["DROP1"] || !pruned["DROP2"] {
-		t.Errorf("expected DROP1+DROP2 pruned, got %v", pruned)
-	}
+	ensureAvailabilityColumns(records)
 
-	// Verify CSV no longer contains pruned ASINs
-	f, err := os.Open(csvPath)
-	if err != nil {
-		t.Fatalf("reopen: %v", err)
+	if got := records[0][colAmazonPurchasable]; got != "amazon_purchasable" {
+		t.Fatalf("purchasable header = %q", got)
 	}
-	defer f.Close()
-	r := csv.NewReader(f)
-	rows, err := r.ReadAll()
-	if err != nil {
-		t.Fatalf("read after prune: %v", err)
+	if got := records[0][colAmazonCheckedAt]; got != "amazon_availability_checked_at" {
+		t.Fatalf("checked-at header = %q", got)
 	}
-	if len(rows) != 1+2 { // header + 2 surviving rows
-		t.Fatalf("rows after prune = %d, want %d", len(rows), 3)
+	if got := records[1][colAmazonPurchasable]; got != "true" {
+		t.Fatalf("legacy row default = %q, want true", got)
 	}
-	for _, row := range rows[1:] {
-		if pruned[row[10]] {
-			t.Errorf("pruned ASIN %s still present in CSV", row[10])
-		}
-	}
-
-	// State should also have the dropped ASINs removed
-	postState, err := LoadState(StatePathFor(csvPath))
-	if err != nil {
-		t.Fatalf("reload state: %v", err)
-	}
-	for asin := range pruned {
-		if _, ok := postState.Entries[asin]; ok {
-			t.Errorf("state still tracks pruned ASIN %s", asin)
-		}
-	}
-}
-
-func TestPruneUnavailable_DryRunDoesNotMutate(t *testing.T) {
-	dir := t.TempDir()
-	csvPath := writeFixtureCSV(t, dir, []string{"DROP"})
-
-	state := &SyncState{Version: 1, Entries: map[string]*SyncStateEntry{
-		"DROP": {UnavailableRuns: 4},
-	}}
-	if err := state.Save(StatePathFor(csvPath)); err != nil {
-		t.Fatalf("save state: %v", err)
-	}
-
-	res, err := PruneUnavailable(csvPath, 3, true)
-	if err != nil {
-		t.Fatalf("PruneUnavailable dry-run: %v", err)
-	}
-	if len(res.Pruned) != 1 {
-		t.Fatalf("dry-run pruned %d, want 1", len(res.Pruned))
-	}
-
-	// CSV must still have the row
-	f, _ := os.Open(csvPath)
-	defer f.Close()
-	rows, _ := csv.NewReader(f).ReadAll()
-	if len(rows) != 2 {
-		t.Errorf("dry-run mutated CSV: %d rows, want 2", len(rows))
-	}
-	// State must still track it
-	postState, _ := LoadState(StatePathFor(csvPath))
-	if postState.Entries["DROP"] == nil {
-		t.Error("dry-run mutated state file")
-	}
-}
-
-func TestPruneUnavailable_ThresholdZeroIsNoop(t *testing.T) {
-	dir := t.TempDir()
-	csvPath := writeFixtureCSV(t, dir, []string{"X"})
-	res, err := PruneUnavailable(csvPath, 0, false)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	if len(res.Pruned) != 0 {
-		t.Errorf("threshold 0 should be noop, got %v pruned", len(res.Pruned))
+	if got := records[1][colAmazonCheckedAt]; got != "" {
+		t.Fatalf("legacy checked-at = %q, want empty", got)
 	}
 }

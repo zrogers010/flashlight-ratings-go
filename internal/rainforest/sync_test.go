@@ -155,3 +155,69 @@ func TestRowSelector_EmptyCSVIsSafe(t *testing.T) {
 		t.Log("includes(0) on empty CSV returned true (harmless)")
 	}
 }
+
+func TestUpdateOfferStateSoftDisablesAndRecovers(t *testing.T) {
+	records := [][]string{make([]string, 36), make([]string, 36)}
+	ensureAvailabilityColumns(records)
+	row := records[1]
+	row[colCurrentPriceUSD] = "49.99"
+	state := &SyncState{Version: 1, Entries: map[string]*SyncStateEntry{}}
+
+	unavailable := &ProductResult{ASIN: "B000000001", Price: 49.99, InStock: false}
+	if _, missed := updateOfferState(row, state, "B000000001", "Brand", "Model", unavailable, 2); !missed {
+		t.Fatal("first unavailable response was not reported")
+	}
+	if got := row[colAmazonPurchasable]; got != "true" {
+		t.Fatalf("first miss should preserve offer during grace period, got %q", got)
+	}
+
+	if _, missed := updateOfferState(row, state, "B000000001", "Brand", "Model", unavailable, 2); !missed {
+		t.Fatal("second unavailable response was not reported")
+	}
+	if got := row[colAmazonPurchasable]; got != "false" {
+		t.Fatalf("second miss should soft-disable offer, got %q", got)
+	}
+
+	available := &ProductResult{ASIN: "B000000001", Price: 44.99, InStock: true}
+	if _, missed := updateOfferState(row, state, "B000000001", "Brand", "Model", available, 2); missed {
+		t.Fatal("purchasable response was reported unavailable")
+	}
+	if got := row[colAmazonPurchasable]; got != "true" {
+		t.Fatalf("recovered offer should be enabled, got %q", got)
+	}
+	if got := row[colCurrentPriceUSD]; got != "44.99" {
+		t.Fatalf("recovered price = %q, want 44.99", got)
+	}
+	if got := state.Entries["B000000001"].UnavailableRuns; got != 0 {
+		t.Fatalf("recovered streak = %d, want 0", got)
+	}
+}
+
+func TestUpdateOfferStateRequiresPriceAndStock(t *testing.T) {
+	tests := []struct {
+		name    string
+		product ProductResult
+	}{
+		{name: "price but out of stock", product: ProductResult{ASIN: "B000000001", Price: 25, InStock: false}},
+		{name: "in stock but no price", product: ProductResult{ASIN: "B000000001", InStock: true}},
+		{name: "no buy box", product: ProductResult{}},
+		{name: "mismatched ASIN", product: ProductResult{ASIN: "B000000002", Price: 25, InStock: true}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			records := [][]string{make([]string, 36), make([]string, 36)}
+			ensureAvailabilityColumns(records)
+			state := &SyncState{Version: 1, Entries: map[string]*SyncStateEntry{}}
+			_, unavailable := updateOfferState(
+				records[1], state, "B000000001", "Brand", "Model", &tt.product, 1,
+			)
+			if !unavailable {
+				t.Fatal("offer should not be purchasable")
+			}
+			if got := records[1][colAmazonPurchasable]; got != "false" {
+				t.Fatalf("offer status = %q, want false", got)
+			}
+		})
+	}
+}

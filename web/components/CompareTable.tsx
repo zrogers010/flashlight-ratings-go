@@ -130,6 +130,7 @@ export function CompareTable({ items }: Props) {
                         amazon_url={item.amazon_url}
                         price_usd={item.price_usd}
                         priceUpdatedAt={item.price_last_updated_at}
+                        inStock={item.amazon_in_stock}
                       />
                     </div>
                   </div>

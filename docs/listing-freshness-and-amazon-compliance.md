@@ -11,11 +11,11 @@
 |---|---|---|
 | Periodic price/rating refresh | ✅ Full catalog 3×/day (default) | `scripts/deploy.sh install-cron`, `internal/rainforest/sync.go` |
 | New ASIN discovery | ✅ Manual / on-demand | `internal/rainforest/discover.go`, `-mode=discover` |
-| Auto-prune chronically-dead listings | ✅ N-consecutive-miss prune | `internal/rainforest/sync.go` (`PruneUnavailable`) |
+| Recoverable unavailable listings | ✅ Soft-disable after N misses; auto-re-enable | `internal/rainforest/sync.go` |
 | Per-ASIN sync state (last check, miss streak) | ✅ Sidecar JSON | `internal/rainforest/state.go`, `data/manual_catalog.sync_state.json` (gitignored) |
 | Amazon-CDN image healing | ✅ Auto-prefer `m.media-amazon.com` | `internal/rainforest/sync.go` (`isAmazonHostedImage`) |
 | Tiered cadence by popularity / age | ❌ Future | uniform rotation today |
-| `stale=true` flag in API / scoring penalty | ❌ Future | `LastCheckAt` exists in sidecar but not surfaced |
+| Offer availability in API | ✅ `amazon_in_stock` from latest price snapshot | `internal/api/repository.go` |
 | `amazon_product_snapshots` history table | ❌ Future | CSV is rewritten in place; no per-call snapshot row |
 | HEAD-based link checker | ❌ Not needed — Rainforest call is the link check | — |
 
@@ -35,6 +35,8 @@
 
 3. **Per-row update.** For each ASIN in today's shard:
    - Call Rainforest `type=product`.
+   - Require a positive buy-box price **and** `in_stock` before considering
+     the offer purchasable.
    - Update `current_price_usd`, `rating_count`, `average_rating` if changed.
    - Migrate `image_url` to an Amazon-hosted CDN (`m.media-amazon.com` etc.)
      when the API returns a stable Amazon URL. Manufacturer/3rd-party CDN
@@ -45,15 +47,17 @@
    dead ASIN — they return 200 with a "couldn't find that page" body. So
    HEAD-checking the URL is useless. Instead the Rainforest response *is* the
    link check: if it returns `success=false`, or comes back with no buybox
-   and no price, we record an unavailable run for that ASIN in the sidecar
-   state (`data/manual_catalog.sync_state.json`).
+   and no purchasable buy box, we record an unavailable run for that ASIN in
+   the sidecar state (`data/manual_catalog.sync_state.json`).
 
-5. **Auto-prune.** When `-prune-unavailable=N` is set (the cron passes
-   `PRUNE_THRESHOLD=2`), any ASIN whose unavailable streak reaches N
-   consecutive sync runs is removed from the CSV at the end of the run.
-   With 3×/day full sync and `PRUNE_THRESHOLD=2`, a dead listing disappears
-   within ~16 hours (2 consecutive runs). With rotated `SYNC_ROTATE_DAYS=3`,
-   worst case is ~6 days (2 misses × 3-day cycle).
+5. **Recoverable soft-disable.** When `-prune-unavailable=N` is set (legacy
+   flag name; the cron passes `PRUNE_THRESHOLD=2`), any ASIN whose unavailable
+   streak reaches N consecutive sync runs gets `amazon_purchasable=false`.
+   The database import deactivates its affiliate link and the UI replaces the
+   CTA with “Currently unavailable.” The catalog row remains, so later syncs
+   keep checking it and automatically restore the CTA after a purchasable
+   response. With 3×/day full sync and `PRUNE_THRESHOLD=2`, a bad offer is
+   hidden within ~16 hours.
 
 6. **Persistence across deploys.** `scripts/deploy.sh` does
    `git reset --hard origin/main`, which would normally wipe the cron's
@@ -67,7 +71,7 @@
 
 For a catalog of ~110 ASINs (1 Rainforest credit ≈ 1 product call):
 
-| Setup | Credits/day | Credits/month | Avg price age | Dead-link removal |
+| Setup | Credits/day | Credits/month | Avg price age | Bad-offer disable |
 |---|---|---|---|---|
 | **`install-cron` 3×/day full (recommended)** | **~330** | **~10k** | **~4h** | **~16h** |
 | `install-cron` every 6h (`0 */6 * * *`) | ~440 | ~13k | ~3h | ~12h |
@@ -115,10 +119,12 @@ last refreshed that ASIN), not “verified.” CTA remains **Check Price on Amaz
   with forced text `Check Price on Amazon`.
 - Disclosure text appears on pages where Amazon links render
   (see `web/app/layout.tsx`).
-- Dead-link defense is the prune step, not a HEAD probe. If you ever notice
+- Dead-link defense is the soft-disable step, not a HEAD probe. If you notice
   Amazon links going to "couldn't find that page" pages for longer than
   `SYNC_ROTATE_DAYS × PRUNE_THRESHOLD` days, look at the sidecar state file
   for that ASIN's `unavailable_runs` and `last_reason`.
+- Never delete unavailable catalog rows automatically. Keeping them allows
+  Rainforest to detect recovery and reactivate the affiliate link.
 
 ## Future work (not implemented)
 
@@ -133,9 +139,8 @@ ambition is documented but isn't confused with current behavior.
      `rating_count`) and have `newRowSelector` pick from multiple shards
      per run weighted by tier.
 2. **`stale=true` flag in API responses + ranking confidence penalty.** The
-   sidecar already tracks `LastCheckAt` per ASIN; surface it through
-   `internal/api/repository.go` and let the worker apply a penalty when a
-   row's last check is older than 24h.
+   API now exposes current offer availability, but it does not yet identify
+   listings whose last successful check is older than 24 hours.
 3. **`amazon_product_snapshots` history table.** Today the CSV is mutated
    in place — no per-call snapshot. Adding a row-per-call to Postgres
    would unlock real price history, drop alerts, and review-velocity rollups.
