@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const faq = [
   {
     q: "How are flashlights ranked?",
-    a: "Every flashlight is scored across 5 dimensions (Tactical, EDC, Value, Throw, Flood) using a weighted algorithm that factors in candela, lumens, runtime, durability, and price. Scores are normalized on a 0-100 scale."
+    a: "Every flashlight gets an Overall score plus five use-case scores (Tactical, EDC, Value, Throw, Flood). The algorithm blends specs, price, durability, and Amazon Trust (star rating + review volume). Scores are on a 0–100 scale — see How We Score for the exact weights."
   },
   {
     q: "How often are rankings and prices updated?",

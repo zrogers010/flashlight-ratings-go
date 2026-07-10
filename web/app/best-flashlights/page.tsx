@@ -92,7 +92,7 @@ export default async function BestFlashlightsPage({
         <p className="kicker">Expert-Ranked Categories</p>
         <h1>Best Flashlights by Category</h1>
         <p className="muted" style={{ maxWidth: 580 }}>
-          Every flashlight in our catalog is scored across 5 dimensions.
+          Every flashlight gets an Overall score plus use-case scores (Tactical, EDC, Value, Throw, Flood).
           Choose a category to see the top-ranked models for your use case.
         </p>
       </div>

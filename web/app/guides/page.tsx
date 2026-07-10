@@ -13,7 +13,7 @@ const guides = [
   {
     slug: "how-we-score",
     title: "How We Score Flashlights",
-    excerpt: "A transparent breakdown of our 5-dimension scoring algorithm — what we measure, how we weight it, and why.",
+    excerpt: "A transparent breakdown of our scoring algorithm — six profiles, Amazon Trust, and the weights behind every score.",
     category: "Methodology"
   },
   {
