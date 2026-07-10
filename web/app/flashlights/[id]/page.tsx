@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BuyOnAmazonButton } from "@/components/BuyOnAmazonButton";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { ScoreBreakdown } from "@/components/ScoreBreakdown";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FAQ } from "@/components/FAQ";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/StructuredData";
@@ -44,6 +45,7 @@ function bestForLabel(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
 
 function topScore(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
   return Math.max(
+    data.overall_score || 0,
     data.tactical_score || 0,
     data.edc_score || 0,
     data.value_score || 0,
@@ -123,14 +125,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-function pct(v: number) {
-  return Math.max(0, Math.min(100, Math.round(v)));
-}
-
-function scoreTier(v: number) {
-  return v >= 80 ? "high" : v >= 60 ? "mid" : "low";
-}
-
 export default async function FlashlightDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [data, catalog, tacticalRanks, edcRanks, valueRanks, throwRanks, floodRanks] = await Promise.all([
@@ -171,14 +165,6 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
   const faqItems = generateFAQ(data);
   const score = topScore(data);
   const bestFor = bestForLabel(data);
-
-  const scoreBreakdown = [
-    { label: "Tactical", value: data.tactical_score || 0 },
-    { label: "EDC", value: data.edc_score || 0 },
-    { label: "Value", value: data.value_score || 0 },
-    { label: "Throw", value: data.throw_score || 0 },
-    { label: "Flood", value: data.flood_score || 0 }
-  ];
 
   return (
     <section className="grid">
@@ -299,24 +285,18 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
       )}
 
       {/* ── Score Breakdown ───────────────────────── */}
-      <div className="panel">
-        <h2 style={{ marginBottom: 16 }}>Score Breakdown</h2>
-        <div className="score-bars">
-          {scoreBreakdown.map((s) => (
-            <div className="bar-row" key={s.label}>
-              <label>
-                <span>{s.label}</span>
-                <strong className={scoreTier(s.value)} style={{ color: `var(--score-${scoreTier(s.value)})` }}>
-                  {s.value > 0 ? s.value.toFixed(1) : "—"}
-                </strong>
-              </label>
-              <div className="bar-track">
-                <span className="bar-fill" style={{ width: `${pct(s.value)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ScoreBreakdown
+        title="Score Breakdown"
+        scores={{
+          overall: data.overall_score,
+          tactical: data.tactical_score,
+          edc: data.edc_score,
+          value: data.value_score,
+          throw: data.throw_score,
+          flood: data.flood_score,
+        }}
+        breakdown={data.metric_breakdown}
+      />
 
       {/* ── Specs Grid ────────────────────────────── */}
       <div className="grid grid-3">

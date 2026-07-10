@@ -16,6 +16,13 @@ export type RankingItem = {
   };
 };
 
+export type MetricBreakdown = {
+  raw?: Record<string, number>;
+  normalized?: Record<string, number>;
+  weighted?: Record<string, Record<string, number>>;
+  formula_version?: string;
+};
+
 export type FlashlightItem = {
   id: number;
   brand: string;
@@ -86,6 +93,7 @@ export type FlashlightDetail = FlashlightItem & {
   amazon_average_rating?: number;
   amazon_last_synced_at?: string;
   price_last_updated_at?: string;
+  metric_breakdown?: MetricBreakdown;
   modes: {
     name: string;
     output_lumens?: number;

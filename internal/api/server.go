@@ -116,12 +116,21 @@ type flashlightDetail struct {
 	CCTMaxK             *int64           `json:"cct_max_k,omitempty"`
 	AmazonRatingCount   *int64           `json:"amazon_rating_count,omitempty"`
 	AmazonAverageRating *float64         `json:"amazon_average_rating,omitempty"`
-	AmazonLastSyncedAt  *string          `json:"amazon_last_synced_at,omitempty"`
-	PriceLastUpdatedAt  *string          `json:"price_last_updated_at,omitempty"`
-	Modes               []flashlightMode `json:"modes"`
-	ImageURLs           []string         `json:"image_urls"`
-	BatteryTypes        []string         `json:"battery_types"`
-	UseCaseTags         []string         `json:"use_case_tags"`
+	AmazonLastSyncedAt  *string           `json:"amazon_last_synced_at,omitempty"`
+	PriceLastUpdatedAt  *string           `json:"price_last_updated_at,omitempty"`
+	MetricBreakdown     *metricBreakdown  `json:"metric_breakdown,omitempty"`
+	Modes               []flashlightMode  `json:"modes"`
+	ImageURLs           []string          `json:"image_urls"`
+	BatteryTypes        []string          `json:"battery_types"`
+	UseCaseTags         []string          `json:"use_case_tags"`
+}
+
+// metricBreakdown mirrors the JSON written by the scoring engine.
+type metricBreakdown struct {
+	Raw        map[string]float64            `json:"raw,omitempty"`
+	Normalized map[string]float64            `json:"normalized,omitempty"`
+	Weighted   map[string]map[string]float64 `json:"weighted,omitempty"`
+	Formula    string                        `json:"formula_version,omitempty"`
 }
 
 type flashlightMode struct {
