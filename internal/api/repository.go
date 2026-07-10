@@ -23,6 +23,7 @@ type flashlightFilters struct {
 	MaxThrow    *int64
 	IPRating    string
 	Brand       string
+	Query       string
 	SortBy      string
 	Order       string
 	Page        int
@@ -1601,8 +1602,46 @@ EXISTS (
 		args = append(args, *f.MaxThrow)
 		argn++
 	}
+	if q := normalizeSearchQuery(f.Query); q != "" {
+		pattern := "%" + q + "%"
+		clauses = append(clauses, fmt.Sprintf(`(
+	f.name ILIKE $%d OR
+	b.name ILIKE $%d OR
+	b.slug ILIKE $%d OR
+	f.slug ILIKE $%d OR
+	COALESCE(f.model_code, '') ILIKE $%d OR
+	COALESCE(f.description, '') ILIKE $%d OR
+	EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases u ON u.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND (
+			u.name ILIKE $%d OR
+			u.slug ILIKE $%d OR
+			REPLACE(u.slug, '-', ' ') ILIKE $%d
+		  )
+	)
+)`, argn, argn, argn, argn, argn, argn, argn, argn, argn))
+		args = append(args, pattern)
+		argn++
+	}
 
 	return "WHERE " + strings.Join(clauses, " AND "), args
+}
+
+// normalizeSearchQuery trims, collapses whitespace, and caps length so
+// ILIKE patterns stay bounded for the small catalog.
+func normalizeSearchQuery(raw string) string {
+	q := strings.Join(strings.Fields(strings.TrimSpace(raw)), " ")
+	if q == "" {
+		return ""
+	}
+	const maxLen = 80
+	if len(q) > maxLen {
+		q = q[:maxLen]
+	}
+	return q
 }
 
 func sortColumn(sortBy string) string {

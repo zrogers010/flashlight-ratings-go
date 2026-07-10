@@ -218,6 +218,7 @@ export async function fetchFlashlights(opts?: {
   pageSize?: number;
   useCase?: string;
   batteryType?: string;
+  q?: string;
 }) {
   const params = new URLSearchParams({
     page: String(opts?.page ?? 1),
@@ -234,6 +235,7 @@ export async function fetchFlashlights(opts?: {
   if (opts?.order) params.set("order", opts.order);
   if (opts?.useCase) params.set("use_case", opts.useCase);
   if (opts?.batteryType) params.set("battery_type", opts.batteryType);
+  if (opts?.q) params.set("q", opts.q);
   return getJSON<FlashlightListResponse>(`/flashlights?${params.toString()}`);
 }
 

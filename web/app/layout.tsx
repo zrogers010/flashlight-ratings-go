@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
+import { Suspense } from "react";
 import { MobileNav } from "@/components/MobileNav";
 import { CompareTray } from "@/components/CompareTray";
 import { AffiliateClickTracker } from "@/components/AffiliateClickTracker";
+import { HeaderSearch } from "@/components/HeaderSearch";
 import "./globals.css";
 
 const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
@@ -132,6 +134,9 @@ export default function RootLayout({
               <span className="brand-icon">◉</span>
               FLASHLIGHT RATINGS
             </Link>
+            <Suspense fallback={<div className="header-search header-search-fallback" aria-hidden />}>
+              <HeaderSearch />
+            </Suspense>
             <nav className="nav" id="main-nav">
               <Link href="/flashlights">Flashlights</Link>
               <Link href="/reviews">Reviews</Link>

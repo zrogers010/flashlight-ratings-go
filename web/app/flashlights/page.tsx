@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 };
 
 type CatalogSearchParams = {
+  q?: string;
   use_case?: string;
   battery_type?: string;
   brand?: string;
@@ -38,6 +39,7 @@ type CatalogSearchParams = {
 };
 
 const CATALOG_QUERY_KEYS: (keyof CatalogSearchParams)[] = [
+  "q",
   "use_case",
   "battery_type",
   "brand",
@@ -93,6 +95,13 @@ function pageHref(sp: CatalogSearchParams, page: number): string {
 
 function buildActiveFilterChips(sp: CatalogSearchParams): { label: string; href: string }[] {
   const chips: { label: string; href: string }[] = [];
+
+  if (sp.q) {
+    chips.push({
+      label: `Search: “${sp.q}”`,
+      href: catalogHref({ ...sp, q: undefined })
+    });
+  }
 
   if (sp.use_case) {
     chips.push({
@@ -179,6 +188,7 @@ export default async function FlashlightsPage({
 
   const [data, brands] = await Promise.all([
     fetchFlashlights({
+      q: sp.q,
       useCase: sp.use_case,
       batteryType: sp.battery_type,
       brand: sp.brand,
@@ -199,7 +209,8 @@ export default async function FlashlightsPage({
   const totalPages = data.total_pages || 1;
 
   const hasFilters = Boolean(
-    sp.use_case ||
+    sp.q ||
+      sp.use_case ||
       sp.battery_type ||
       sp.brand ||
       sp.min_price ||
@@ -229,10 +240,15 @@ export default async function FlashlightsPage({
 
       <div className="panel hero">
         <p className="kicker">Full Catalog</p>
-        <h1>All Flashlights</h1>
+        <h1>{sp.q ? `Results for “${sp.q}”` : "All Flashlights"}</h1>
         <p className="muted" style={{ maxWidth: 560 }}>
-          {data.total} models with verified specs, algorithmic scores, and real-time Amazon pricing.
-          {hasFilters && " Showing filtered results."}
+          {sp.q
+            ? `${data.total} match${data.total === 1 ? "" : "es"} for “${sp.q}”.`
+            : `${data.total} models with verified specs, algorithmic scores, and real-time Amazon pricing.`}
+          {hasFilters && !sp.q && " Showing filtered results."}
+          {hasFilters && sp.q && (sp.use_case || sp.battery_type || sp.brand || sp.min_price || sp.max_price || sp.min_lumens || sp.max_lumens || sp.min_throw || sp.max_throw)
+            ? " Additional filters applied."
+            : null}
         </p>
       </div>
 
@@ -274,7 +290,16 @@ export default async function FlashlightsPage({
 
           {data.items.length === 0 && (
             <div className="panel" style={{ textAlign: "center", padding: 40 }}>
-              <p className="muted">No flashlights match your filters. Try adjusting or clearing them.</p>
+              <p className="muted">
+                {sp.q
+                  ? `No flashlights match “${sp.q}”. Try a brand, model name, or clear search.`
+                  : "No flashlights match your filters. Try adjusting or clearing them."}
+              </p>
+              {sp.q && (
+                <p style={{ marginTop: 12 }}>
+                  <Link href="/flashlights">Clear search →</Link>
+                </p>
+              )}
             </div>
           )}
 

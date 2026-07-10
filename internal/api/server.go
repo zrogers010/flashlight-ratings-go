@@ -278,6 +278,7 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 		UseCase:     strings.TrimSpace(r.URL.Query().Get("use_case")),
 		IPRating:    strings.TrimSpace(r.URL.Query().Get("ip_rating")),
 		Brand:       strings.TrimSpace(r.URL.Query().Get("brand")),
+		Query:       strings.TrimSpace(r.URL.Query().Get("q")),
 		SortBy:      strings.TrimSpace(r.URL.Query().Get("sort_by")),
 		Order:       strings.TrimSpace(r.URL.Query().Get("order")),
 		Page:        page,
