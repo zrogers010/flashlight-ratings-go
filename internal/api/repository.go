@@ -51,7 +51,8 @@ WITH latest_run AS (
 latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
-		p.price
+		p.price,
+		p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
@@ -122,6 +123,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	lp.captured_at,
 	ls.overall_score,
 	ls.tactical_score,
 	ls.edc_score,
@@ -159,6 +161,7 @@ LIMIT %d OFFSET %d
 			ip, amazonURL, switchType, ledModel       sql.NullString
 			weight                                    sql.NullFloat64
 			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
+			priceUpdatedAt                                       sql.NullTime
 			batteryTypesJSON, useCaseTagsJSON                    []byte
 		)
 		if err := rows.Scan(
@@ -179,6 +182,7 @@ LIMIT %d OFFSET %d
 			&switchType,
 			&ledModel,
 			&price,
+			&priceUpdatedAt,
 			&overall,
 			&tactical,
 			&edc,
@@ -203,6 +207,7 @@ LIMIT %d OFFSET %d
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
+		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
@@ -587,7 +592,8 @@ WITH latest_run AS (
 latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
-		p.price
+		p.price,
+		p.captured_at
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
@@ -658,6 +664,7 @@ SELECT
 	s.switch_type,
 	s.led_model,
 	lp.price,
+	lp.captured_at,
 	ls.overall_score,
 	ls.tactical_score,
 	ls.edc_score,
@@ -694,6 +701,7 @@ ORDER BY f.id ASC
 			ip, amazonURL, switchType, ledModel               sql.NullString
 			weight                                            sql.NullFloat64
 			price, overall, tactical, edc, value, throw, flood sql.NullFloat64
+			priceUpdatedAt                                     sql.NullTime
 			batteryTypesJSON, useCaseTagsJSON                  []byte
 		)
 		if err := rows.Scan(
@@ -714,6 +722,7 @@ ORDER BY f.id ASC
 			&switchType,
 			&ledModel,
 			&price,
+			&priceUpdatedAt,
 			&overall,
 			&tactical,
 			&edc,
@@ -738,6 +747,7 @@ ORDER BY f.id ASC
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
+		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)

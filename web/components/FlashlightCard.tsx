@@ -6,6 +6,7 @@ import { CompareToggle } from "./CompareToggle";
 import { ImageWithFallback } from "./ImageWithFallback";
 import { QuickSpecTooltip } from "./QuickSpecTooltip";
 import type { FlashlightItem } from "@/lib/api";
+import { getPriceFreshness } from "@/lib/price-freshness";
 
 function fmt(v?: number, digits = 0) {
   if (v === undefined || Number.isNaN(v)) return "—";
@@ -55,6 +56,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
   const href = item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`;
   const primaryBattery = item.battery_types?.[0];
   const tags = (item.use_case_tags || []).slice(0, 2);
+  const priceFresh = getPriceFreshness(item.price_last_updated_at);
 
   return (
     <article
@@ -66,6 +68,9 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
 
       <div className="image-card">
         <ImageWithFallback src={item.image_url} alt={`${item.brand} ${item.name}`} />
+        {priceFresh?.showCardBadge && (
+          <span className="price-fresh-badge">Checked today</span>
+        )}
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
@@ -100,7 +105,12 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       <div className="cta-row">
         <CompareToggle id={item.id} brand={item.brand} name={item.name} image_url={item.image_url} />
         <div style={{ marginLeft: "auto" }}>
-          <BuyOnAmazonButton amazon_url={item.amazon_url} price_usd={item.price_usd} />
+          <BuyOnAmazonButton
+            amazon_url={item.amazon_url}
+            price_usd={item.price_usd}
+            priceUpdatedAt={item.price_last_updated_at}
+            showFreshness={false}
+          />
         </div>
       </div>
 

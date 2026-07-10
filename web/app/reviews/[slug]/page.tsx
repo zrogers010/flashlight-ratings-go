@@ -16,6 +16,7 @@ import {
   type FlashlightDetail,
   type FlashlightItem,
 } from "@/lib/api";
+import { getPriceFreshness } from "@/lib/price-freshness";
 
 export const revalidate = 3600;
 
@@ -261,6 +262,7 @@ export default async function BreakdownArticlePage({
 
   const { publishedAt, updatedAt } = reviewDates(data);
   const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
+  const priceFresh = getPriceFreshness(data.price_last_updated_at);
 
   return (
     <article className="grid review-article">
@@ -379,6 +381,15 @@ export default async function BreakdownArticlePage({
               {data.price_usd ? `$${fmt(data.price_usd, 2)}` : "—"}
             </span>
             <span className="review-spec-label">Price</span>
+            {priceFresh && (
+              <span
+                className={`review-spec-freshness review-spec-freshness--${priceFresh.tone}`}
+              >
+                {priceFresh.tone === "stale"
+                  ? priceFresh.label
+                  : priceFresh.label.replace(/^Last checked /, "")}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -634,6 +645,7 @@ export default async function BreakdownArticlePage({
             amazon_url={data.amazon_url}
             price_usd={data.price_usd}
             size="lg"
+            priceUpdatedAt={data.price_last_updated_at}
           />
           <Link
             href={`/flashlights/${data.id}`}
@@ -683,6 +695,20 @@ export default async function BreakdownArticlePage({
       )}
 
       <AmazonDisclosure />
+
+      {data.amazon_url && (
+        <div className="sticky-buy-bar sticky-buy-bar--review" role="region" aria-label="Quick buy">
+          <div className="sticky-buy-bar-item">
+            <span className="sticky-buy-bar-label">{name}</span>
+            <BuyOnAmazonButton
+              amazon_url={data.amazon_url}
+              price_usd={data.price_usd}
+              size="sm"
+              priceUpdatedAt={data.price_last_updated_at}
+            />
+          </div>
+        </div>
+      )}
     </article>
   );
 }

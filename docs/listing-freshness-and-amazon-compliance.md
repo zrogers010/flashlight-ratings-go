@@ -9,7 +9,7 @@
 
 | Concern | Implemented? | Where |
 |---|---|---|
-| Periodic price/rating refresh | ✅ Uniform daily-rotated shard | `internal/rainforest/sync.go` (`rowSelector`) |
+| Periodic price/rating refresh | ✅ Full catalog 3×/day (default) | `scripts/deploy.sh install-cron`, `internal/rainforest/sync.go` |
 | New ASIN discovery | ✅ Manual / on-demand | `internal/rainforest/discover.go`, `-mode=discover` |
 | Auto-prune chronically-dead listings | ✅ N-consecutive-miss prune | `internal/rainforest/sync.go` (`PruneUnavailable`) |
 | Per-ASIN sync state (last check, miss streak) | ✅ Sidecar JSON | `internal/rainforest/state.go`, `data/manual_catalog.sync_state.json` (gitignored) |
@@ -25,14 +25,13 @@
    Postgres is reloaded from the CSV after every sync via
    `scripts/import-manual-catalog.sh`.
 
-2. **Cadence:** uniform daily rotation. The rotated cron runs once per day and
-   refreshes only ~1/N of the catalog, where N = `SYNC_ROTATE_DAYS`.
-   - Shard for the day = `(UTC day-of-year - 1) mod N`.
-   - Each row belongs to exactly one shard (`row_index mod N`), so every ASIN
-     gets refreshed exactly once per N-day cycle, and the cycle is
-     deterministic and resumable (a missed day just shifts the calendar).
-   - Newly-discovered ASINs do **not** get a priority window — they fall into
-     whichever shard their row index lands in.
+2. **Cadence (default after larger Rainforest plan):** full-catalog sync
+   **3× per day** via `bash scripts/deploy.sh install-cron`
+   (`CRON_SCHEDULE=0 6,14,22 * * *`, `SYNC_ROTATE_DAYS=0`).
+   - Every run refreshes **all** ASINs — average age ~4 hours, worst case ~8h.
+   - For very large catalogs, fall back to rotation with
+     `bash scripts/deploy.sh install-cron-rotated` and `ROTATE_DAYS=N`
+     (shard = `(UTC day-of-year - 1) mod N`, each ASIN once per N days).
 
 3. **Per-row update.** For each ASIN in today's shard:
    - Call Rainforest `type=product`.
@@ -52,8 +51,9 @@
 5. **Auto-prune.** When `-prune-unavailable=N` is set (the cron passes
    `PRUNE_THRESHOLD=2`), any ASIN whose unavailable streak reaches N
    consecutive sync runs is removed from the CSV at the end of the run.
-   With `SYNC_ROTATE_DAYS=3` and `PRUNE_THRESHOLD=2`, a dead listing
-   disappears within ~6 days (2 misses × 3-day cycle).
+   With 3×/day full sync and `PRUNE_THRESHOLD=2`, a dead listing disappears
+   within ~16 hours (2 consecutive runs). With rotated `SYNC_ROTATE_DAYS=3`,
+   worst case is ~6 days (2 misses × 3-day cycle).
 
 6. **Persistence across deploys.** `scripts/deploy.sh` does
    `git reset --hard origin/main`, which would normally wipe the cron's
@@ -65,20 +65,30 @@
 
 ## Tuning the cadence
 
-For a catalog of ~110 ASINs:
+For a catalog of ~110 ASINs (1 Rainforest credit ≈ 1 product call):
 
-| `SYNC_ROTATE_DAYS` | `PRUNE_THRESHOLD` | Credits/day | Credits/month | Avg price staleness | Worst-case dead-link removal |
-|---|---|---|---|---|---|
-| `1` (daily full) | `2` | ~111 | ~3,330 | ~12h | 2 days |
-| **`3` (recommended default)** | **`2`** | **~37** | **~1,110** | **~36h** | **~6 days** |
-| `7` | `2` | ~16 | ~480 | ~3.5 days | ~14 days |
-| `14` | `2` | ~8 | ~240 | ~7 days | ~28 days |
+| Setup | Credits/day | Credits/month | Avg price age | Dead-link removal |
+|---|---|---|---|---|
+| **`install-cron` 3×/day full (recommended)** | **~330** | **~10k** | **~4h** | **~16h** |
+| `install-cron` every 6h (`0 */6 * * *`) | ~440 | ~13k | ~3h | ~12h |
+| Daily full (`0 9 * * *`, rotate=0) | ~110 | ~3.3k | ~12h | ~2 days |
+| Rotated `ROTATE_DAYS=3` once/day | ~37 | ~1.1k | ~36h | ~6 days |
 
-Override at install time:
+Install / reinstall the recommended schedule on the server:
 
 ```bash
-ROTATE_DAYS=1 PRUNE_THRESHOLD=2 bash scripts/deploy.sh install-cron-rotated
+# After deploy — replaces older weekly / rotated entries
+bash scripts/deploy.sh install-cron
+
+# More aggressive (every 6 hours)
+CRON_SCHEDULE="0 */6 * * *" bash scripts/deploy.sh install-cron
+
+# Large catalog: spread credits with rotation instead
+ROTATE_DAYS=3 bash scripts/deploy.sh install-cron-rotated
 ```
+
+**UI copy:** price freshness labels say **“Last checked …”** (when Rainforest
+last refreshed that ASIN), not “verified.” CTA remains **Check Price on Amazon**.
 
 ## Compliance guardrails
 - Use Amazon-API-sourced data for prices/ratings/images (currently Rainforest;
@@ -89,10 +99,9 @@ ROTATE_DAYS=1 PRUNE_THRESHOLD=2 bash scripts/deploy.sh install-cron-rotated
   - `As an Amazon Associate we earn from qualifying purchases.`
 - Do not store or serve stale prices past allowed PA-API policy windows.
   The standard read of the policy is **24 hours**. With the recommended
-  `SYNC_ROTATE_DAYS=3`, average staleness is ~36h and worst case ~3 days —
-  acceptable for a small affiliate site, but consider daily-full
-  (`SYNC_ROTATE_DAYS=1`) before doing any kind of price-comparison feature
-  or audited promotion.
+  3×/day full sync, average age is ~4h and worst case ~8h — well inside
+  that window. If you fall back to multi-day rotation, keep CTA copy as
+  “Check Price on Amazon” and show honest “Last checked …” labels.
 - CTA copy must be:
   - `Check Price on Amazon`
 - Never use CTA copy:

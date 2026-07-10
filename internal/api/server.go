@@ -57,6 +57,7 @@ type flashlightItem struct {
 	SwitchType     *string  `json:"switch_type,omitempty"`
 	LEDModel       *string  `json:"led_model,omitempty"`
 	PriceUSD       *float64 `json:"price_usd,omitempty"`
+	PriceLastUpdatedAt *string `json:"price_last_updated_at,omitempty"`
 	OverallScore   *float64 `json:"overall_score,omitempty"`
 	TacticalScore  *float64 `json:"tactical_score,omitempty"`
 	EDCScore       *float64 `json:"edc_score,omitempty"`
@@ -114,10 +115,9 @@ type flashlightDetail struct {
 	CRI                 *int64           `json:"cri,omitempty"`
 	CCTMinK             *int64           `json:"cct_min_k,omitempty"`
 	CCTMaxK             *int64           `json:"cct_max_k,omitempty"`
-	AmazonRatingCount   *int64           `json:"amazon_rating_count,omitempty"`
-	AmazonAverageRating *float64         `json:"amazon_average_rating,omitempty"`
+	AmazonRatingCount   *int64            `json:"amazon_rating_count,omitempty"`
+	AmazonAverageRating *float64          `json:"amazon_average_rating,omitempty"`
 	AmazonLastSyncedAt  *string           `json:"amazon_last_synced_at,omitempty"`
-	PriceLastUpdatedAt  *string           `json:"price_last_updated_at,omitempty"`
 	MetricBreakdown     *metricBreakdown  `json:"metric_breakdown,omitempty"`
 	Modes               []flashlightMode  `json:"modes"`
 	ImageURLs           []string          `json:"image_urls"`

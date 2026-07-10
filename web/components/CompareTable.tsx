@@ -125,7 +125,11 @@ export function CompareTable({ items }: Props) {
                       )}
                     </div>
                     <div style={{ marginTop: 8 }}>
-                      <BuyOnAmazonButton amazon_url={item.amazon_url} price_usd={item.price_usd} />
+                      <BuyOnAmazonButton
+                        amazon_url={item.amazon_url}
+                        price_usd={item.price_usd}
+                        priceUpdatedAt={item.price_last_updated_at}
+                      />
                     </div>
                   </div>
                 </th>
