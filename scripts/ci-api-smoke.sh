@@ -61,4 +61,13 @@ check_json "/compare?ids=${ID}" \
   '.items | type == "array" and length >= 1' \
   "compare"
 
+# Text search — demo seed includes Wurkkos FC11C / Sofirn IF22A
+check_json "/flashlights?q=wurkkos&page=1&page_size=10" \
+  '.items | type == "array" and length >= 1 and all(.[]; (.brand | test("wurkkos"; "i")) or (.name | test("wurkkos"; "i")) or (.slug | test("wurkkos"; "i")))' \
+  "search q=wurkkos"
+
+check_json "/flashlights?q=zzzz-no-such-model&page=1&page_size=5" \
+  '.total == 0 and (.items | length == 0)' \
+  "search empty results"
+
 echo "→ All smoke checks passed"
