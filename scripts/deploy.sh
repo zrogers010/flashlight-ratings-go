@@ -24,10 +24,11 @@ usage() {
   echo ""
   echo "  setup                  First-time server setup (run as ec2-user with sudo)"
   echo "  deploy                 Pull latest code and deploy (run as deploy user)"
-  echo "  install-cron           Install weekly cron that refreshes the FULL catalog"
+  echo "  install-cron           Install frequent FULL-catalog Rainforest sync"
+  echo "                          (default: 3×/day UTC — 06:00, 14:00, 22:00)"
   echo "  install-cron-rotated   Install daily cron that refreshes 1/N of the catalog"
-  echo "                          (default N=3, full coverage every 3 days, prunes"
-  echo "                          dead listings after 2 misses ~= 6 days)"
+  echo "                          (default N=1 = full catalog once/day; raise N for"
+  echo "                          larger catalogs to spread Rainforest credits)"
   echo "  catalog-sync           Run a one-off catalog refresh (sync + import + restart)"
   echo ""
   echo "If no argument given, defaults to 'deploy'."
@@ -377,15 +378,17 @@ do_catalog_sync() {
 }
 
 # ═════════════════════════════════════════════════════════════════════
-# INSTALL-CRON — install a weekly cron entry for catalog-sync
+# INSTALL-CRON — frequent FULL-catalog Rainforest sync
 #   Usage:  bash scripts/deploy.sh install-cron
 #
-# Installs (or replaces) a single cron line that runs catalog-sync every
-# Monday at 09:00 UTC and appends output to ~/catalog-sync.log. The script
-# is idempotent — running it multiple times leaves exactly one entry.
+# Default: refresh the entire catalog 3× per day (06:00 / 14:00 / 22:00 UTC).
+# Tuned for a larger Rainforest plan where credits support full sweeps.
+# SYNC_ROTATE_DAYS=0 means every run touches all ASINs.
 #
-# Override schedule with CRON_SCHEDULE env var, e.g.:
-#   CRON_SCHEDULE="0 4 * * *" bash scripts/deploy.sh install-cron   # daily 04:00
+# Override examples:
+#   CRON_SCHEDULE="0 */6 * * *" bash scripts/deploy.sh install-cron   # every 6h
+#   CRON_SCHEDULE="0 9 * * *"   bash scripts/deploy.sh install-cron   # once daily
+#   PRUNE_THRESHOLD=2           bash scripts/deploy.sh install-cron
 # ═════════════════════════════════════════════════════════════════════
 do_install_cron() {
   if ! command -v crontab >/dev/null 2>&1; then
@@ -399,21 +402,32 @@ do_install_cron() {
     exit 1
   fi
 
-  CRON_SCHEDULE="${CRON_SCHEDULE:-0 9 * * 1}"
+  # 3×/day full catalog — keeps average price age ~4h for a ~100–300 ASIN set.
+  CRON_SCHEDULE="${CRON_SCHEDULE:-0 6,14,22 * * *}"
+  PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-2}"
   CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
   CRON_TAG="# flashlightratings-catalog-sync"
-  CRON_CMD="cd ${APP_DIR} && bash scripts/catalog-sync.sh >> ${CRON_LOG} 2>&1"
+  # Full catalog each run (no rotation). Prune after N consecutive unavailable hits.
+  CRON_CMD="cd ${APP_DIR} && SYNC_ROTATE_DAYS=0 PRUNE_THRESHOLD=${PRUNE_THRESHOLD} bash scripts/catalog-sync.sh >> ${CRON_LOG} 2>&1"
   CRON_LINE="${CRON_SCHEDULE} ${CRON_CMD} ${CRON_TAG}"
 
-  echo "→ Installing cron entry:"
+  echo "→ Installing frequent full-catalog cron entry:"
   echo "    ${CRON_LINE}"
+  echo ""
+  echo "  Each run refreshes the ENTIRE catalog (SYNC_ROTATE_DAYS=0)."
+  echo "  Dead listings are pruned after ${PRUNE_THRESHOLD} consecutive unavailable runs."
 
   # Replace any existing entry with the same tag, then append the new one.
   # Build the new crontab in a temp file so we don't rely on subshell exit
   # semantics — `set -euo pipefail` plus an empty existing crontab caused
   # earlier versions to silently install nothing.
   CRON_TMP="$(mktemp)"
-  crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" > "${CRON_TMP}" || true
+  # Drop both sync cron tags. Match the full-sync tag with a trailing space /
+  # end-of-line so we don't also eat the "-rotated" variant (which shares a
+  # common prefix).
+  crontab -l 2>/dev/null \
+    | grep -vE '# flashlightratings-catalog-sync(-rotated)?( |$)' \
+    > "${CRON_TMP}" || true
   echo "${CRON_LINE}" >> "${CRON_TMP}"
   crontab "${CRON_TMP}"
   rm -f "${CRON_TMP}"
@@ -454,11 +468,10 @@ do_install_cron_rotated() {
     exit 1
   fi
 
-  # Defaults chosen for a ~100-300 ASIN catalog: every ASIN refreshed every
-  # ~3 days (~1/3 of catalog touched per run), and a dead listing is pruned
-  # after 2 consecutive misses (~6 days of being unavailable). Override with
-  # ROTATE_DAYS / PRUNE_THRESHOLD env vars at install time.
-  ROTATE_DAYS="${ROTATE_DAYS:-3}"
+  # Prefer install-cron (3×/day full) when credits allow. Use this path when
+  # the catalog grows large enough that a full sweep per run is too expensive —
+  # e.g. ROTATE_DAYS=3 spreads ~300+ ASINs across three daily shards.
+  ROTATE_DAYS="${ROTATE_DAYS:-1}"
   PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-2}"
   CRON_SCHEDULE="${CRON_SCHEDULE:-0 9 * * *}"
   CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
@@ -471,13 +484,20 @@ do_install_cron_rotated() {
   echo "→ Installing rotated cron entry:"
   echo "    ${CRON_LINE}"
   echo ""
-  echo "  This will refresh ~1/${ROTATE_DAYS}th of the catalog each day,"
-  echo "  giving full coverage every ${ROTATE_DAYS} days at ~1/${ROTATE_DAYS} the credit cost."
-  echo "  Listings unavailable for ${PRUNE_THRESHOLD} consecutive runs (~${PRUNE_THRESHOLD}× ${ROTATE_DAYS} days) get pruned."
+  if [[ "${ROTATE_DAYS}" -le 1 ]]; then
+    echo "  ROTATE_DAYS=${ROTATE_DAYS}: each run refreshes the full catalog (once per schedule)."
+  else
+    echo "  This will refresh ~1/${ROTATE_DAYS}th of the catalog each day,"
+    echo "  giving full coverage every ${ROTATE_DAYS} days at ~1/${ROTATE_DAYS} the credit cost."
+  fi
+  echo "  Listings unavailable for ${PRUNE_THRESHOLD} consecutive runs get pruned."
 
   # Build the new crontab in a temp file (see do_install_cron for why).
   CRON_TMP="$(mktemp)"
-  crontab -l 2>/dev/null | grep -vF "${CRON_TAG}" > "${CRON_TMP}" || true
+  # Drop both sync cron tags (see install-cron for the regex rationale).
+  crontab -l 2>/dev/null \
+    | grep -vE '# flashlightratings-catalog-sync(-rotated)?( |$)' \
+    > "${CRON_TMP}" || true
   echo "${CRON_LINE}" >> "${CRON_TMP}"
   crontab "${CRON_TMP}"
   rm -f "${CRON_TMP}"
@@ -486,9 +506,8 @@ do_install_cron_rotated() {
   echo "✓ Rotated cron installed. Verify with:  crontab -l"
   echo "  Logs will go to: ${CRON_LOG}"
   echo ""
-  echo "  Heads-up: if you previously installed the weekly full-catalog cron"
-  echo "  (install-cron), it's still active. Remove it to avoid double-spending:"
-  echo "    crontab -l | grep -vF '# flashlightratings-catalog-sync ' | crontab -"
+  echo "  Prefer multi-times-per-day full sync? Use instead:"
+  echo "    bash ${APP_DIR}/scripts/deploy.sh install-cron"
   echo ""
   echo "  To remove this rotated cron later:"
   echo "    crontab -l | grep -vF '${CRON_TAG}' | crontab -"

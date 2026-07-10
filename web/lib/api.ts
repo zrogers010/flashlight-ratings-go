@@ -41,6 +41,7 @@ export type FlashlightItem = {
   switch_type?: string;
   led_model?: string;
   price_usd?: number;
+  price_last_updated_at?: string;
   overall_score?: number;
   tactical_score?: number;
   edc_score?: number;
@@ -92,7 +93,6 @@ export type FlashlightDetail = FlashlightItem & {
   amazon_rating_count?: number;
   amazon_average_rating?: number;
   amazon_last_synced_at?: string;
-  price_last_updated_at?: string;
   metric_breakdown?: MetricBreakdown;
   modes: {
     name: string;
