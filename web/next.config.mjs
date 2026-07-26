@@ -3,8 +3,11 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "m.media-amazon.com" },
+      // Keep in lockstep with isAmazonHostedImage in internal/rainforest/sync.go
+      { protocol: "https", hostname: "**.media-amazon.com" },
       { protocol: "https", hostname: "images-na.ssl-images-amazon.com" },
+      { protocol: "https", hostname: "images-eu.ssl-images-amazon.com" },
+      { protocol: "https", hostname: "**.images-amazon.com" },
       { protocol: "https", hostname: "**.amazonaws.com" },
       { protocol: "https", hostname: "**.fenixlighting.com" },
       { protocol: "https", hostname: "**.streamlight.com" },

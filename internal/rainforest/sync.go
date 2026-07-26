@@ -257,22 +257,27 @@ func SyncCSVWithSources(ctx context.Context, src Sources, csvPath string, opts S
 			}
 		}
 
-		// Update image_url when (a) it's empty, or (b) it's hosted on a non-Amazon
-		// CDN and the API has a stable Amazon-hosted replacement. Manufacturer/
-		// 3rd-party CDN paths drift and break over time, so prefer m.media-amazon.com.
+		// Track the listing's current primary image. Amazon retires old CDN
+		// paths when sellers swap photos, so a pinned URL eventually 404s;
+		// always adopt the Amazon-hosted image the source reports today.
+		// Non-Amazon (manufacturer/Shopify) URLs are only used to fill gaps.
 		oldImage := strings.TrimSpace(row[colImageURL])
-		if product.MainImage != "" && isAmazonHostedImage(product.MainImage) {
+		newImage := strings.TrimSpace(product.MainImage)
+		if isPlaceholderImage(newImage) {
+			newImage = ""
+		}
+		if newImage != "" && isAmazonHostedImage(newImage) {
 			if oldImage == "" {
 				changes = append(changes, "image added")
-				row[colImageURL] = product.MainImage
-			} else if !isAmazonHostedImage(oldImage) {
-				changes = append(changes, "image migrated to amazon CDN")
-				row[colImageURL] = product.MainImage
+				row[colImageURL] = newImage
+			} else if oldImage != newImage {
+				changes = append(changes, "image refreshed")
+				row[colImageURL] = newImage
 			}
-		} else if oldImage == "" && product.MainImage != "" {
+		} else if oldImage == "" && newImage != "" {
 			// API returned a non-Amazon image but we have nothing — take it anyway.
 			changes = append(changes, "image added (non-amazon CDN)")
-			row[colImageURL] = product.MainImage
+			row[colImageURL] = newImage
 		}
 
 		if opts.PartnerTag != "" {
@@ -507,6 +512,13 @@ func isAmazonHostedImage(url string) bool {
 		}
 	}
 	return false
+}
+
+// isPlaceholderImage reports whether the URL is Amazon's "no image available"
+// placeholder. The frontend already treats these as broken; never write them
+// into the catalog.
+func isPlaceholderImage(url string) bool {
+	return strings.Contains(url, "._SCLZZZZZZZ_")
 }
 
 func formatFloat(v float64) string {
