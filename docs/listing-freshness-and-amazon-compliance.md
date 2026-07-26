@@ -10,7 +10,8 @@
 | Concern | Implemented? | Where |
 |---|---|---|
 | Periodic price/rating refresh | ✅ Full catalog 3×/day (default) | `scripts/deploy.sh install-cron`, `internal/rainforest/sync.go` |
-| New ASIN discovery | ✅ Manual / on-demand | `internal/rainforest/discover.go`, `-mode=discover` |
+| Official-API price data (Creators API primary) | ✅ With Rainforest failover | `internal/amazon/creators_client.go`, `internal/amazon/catalog_source.go` |
+| New ASIN discovery | ✅ Quality-gated, per brand x category | `internal/discovery/`, `-mode=discover` (legacy: `internal/rainforest/discover.go`) |
 | Recoverable unavailable listings | ✅ Soft-disable after N misses; auto-re-enable | `internal/rainforest/sync.go` |
 | Per-ASIN sync state (last check, miss streak) | ✅ Sidecar JSON | `internal/rainforest/state.go`, `data/manual_catalog.sync_state.json` (gitignored) |
 | Amazon-CDN image healing | ✅ Auto-prefer `m.media-amazon.com` | `internal/rainforest/sync.go` (`isAmazonHostedImage`) |
@@ -34,9 +35,12 @@
      (shard = `(UTC day-of-year - 1) mod N`, each ASIN once per N days).
 
 3. **Per-row update.** For each ASIN in today's shard:
-   - Call Rainforest `type=product`.
-   - Require a positive buy-box price **and** `in_stock` before considering
-     the offer purchasable.
+   - Primary source: **Creators API** `getItems` (batched 10 ASINs/call,
+     free, official). Rainforest `type=product` reinforces star ratings the
+     Creators API withholds and takes over the whole run if Creators
+     credentials are rejected (`SYNC_SOURCE=auto`).
+   - Require a positive buy-box price **and** an in-stock availability type
+     before considering the offer purchasable.
    - Update `current_price_usd`, `rating_count`, `average_rating` if changed.
    - Migrate `image_url` to an Amazon-hosted CDN (`m.media-amazon.com` etc.)
      when the API returns a stable Amazon URL. Manufacturer/3rd-party CDN
@@ -95,8 +99,9 @@ ROTATE_DAYS=3 bash scripts/deploy.sh install-cron-rotated
 last refreshed that ASIN), not “verified.” CTA remains **Check Price on Amazon**.
 
 ## Compliance guardrails
-- Use Amazon-API-sourced data for prices/ratings/images (currently Rainforest;
-  PA-API is the longer-term plan — see `docs/associates-paapi-readiness.md`).
+- Prices/availability/images now come from the **official Creators API**
+  (see `docs/associates-paapi-readiness.md`), which is what the Operating
+  Agreement expects. Rainforest is reinforcement/failover only.
 - Pull and render images via API-sanctioned assets only. The sync auto-migrates
   to Amazon-hosted CDN URLs whenever possible.
 - Show disclosure text on any page with Amazon links:
@@ -144,7 +149,8 @@ ambition is documented but isn't confused with current behavior.
 3. **`amazon_product_snapshots` history table.** Today the CSV is mutated
    in place — no per-call snapshot. Adding a row-per-call to Postgres
    would unlock real price history, drop alerts, and review-velocity rollups.
-4. **Migrate from Rainforest to PA-API.** Free if Amazon approves you,
-   batches up to 10 ASINs per call, and gives a true `ItemNotAccessible`
-   signal. See `docs/associates-paapi-readiness.md` and
-   `internal/amazon/paapi_client.go` for the in-progress scaffolding.
+4. ~~Migrate from Rainforest to PA-API.~~ **Done** — the Creators API
+   (PA-API v5's successor) is now the primary source with Rainforest
+   failover. See `docs/associates-paapi-readiness.md`.
+5. **`GetVariations` grouping.** Group emitter/tint/color variant ASINs
+   under one flashlight (discovery already dedupes on `parentASIN`).

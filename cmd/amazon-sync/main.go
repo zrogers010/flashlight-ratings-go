@@ -50,16 +50,14 @@ func main() {
 
 	var client amazon.Client = &amazon.StubClient{}
 	if !cfg.DryRun {
-		realClient, err := amazon.NewPAAPIClient(amazon.PAAPIConfig{
-			AccessKeyID:     envOr("AMAZON_ACCESS_KEY_ID", ""),
-			SecretAccessKey: envOr("AMAZON_SECRET_ACCESS_KEY", ""),
-			PartnerTag:      cfg.PartnerTag,
-			RegionCode:      cfg.Region,
-			PartnerType:     envOr("AMAZON_PARTNER_TYPE", "Associates"),
-			Marketplace:     envOr("AMAZON_MARKETPLACE", ""),
+		realClient, err := amazon.NewCreatorsClient(amazon.CreatorsConfig{
+			ClientID:     envOr("AMAZON_CREATORS_CLIENT_ID", ""),
+			ClientSecret: envOr("AMAZON_CREATORS_CLIENT_SECRET", ""),
+			PartnerTag:   cfg.PartnerTag,
+			Marketplace:  envOr("AMAZON_MARKETPLACE", "www.amazon.com"),
 		})
 		if err != nil {
-			log.Fatalf("configure paapi client: %v", err)
+			log.Fatalf("configure creators api client: %v", err)
 		}
 		client = realClient
 	}

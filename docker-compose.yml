@@ -102,6 +102,9 @@ services:
     environment:
       RAINFOREST_API_KEY: ${RAINFOREST_API_KEY:-}
       AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-flashlightrat-20}
+      AMAZON_CREATORS_CLIENT_ID: ${AMAZON_CREATORS_CLIENT_ID:-}
+      AMAZON_CREATORS_CLIENT_SECRET: ${AMAZON_CREATORS_CLIENT_SECRET:-}
+      AMAZON_MARKETPLACE: ${AMAZON_MARKETPLACE:-www.amazon.com}
     volumes:
       - ./data:/app/data
     profiles: ["tools"]
