@@ -3,6 +3,7 @@ package rainforest
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -72,7 +73,7 @@ type SyncOptions struct {
 // a sidecar JSON state file (StatePathFor(csvPath)) that tracks each ASIN's
 // consecutive-unavailable streak so offers can be soft-disabled and recovered.
 //
-// Deprecated: prefer SyncCSVWithOptions for new callers. This wrapper preserves
+// Deprecated: prefer SyncCSVWithSources for new callers. This wrapper preserves
 // the original 5-arg signature for tests / older entrypoints.
 func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag string, dryRun bool) (*SyncResult, error) {
 	return SyncCSVWithOptions(ctx, client, csvPath, SyncOptions{
@@ -81,8 +82,21 @@ func SyncCSV(ctx context.Context, client *Client, csvPath string, partnerTag str
 	})
 }
 
-// SyncCSVWithOptions is the slice/rotation-aware entrypoint. See SyncCSV docs.
+// SyncCSVWithOptions runs a Rainforest-only sync (legacy entrypoint).
 func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opts SyncOptions) (*SyncResult, error) {
+	return SyncCSVWithSources(ctx, Sources{Primary: client}, csvPath, opts)
+}
+
+// SyncCSVWithSources is the slice/rotation-aware, multi-source entrypoint.
+// The primary source provides offer/image data; when it reports
+// ErrSourceUnavailable the run transparently continues on the fallback.
+// When the primary result carries no ratings (e.g. Creators API accounts
+// without customerReviews access) and RatingsFrom is configured, ratings are
+// reinforced with one extra lookup per row.
+func SyncCSVWithSources(ctx context.Context, src Sources, csvPath string, opts SyncOptions) (*SyncResult, error) {
+	if src.Primary == nil {
+		return nil, fmt.Errorf("sync: primary product source is required")
+	}
 	f, err := os.Open(csvPath)
 	if err != nil {
 		return nil, fmt.Errorf("open csv: %w", err)
@@ -115,6 +129,55 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 
 	result := &SyncResult{State: state}
 
+	// Warm batchable sources (Creators API getItems takes 10 ASINs/call)
+	// with everything this run will touch. A source-level failure here flips
+	// the whole run to the fallback before we start mutating rows.
+	usingFallback := false
+	var selectedASINs []string
+	for i := 1; i < len(records); i++ {
+		asin := strings.TrimSpace(records[i][colASIN])
+		if asin != "" && selector.includes(i-1) {
+			selectedASINs = append(selectedASINs, asin)
+		}
+	}
+	if bp, ok := src.Primary.(BatchPreloader); ok && len(selectedASINs) > 0 {
+		if err := bp.Preload(ctx, selectedASINs); err != nil {
+			if errors.Is(err, ErrSourceUnavailable) && src.Fallback != nil {
+				log.Printf("WARNING: %s unavailable (%v) — failing over to %s for this run",
+					src.Primary.SourceName(), err, src.Fallback.SourceName())
+				usingFallback = true
+			} else {
+				return nil, fmt.Errorf("preload %s: %w", src.Primary.SourceName(), err)
+			}
+		}
+	}
+
+	lookupOne := func(asin string) (*ProductResult, string, error) {
+		if !usingFallback {
+			product, err := src.Primary.LookupProduct(ctx, asin)
+			switch {
+			case err == nil:
+				return product, src.Primary.SourceName(), nil
+			case errors.Is(err, ErrItemNotFound):
+				// The source answered but doesn't know this ASIN: strong
+				// evidence the listing is gone. Feed the unavailable-streak
+				// logic instead of counting an error.
+				return &ProductResult{}, src.Primary.SourceName(), nil
+			case errors.Is(err, ErrSourceUnavailable) && src.Fallback != nil:
+				log.Printf("WARNING: %s unavailable (%v) — failing over to %s for the rest of the run",
+					src.Primary.SourceName(), err, src.Fallback.SourceName())
+				usingFallback = true
+			default:
+				return nil, src.Primary.SourceName(), err
+			}
+		}
+		if usingFallback {
+			product, err := src.Fallback.LookupProduct(ctx, asin)
+			return product, src.Fallback.SourceName(), err
+		}
+		return nil, src.Primary.SourceName(), fmt.Errorf("no source available for %s", asin)
+	}
+
 	for i := 1; i < len(records); i++ {
 		row := records[i]
 		asin := strings.TrimSpace(row[colASIN])
@@ -131,9 +194,9 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 
 		log.Printf("[%d/%d] Looking up %s %s (ASIN: %s)...", i, dataRowCount, brandName, strings.TrimSpace(row[5]), asin)
 
-		product, err := client.LookupProduct(ctx, asin)
+		product, sourceName, err := lookupOne(asin)
 		if err != nil {
-			log.Printf("  ERROR: %v", err)
+			log.Printf("  ERROR (%s): %v", sourceName, err)
 			result.Errors++
 			result.Changes = append(result.Changes, fmt.Sprintf("ERROR  %s (%s): %v", asin, brandName, err))
 			continue
@@ -142,6 +205,28 @@ func SyncCSVWithOptions(ctx context.Context, client *Client, csvPath string, opt
 		modelName := strings.TrimSpace(row[5])
 
 		var changes []string
+
+		// Reinforce ratings from the secondary source when the primary
+		// carries none, and sanity-check availability across the two.
+		if src.RatingsFrom != nil && !usingFallback &&
+			product.Rating == 0 && product.RatingsTotal == 0 {
+			rp, rerr := src.RatingsFrom.LookupProduct(ctx, asin)
+			if rerr != nil {
+				log.Printf("  ratings lookup via %s failed: %v", src.RatingsFrom.SourceName(), rerr)
+			} else {
+				product.Rating = rp.Rating
+				product.RatingsTotal = rp.RatingsTotal
+				if rp.InStock != product.InStock {
+					msg := fmt.Sprintf("MISMATCH %s %s: %s in_stock=%v vs %s in_stock=%v (%s wins)",
+						brandName, modelName,
+						sourceName, product.InStock,
+						src.RatingsFrom.SourceName(), rp.InStock,
+						sourceName)
+					log.Printf("  %s", msg)
+					result.Changes = append(result.Changes, msg)
+				}
+			}
+		}
 
 		offerChanges, unavailable := updateOfferState(
 			row, state, asin, brandName, modelName, product, opts.AvailabilityThreshold,

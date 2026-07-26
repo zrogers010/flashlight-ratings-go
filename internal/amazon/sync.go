@@ -23,6 +23,7 @@ type SyncConfig struct {
 
 type Product struct {
 	ASIN          string
+	ParentASIN    string
 	Title         string
 	Brand         string
 	Manufacturer  string
@@ -346,7 +347,16 @@ func productIsPurchasable(p Product) bool {
 	if p.OfferPrice == nil || *p.OfferPrice <= 0 {
 		return false
 	}
-	switch strings.ToLower(strings.TrimSpace(p.Availability)) {
+	return AvailabilityInStock(p.Availability)
+}
+
+// AvailabilityInStock normalizes availability values across sources: PA-API
+// used "Now", Rainforest uses "in_stock", Creators API OffersV2 uses values
+// like "IN_STOCK" / "In Stock".
+func AvailabilityInStock(availability string) bool {
+	norm := strings.ToLower(strings.TrimSpace(availability))
+	norm = strings.ReplaceAll(norm, " ", "_")
+	switch norm {
 	case "now", "in_stock", "available":
 		return true
 	default:

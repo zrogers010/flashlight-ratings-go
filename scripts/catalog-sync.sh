@@ -23,7 +23,15 @@
 # CATALOG_AUTO_COMMIT below for the auto-commit option.
 #
 # Environment:
-#   RAINFOREST_API_KEY     required (read from .env if present)
+#   AMAZON_CREATORS_CLIENT_ID / _SECRET
+#                          Creators API credentials (primary source; free).
+#   RAINFOREST_API_KEY     Rainforest key (ratings reinforcement + failover).
+#                          At least one of the two sources is required.
+#   SYNC_SOURCE            default: auto (creators w/ rainforest failover;
+#                                         also: creators | rainforest)
+#   SYNC_RATINGS_SOURCE    default: rainforest (reinforce ratings when the
+#                                         Creators API withholds them; set to
+#                                         "off" to skip on price-only runs)
 #   AMAZON_PARTNER_TAG     default: flashlightrat-20
 #   PRUNE_THRESHOLD        default: 2 (0 = never disable; legacy name)
 #   SYNC_DELAY             default: 1s   (delay between Rainforest API calls)
@@ -56,9 +64,12 @@ if [[ -f .env ]]; then
   set -a; source .env; set +a
 fi
 
-if [[ -z "${RAINFOREST_API_KEY:-}" ]]; then
-  echo "ERROR: RAINFOREST_API_KEY is not set."
-  echo "  Add it to .env or export it before running this script."
+# The Creators API (free, official) is the primary source when configured;
+# Rainforest reinforces ratings and serves as failover. At least one of the
+# two must be present.
+if [[ -z "${AMAZON_CREATORS_CLIENT_ID:-}" && -z "${RAINFOREST_API_KEY:-}" ]]; then
+  echo "ERROR: neither AMAZON_CREATORS_CLIENT_ID nor RAINFOREST_API_KEY is set."
+  echo "  Add at least one to .env or export it before running this script."
   exit 1
 fi
 
@@ -101,6 +112,8 @@ ${COMPOSE} --profile tools run --rm \
   -e SYNC_ROTATE_DAYS="${SYNC_ROTATE_DAYS}" \
   -e SYNC_LIMIT="${SYNC_LIMIT}" \
   -e SYNC_OFFSET="${SYNC_OFFSET}" \
+  -e SYNC_SOURCE="${SYNC_SOURCE:-auto}" \
+  -e SYNC_RATINGS_SOURCE="${SYNC_RATINGS_SOURCE:-rainforest}" \
   rainforest-sync \
   -mode="${SYNC_MODE}" \
   -delay="${SYNC_DELAY}" \

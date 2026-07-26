@@ -46,7 +46,7 @@ func main() {
 
 	client, err := buildAmazonClient(cfg.amazonSync)
 	if err != nil {
-		log.Fatalf("configure paapi client: %v", err)
+		log.Fatalf("configure creators api client: %v", err)
 	}
 
 	runCycle := func() {
@@ -100,13 +100,11 @@ func buildAmazonClient(cfg amazon.SyncConfig) (amazon.Client, error) {
 	if cfg.DryRun {
 		return nil, nil
 	}
-	return amazon.NewPAAPIClient(amazon.PAAPIConfig{
-		AccessKeyID:     envOr("AMAZON_ACCESS_KEY_ID", ""),
-		SecretAccessKey: envOr("AMAZON_SECRET_ACCESS_KEY", ""),
-		PartnerTag:      cfg.PartnerTag,
-		RegionCode:      cfg.Region,
-		PartnerType:     envOr("AMAZON_PARTNER_TYPE", "Associates"),
-		Marketplace:     envOr("AMAZON_MARKETPLACE", ""),
+	return amazon.NewCreatorsClient(amazon.CreatorsConfig{
+		ClientID:     envOr("AMAZON_CREATORS_CLIENT_ID", ""),
+		ClientSecret: envOr("AMAZON_CREATORS_CLIENT_SECRET", ""),
+		PartnerTag:   cfg.PartnerTag,
+		Marketplace:  envOr("AMAZON_MARKETPLACE", "www.amazon.com"),
 	})
 }
 

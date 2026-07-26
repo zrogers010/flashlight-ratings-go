@@ -1,59 +1,67 @@
-# Amazon Associates -> PA-API Readiness Playbook
+# Amazon Creators API Runbook
 
-Use this while running manual catalog mode.
+The Creators API replaced PA-API v5 (endpoint shut down 2026-05-15) and is
+now the primary product data source for both the CSV catalog sync
+(`cmd/rainforest-sync`) and the DB snapshot worker (`cmd/amazon-sync`,
+`cmd/worker`). Rainforest remains configured as ratings reinforcement and
+automatic failover.
 
-## Goal
+## Credentials
 
-Unlock PA-API access so the worker can refresh real listings automatically.
+1. Register the application in Associates Central (Tools -> Creators API).
+   Only the primary account owner can register.
+2. Copy the Credential ID and Secret into:
+   - `.env` — `AMAZON_CREATORS_CLIENT_ID`, `AMAZON_CREATORS_CLIENT_SECRET`
+     (used by `scripts/catalog-sync.sh` / the rainforest-sync container)
+   - `worker.env` — same variables (used by the worker / amazon-sync)
+3. Auth is OAuth2 client-credentials against
+   `https://api.amazon.com/auth/o2/token` (NA region); tokens last 1 hour
+   and are cached in-process. No AWS keys are involved anymore.
 
-## Track weekly
+## Eligibility risk (why Rainforest stays)
 
-- `qualified_clicks`
-- `ordered_items`
-- `shipped_items`
-- `conversion_rate`
-- `top_pages_by_clicks`
+Creators API access requires roughly 10 qualifying referred sales in the
+trailing 30 days. If sales dip and Amazon revokes access, API calls return
+401/403. The sync detects this (`ErrAuthDenied` -> `ErrSourceUnavailable`)
+and transparently fails over to Rainforest for the rest of the run — the
+site never goes stale. Watch the sync logs for:
 
-Keep this in a simple sheet and update every week.
+```
+WARNING: creators-api unavailable (...) — failing over to rainforest
+```
 
-## Site actions that improve eligibility
+If that appears, check Associates Central for eligibility status and expect
+Rainforest spend to rise until access is restored.
 
-1. Keep all affiliate disclosures visible on every page with links.
-2. Publish high-intent pages:
-   - best EDC flashlights under budget tiers
-   - thrower vs flooder comparison pages
-   - use-case landing pages (camping, tactical, search & rescue)
-3. Add clear CTA placements above the fold and in comparison rows.
-4. Remove broken/out-of-stock links quickly.
-5. Focus on fewer trusted brands first to improve conversion quality.
+## Ratings gating
 
-## Compliance guardrails
+`customerReviews.count` / `customerReviews.starRating` are requested on
+every call but Amazon only returns them for accounts enrolled in a limited
+program. When absent, the sync reinforces ratings with one Rainforest
+lookup per row (`-ratings-source=rainforest`, the default). To control
+Rainforest spend, run frequent price-only syncs with `-ratings-source=off`
+and a weekly full run with ratings on.
 
-- No fake prices or fake reviews.
-- Avoid copied Amazon text/images unless explicitly permitted.
-- Use manufacturer/public specs and your own editorial copy.
-- Keep links accurate to the exact product model and ASIN.
+## Rate limits
 
-## Operational workflow until approval
+The client enforces 1 request/second and retries on 429 with exponential
+backoff. getItems batches 10 ASINs per request, so a full 110-row catalog
+refresh is ~11 requests. Discovery (24 brands x 6 categories) is ~150
+requests, ~2.5 minutes.
 
-1. Keep `AMAZON_SYNC_DRY_RUN=true`.
-2. Refresh catalog weekly via:
-   - `docs/manual-catalog-import.md`
-3. Re-run score job after each catalog update.
-4. Validate top pages and links before publishing.
+## Keeping eligibility (unchanged)
 
-## Switch-over checklist after approval
+- Keep affiliate disclosures visible on every page with links.
+- Publish high-intent pages (budget tiers, thrower vs flooder, use cases).
+- Remove broken/out-of-stock links quickly (the sync's soft-disable does
+  this automatically).
+- No fake prices or reviews; keep links accurate to the exact ASIN.
 
-1. Generate PA-API-enabled access key/secret in Associates credentials.
-2. Update `worker.env`:
-   - `AMAZON_ACCESS_KEY_ID`
-   - `AMAZON_SECRET_ACCESS_KEY`
-   - `AMAZON_PARTNER_TAG`
-   - `AMAZON_SYNC_DRY_RUN=false`
-3. Restart worker:
-   - `docker compose up -d --build worker`
-4. Verify first successful run:
-   - `docker compose logs -f --tail=200 worker`
-5. Confirm snapshots update:
-   - latest rows in `amazon_product_snapshots`
-   - latest rows in `flashlight_price_snapshots`
+## Worker switch-over checklist
+
+1. Set `AMAZON_CREATORS_CLIENT_ID` / `AMAZON_CREATORS_CLIENT_SECRET` in
+   `worker.env` and `AMAZON_SYNC_DRY_RUN=false`.
+2. Restart: `docker compose up -d --build worker`
+3. Verify: `docker compose logs -f --tail=200 worker`
+4. Confirm fresh rows in `amazon_product_snapshots` and
+   `flashlight_price_snapshots`.
