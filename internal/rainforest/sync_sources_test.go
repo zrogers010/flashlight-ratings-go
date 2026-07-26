@@ -207,6 +207,76 @@ func TestSyncRatingsReinforcement(t *testing.T) {
 	}
 }
 
+func TestSyncImageTracksListing(t *testing.T) {
+	cases := []struct {
+		name      string
+		oldImage  string
+		mainImage string
+		want      string
+	}{
+		{
+			name:      "stale amazon image replaced by current one",
+			oldImage:  "https://m.media-amazon.com/images/I/old.jpg",
+			mainImage: "https://m.media-amazon.com/images/I/new.jpg",
+			want:      "https://m.media-amazon.com/images/I/new.jpg",
+		},
+		{
+			name:      "placeholder image never written",
+			oldImage:  "https://m.media-amazon.com/images/I/good.jpg",
+			mainImage: "https://m.media-amazon.com/images/I/no-img._SCLZZZZZZZ_.jpg",
+			want:      "https://m.media-amazon.com/images/I/good.jpg",
+		},
+		{
+			name:      "existing image kept when source has none",
+			oldImage:  "https://m.media-amazon.com/images/I/good.jpg",
+			mainImage: "",
+			want:      "https://m.media-amazon.com/images/I/good.jpg",
+		},
+		{
+			name:      "non-amazon image migrated to amazon CDN",
+			oldImage:  "https://cdn.shopify.com/light.jpg",
+			mainImage: "https://m.media-amazon.com/images/I/new.jpg",
+			want:      "https://m.media-amazon.com/images/I/new.jpg",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := writeTestCatalog(t, []string{"B0AAA"})
+			setCatalogField(t, path, colImageURL, tc.oldImage)
+			primary := &fakeSource{
+				name: "creators-api",
+				results: map[string]*ProductResult{
+					"B0AAA": {ASIN: "B0AAA", Price: 10, InStock: true, MainImage: tc.mainImage},
+				},
+			}
+			if _, err := SyncCSVWithSources(context.Background(), Sources{Primary: primary}, path, SyncOptions{}); err != nil {
+				t.Fatal(err)
+			}
+			rows := readCatalogRows(t, path)
+			if got := rows[1][colImageURL]; got != tc.want {
+				t.Errorf("image = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// setCatalogField rewrites one column of the single data row in a test catalog.
+func setCatalogField(t *testing.T, path string, col int, value string) {
+	t.Helper()
+	records := readCatalogRows(t, path)
+	records[1][col] = value
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := csv.NewWriter(f)
+	if err := w.WriteAll(records); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+}
+
 func TestSyncItemNotFoundCountsAsUnavailable(t *testing.T) {
 	path := writeTestCatalog(t, []string{"B0GONE"})
 	primary := &fakeSource{name: "creators-api", results: map[string]*ProductResult{}}
