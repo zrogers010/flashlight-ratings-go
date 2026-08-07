@@ -25,6 +25,28 @@ RETURNING id
 	return runID, nil
 }
 
+// keepScoringRuns is how many recent completed runs (and their cascade-linked
+// flashlight_scores rows) survive pruning. The API reads only the latest one;
+// the rest exist purely for short-term debugging.
+const keepScoringRuns = 10
+
+// pruneOldRuns deletes all scoring runs except the most recent completed ones
+// and any run currently in progress. flashlight_scores rows cascade.
+func pruneOldRuns(ctx context.Context, db queryExecer, keep int) error {
+	const q = `
+DELETE FROM scoring_runs
+WHERE status <> 'running'
+  AND id NOT IN (
+    SELECT id FROM scoring_runs
+    WHERE status = 'completed'
+    ORDER BY completed_at DESC NULLS LAST
+    LIMIT $1
+  )
+`
+	_, err := db.ExecContext(ctx, q, keep)
+	return err
+}
+
 func completeRun(ctx context.Context, db queryExecer, runID int64) error {
 	const q = `
 UPDATE scoring_runs
