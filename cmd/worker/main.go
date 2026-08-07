@@ -55,12 +55,14 @@ func main() {
 		syncCtx, cancelSync := context.WithTimeout(ctx, cfg.syncTimeout)
 		syncer := amazon.NewSyncer(db, client, cfg.amazonSync)
 		if err := syncer.Run(syncCtx); err != nil {
-			cancelSync()
-			log.Printf("amazon sync failed: %v", err)
-			return
+			// The CSV catalog sync keeps the DB fresh independently, so a
+			// failed Amazon pull (e.g. Creators API eligibility lapse) must
+			// not block score recomputation.
+			log.Printf("amazon sync failed (continuing to scoring): %v", err)
+		} else {
+			log.Println("amazon sync completed")
 		}
 		cancelSync()
-		log.Println("amazon sync completed")
 
 		scoreCtx, cancelScore := context.WithTimeout(ctx, cfg.scoreTimeout)
 		engine := scoring.NewEngine(db)
