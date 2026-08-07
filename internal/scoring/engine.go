@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -121,6 +122,14 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 	}
 	if err := completeRun(ctx, e.db, runID); err != nil {
 		return runID, err
+	}
+
+	// Prune old runs so score history can't grow unbounded: the API only ever
+	// reads the latest completed run, and the worker re-scores every cycle.
+	// Without this the flashlight_scores table grows by a full catalog's worth
+	// of rows per run (this once reached 14 GB and filled the disk).
+	if err := pruneOldRuns(ctx, e.db, keepScoringRuns); err != nil {
+		log.Printf("scoring: prune old runs: %v", err)
 	}
 
 	return runID, nil
