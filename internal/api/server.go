@@ -183,7 +183,23 @@ type rankedResponse struct {
 		BeamDistanceM    *int64   `json:"beam_distance_m,omitempty"`
 		WaterproofRating *string  `json:"waterproof_rating,omitempty"`
 		PriceUSD         *float64 `json:"price_usd,omitempty"`
+		AmazonInStock    *bool    `json:"amazon_in_stock,omitempty"`
 	} `json:"flashlight"`
+	AlternateInStock *alternateInStock `json:"alternate_in_stock,omitempty"`
+}
+
+type alternateInStock struct {
+	ID            int64    `json:"id"`
+	Brand         string   `json:"brand"`
+	Name          string   `json:"name"`
+	Slug          string   `json:"slug"`
+	ImageURL      *string  `json:"image_url,omitempty"`
+	AmazonURL     *string  `json:"amazon_url,omitempty"`
+	Score         float64  `json:"score"`
+	Rank          int      `json:"rank"`
+	MaxLumens     *int64   `json:"max_lumens,omitempty"`
+	BeamDistanceM *int64   `json:"beam_distance_m,omitempty"`
+	PriceUSD      *float64 `json:"price_usd,omitempty"`
 }
 
 type finderResponse struct {
