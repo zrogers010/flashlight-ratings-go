@@ -215,14 +215,14 @@ export default async function HomePage() {
     <section className="grid">
       <div className="panel hero hero-home hero-dashboard">
         <p className="kicker hero-dashboard-kicker">Gear Discovery Dashboard</p>
-        <h1 className="hero-title hero-dashboard-title">Find Your Next Flashlight</h1>
+        <h1 className="hero-title hero-dashboard-title">Best Flashlights, Ranked by Data (2026)</h1>
         <p className="muted hero-subtitle hero-dashboard-subtitle">
           Live index: <strong className="hero-dashboard-metric">{catalogSize}</strong> models with normalized scores,
           spec verification, and Amazon price sync.
         </p>
         <div className="cta-row hero-dashboard-cta">
-          <Link href="/flashlights" className="button-link">
-            Browse All
+          <Link href="/best-flashlights" className="button-link">
+            View Rankings
           </Link>
           <Link href="/find-yours" className="button-link button-secondary">
             Find Yours
