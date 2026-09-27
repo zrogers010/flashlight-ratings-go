@@ -37,7 +37,7 @@ check_json "/flashlights/${ID}" \
   "flashlight detail"
 
 check_json "/flashlights/${ID}" \
-  'if .price_usd != null then (.amazon_in_stock | type == "boolean") else true end' \
+  'if .price_usd != null then (.in_stock | type == "boolean") else true end' \
   "detail includes offer availability"
 
 check_json "/flashlights/${ID}" \
@@ -62,7 +62,7 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
   "rankings tactical"
 
 check_json "/compare?ids=${ID}" \
-  '.items | type == "array" and length >= 1 and all(.[]; if .price_usd != null then (.amazon_in_stock | type == "boolean") else true end)' \
+  '.items | type == "array" and length >= 1 and all(.[]; if .price_usd != null then (.in_stock | type == "boolean") else true end)' \
   "compare"
 
 # Text search — demo seed includes Wurkkos FC11C / Sofirn IF22A
