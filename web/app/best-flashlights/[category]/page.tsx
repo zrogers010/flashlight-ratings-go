@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FlashlightCard } from "@/components/FlashlightCard";
 import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/StructuredData";
-import { fetchRankings, fetchFlashlights, fetchBrandsDetailed, type FlashlightItem } from "@/lib/api";
+import { fetchRankings, fetchFlashlights, fetchBrandsDetailed, type FlashlightItem, type InStockAlternate } from "@/lib/api";
 import {
   parseCompositeFilter,
   composeCompositeSlug,
@@ -246,7 +246,7 @@ async function fetchCompositeItems(filter: CompositeFilter): Promise<FlashlightI
       minPrice: filter.minPrice,
       sortBy: sortField,
       order: "desc",
-      pageSize: 100,
+      pageSize: 200,
     });
     return res.items;
   } catch {
@@ -299,6 +299,9 @@ type ScoredCard = {
   image_url?: string;
   amazon_url?: string;
   amazon_in_stock?: boolean;
+  in_stock?: boolean | null;
+  availability_status?: 'in_stock' | 'out_of_stock' | 'unknown';
+  in_stock_alternate?: InStockAlternate | null;
   max_lumens?: number;
   beam_distance_m?: number;
   waterproof_rating?: string;
@@ -367,6 +370,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       image_url: item.image_url,
       amazon_url: item.amazon_url,
       amazon_in_stock: item.amazon_in_stock,
+      in_stock: item.in_stock,
+      availability_status: item.availability_status,
+      in_stock_alternate: item.in_stock_alternate,
       max_lumens: item.max_lumens,
       beam_distance_m: item.beam_distance_m,
       waterproof_rating: item.waterproof_rating,
@@ -387,6 +393,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       slug: item.flashlight.slug,
       image_url: item.flashlight.image_url,
       amazon_url: item.flashlight.amazon_url,
+      in_stock: item.flashlight.in_stock,
+      availability_status: item.flashlight.availability_status,
+      in_stock_alternate: item.in_stock_alternate,
       max_lumens: item.flashlight.max_lumens,
       beam_distance_m: item.flashlight.beam_distance_m,
       waterproof_rating: item.flashlight.waterproof_rating,
@@ -411,7 +420,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
-          available: item.amazon_in_stock,
+          available: item.in_stock !== undefined && item.in_stock !== null ? item.in_stock : item.amazon_in_stock,
         }))}
       />
       <Breadcrumbs items={[{ label: "Best Flashlights", href: "/best-flashlights" }, { label: config.label }]} />
@@ -435,6 +444,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
               image_url: item.image_url,
               amazon_url: item.amazon_url,
               amazon_in_stock: item.amazon_in_stock,
+              in_stock: item.in_stock,
+              availability_status: item.availability_status,
+              in_stock_alternate: item.in_stock_alternate,
               max_lumens: item.max_lumens,
               beam_distance_m: item.beam_distance_m,
               waterproof_rating: item.waterproof_rating,
@@ -534,7 +546,7 @@ async function CompositePage({ filter }: { filter: CompositeFilter }) {
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
-          available: item.amazon_in_stock,
+          available: item.in_stock !== undefined && item.in_stock !== null ? item.in_stock : item.amazon_in_stock,
         }))}
       />
       <Breadcrumbs

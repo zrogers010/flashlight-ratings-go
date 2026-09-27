@@ -234,7 +234,7 @@ export default async function FlashlightsPage({
           url: item.slug ? `/reviews/${item.slug}` : `/flashlights/${item.id}`,
           image: item.image_url,
           price: item.price_usd,
-          available: item.amazon_in_stock,
+          available: item.in_stock !== undefined && item.in_stock !== null ? item.in_stock : item.amazon_in_stock,
         }))}
       />
       <Breadcrumbs items={[{ label: "Catalog" }]} />
