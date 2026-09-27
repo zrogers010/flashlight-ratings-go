@@ -58,7 +58,8 @@ type flashlightItem struct {
 	LEDModel           *string  `json:"led_model,omitempty"`
 	PriceUSD           *float64 `json:"price_usd,omitempty"`
 	PriceLastUpdatedAt *string  `json:"price_last_updated_at,omitempty"`
-	AmazonInStock      *bool    `json:"amazon_in_stock,omitempty"`
+	InStock            *bool    `json:"in_stock"`
+	AvailabilityStatus string   `json:"availability_status"`
 	OverallScore       *float64 `json:"overall_score,omitempty"`
 	TacticalScore      *float64 `json:"tactical_score,omitempty"`
 	EDCScore           *float64 `json:"edc_score,omitempty"`
@@ -169,37 +170,38 @@ type rankingsResponse struct {
 }
 
 type rankedResponse struct {
-	Rank       int     `json:"rank"`
-	Score      float64 `json:"score"`
-	Profile    string  `json:"profile"`
-	Flashlight struct {
-		ID               int64    `json:"id"`
-		Brand            string   `json:"brand"`
-		Name             string   `json:"name"`
-		Slug             string   `json:"slug"`
-		ImageURL         *string  `json:"image_url,omitempty"`
-		AmazonURL        *string  `json:"amazon_url,omitempty"`
-		MaxLumens        *int64   `json:"max_lumens,omitempty"`
-		BeamDistanceM    *int64   `json:"beam_distance_m,omitempty"`
-		WaterproofRating *string  `json:"waterproof_rating,omitempty"`
-		PriceUSD         *float64 `json:"price_usd,omitempty"`
-		AmazonInStock    *bool    `json:"amazon_in_stock,omitempty"`
-	} `json:"flashlight"`
-	AlternateInStock *alternateInStock `json:"alternate_in_stock,omitempty"`
+	RankPosition    int               `json:"rank_position"`
+	RankPositionRaw *int              `json:"rank_position_raw,omitempty"`
+	Score           float64           `json:"score"`
+	Profile         string            `json:"profile"`
+	Flashlight      flashlightRanking `json:"flashlight"`
+	InStockAlternate *inStockAlternate `json:"in_stock_alternate,omitempty"`
 }
 
-type alternateInStock struct {
-	ID            int64    `json:"id"`
-	Brand         string   `json:"brand"`
-	Name          string   `json:"name"`
-	Slug          string   `json:"slug"`
-	ImageURL      *string  `json:"image_url,omitempty"`
-	AmazonURL     *string  `json:"amazon_url,omitempty"`
-	Score         float64  `json:"score"`
-	Rank          int      `json:"rank"`
-	MaxLumens     *int64   `json:"max_lumens,omitempty"`
-	BeamDistanceM *int64   `json:"beam_distance_m,omitempty"`
-	PriceUSD      *float64 `json:"price_usd,omitempty"`
+type flashlightRanking struct {
+	ID                 int64    `json:"id"`
+	Brand              string   `json:"brand"`
+	Name               string   `json:"name"`
+	Slug               string   `json:"slug"`
+	ImageURL           *string  `json:"image_url,omitempty"`
+	AmazonURL          *string  `json:"amazon_url,omitempty"`
+	MaxLumens          *int64   `json:"max_lumens,omitempty"`
+	BeamDistanceM      *int64   `json:"beam_distance_m,omitempty"`
+	WaterproofRating   *string  `json:"waterproof_rating,omitempty"`
+	PriceUSD           *float64 `json:"price_usd,omitempty"`
+	InStock            *bool    `json:"in_stock"`
+	AvailabilityStatus string   `json:"availability_status"`
+}
+
+type inStockAlternate struct {
+	ID           int64    `json:"id"`
+	Slug         string   `json:"slug"`
+	Name         string   `json:"name"`
+	BrandName    string   `json:"brand_name"`
+	Score        *float64 `json:"score,omitempty"`
+	RankPosition *int     `json:"rank_position,omitempty"`
+	AffiliateURL *string  `json:"affiliate_url,omitempty"`
+	ImageURL     *string  `json:"image_url,omitempty"`
 }
 
 type finderResponse struct {

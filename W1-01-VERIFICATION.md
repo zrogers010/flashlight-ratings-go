@@ -1,79 +1,124 @@
 # W1-01: Availability-Aware Ranking Verification
 
+## API Contract (Locked for Frontend)
+
+### Per-Flashlight Fields
+
+All flashlight responses (rankings, lists, detail) include:
+
+- **`in_stock`**: `boolean | null`  
+  Raw value from latest `flashlight_price_snapshots.in_stock`. `null` when no price snapshot exists.
+
+- **`availability_status`**: `'in_stock' | 'out_of_stock' | 'unknown'`  
+  Derived enum:
+  - `in_stock`: `in_stock === true`
+  - `out_of_stock`: `in_stock === false`
+  - `unknown`: `in_stock === null`
+
+### Ranking-Specific Fields
+
+Ranking endpoints (`/rankings`) include additional fields:
+
+- **`rank_position`**: `number`  
+  Availability-aware rank using stable partition: (in-stock + unknown) before out-of-stock, then by score descending.
+
+- **`rank_position_raw`**: `number`  
+  Score-only rank (ignoring stock status). Shows what the rank would be without demotion.
+
+- **`in_stock_alternate`**: `object | null`  
+  Present when `availability_status === 'out_of_stock'`. Contains the highest-ranked in-stock product in the same use case.
+  
+  Structure:
+  ```typescript
+  {
+    id: number;
+    slug: string;
+    name: string;
+    brand_name: string;
+    score?: number;
+    rank_position?: number;
+    affiliate_url?: string;
+    image_url?: string;
+  }
+  ```
+
+### Meta Fields
+
+- **`total`** / **`flashlight_count`**: Real active flashlight count from DB (≥178), not hardcoded
+
 ## Changes Summary
 
 ### 1. Ranking Logic Update
 **File**: `internal/api/repository.go` - `rankings()` function
 
-**Change**: Modified SQL query to prioritize in-stock products in ranking order.
-
-**Sort Key** (new):
-```
+**Sort Key** (new - stable partition):
+```sql
 ORDER BY
-  COALESCE(lp.in_stock, FALSE) DESC,  -- In-stock products first
-  COALESCE(fs.score, 0) DESC,         -- Then by score (highest first)
-  f.id ASC                             -- Tie-breaker
+  CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,  -- OOS last; in-stock + unknown first
+  COALESCE(fs.score, 0) DESC,                           -- Then by score
+  f.id ASC                                               -- Tie-breaker
 ```
 
 **Behavior**:
-- All in-stock products appear before out-of-stock products
-- Within each group (in-stock vs OOS), products are sorted by score descending
-- Out-of-stock products are demoted but NOT removed from the catalog
-- Stock status is now included in the response: `amazon_in_stock` field
+- **In-stock + unknown** products rank before **out-of-stock** products
+- Within each group, products sorted by score descending
+- OOS products demoted but NOT removed from catalog
+- Both `rank_position` (availability-aware) and `rank_position_raw` (score-only) included
 
 ### 2. In-Stock Alternate Exposure
-**File**: `internal/api/server.go` - New `alternateInStock` type
-**File**: `internal/api/repository.go` - New `findInStockAlternate()` function
+**Files**: `internal/api/server.go`, `internal/api/repository.go`
 
-**Change**: When the #1 ranked product is out of stock, the API now includes an `alternate_in_stock` object with the highest-scoring in-stock product.
+**Change**: When a product is OOS, the API includes `in_stock_alternate` with the highest-ranked in-stock peer.
 
-**Response Structure**:
+**Response Example**:
 ```json
 {
-  "rank": 1,
+  "rank_position": 1,
+  "rank_position_raw": 1,
   "score": 92.5,
   "flashlight": {
     "id": 123,
     "brand": "Olight",
     "name": "Warrior X Pro",
-    "amazon_in_stock": false,
+    "in_stock": false,
+    "availability_status": "out_of_stock",
     ...
   },
-  "alternate_in_stock": {
+  "in_stock_alternate": {
     "id": 456,
-    "brand": "Streamlight",
+    "slug": "streamlight-protac-hl-x",
     "name": "ProTac HL-X",
+    "brand_name": "Streamlight",
     "score": 89.2,
-    "rank": 2,
+    "rank_position": 2,
     "image_url": "...",
-    "amazon_url": "...",
-    ...
+    "affiliate_url": "..."
   }
 }
 ```
 
 **Behavior**:
-- Only appears when rank #1 (on page 1) has `amazon_in_stock: false`
-- Contains the highest-scoring in-stock product from the same use case
-- Frontend can use this to badge/highlight the alternate as "Top In-Stock Pick"
+- Set for ANY product with `availability_status === 'out_of_stock'` (not just rank #1)
+- Contains highest-ranked in-stock product from same use case
+- Frontend can badge this as "Top In-Stock Pick"
 
 ### 3. General Listing Update
 **File**: `internal/api/repository.go` - `listFlashlights()` function
 
 **Change**: The `/flashlights` endpoint now also demotes OOS products in all sort modes.
 
-**Sort Key** (updated):
-```
+**Sort Key** (updated - stable partition):
+```sql
 ORDER BY
-  COALESCE(lp.in_stock, FALSE) DESC,  -- In-stock first
-  {user_sort_expr} {ASC|DESC},        -- Then user's chosen sort
-  f.id ASC                             -- Tie-breaker
+  CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,  -- OOS last; in-stock + unknown first
+  {user_sort_expr} {ASC|DESC},                          -- Then user's chosen sort
+  f.id ASC                                               -- Tie-breaker
 ```
 
 **Behavior**:
 - Works with all existing sort parameters: `sort_by=overall_score`, `sort_by=price`, `sort_by=max_lumens`, etc.
-- In-stock products always appear before OOS, regardless of the sort field
-- The user's chosen sort order is respected within each stock group
+- In-stock + unknown products appear before OOS, regardless of sort field
+- User's chosen sort order respected within each availability group
 
 ### 4. Catalog Count
 **Status**: ✅ Already accurate
@@ -101,33 +146,53 @@ Contains test stubs documenting expected behavior. Full integration tests requir
 
 #### 1. Verify OOS Demotion in Rankings
 ```bash
-curl 'http://localhost:8080/rankings?use_case=tactical&page=1&page_size=20' | jq '.items[] | {rank, brand, name, in_stock: .flashlight.amazon_in_stock, score}'
+curl 'http://localhost:8080/rankings?use_case=tactical&page=1&page_size=20' | jq '.items[] | {
+  rank_position,
+  rank_position_raw,
+  brand: .flashlight.brand,
+  name: .flashlight.name,
+  availability_status: .flashlight.availability_status,
+  score
+}'
 ```
 
 **Expected**:
-- All items with `in_stock: true` appear before `in_stock: false`
-- Within in-stock items: scores are descending
-- Within OOS items: scores are descending
-- Rank numbers are sequential: 1, 2, 3, ...
+- All items with `availability_status: "in_stock"` or `"unknown"` appear before `"out_of_stock"`
+- Within in-stock+unknown group: scores descending (`rank_position_raw` order)
+- Within OOS group: scores descending
+- `rank_position` is sequential: 1, 2, 3, ...
+- `rank_position_raw` shows score-only rank (may differ from `rank_position` for OOS items)
 
-#### 2. Verify Alternate Exposure When #1 is OOS
+#### 2. Verify Alternate Exposure for OOS Items
 ```bash
-curl 'http://localhost:8080/rankings?use_case=tactical&page=1&page_size=5' | jq '.items[0] | {rank, in_stock: .flashlight.amazon_in_stock, alternate_in_stock}'
+curl 'http://localhost:8080/rankings?use_case=tactical&page=1&page_size=10' | jq '.items[] | select(.flashlight.availability_status == "out_of_stock") | {
+  rank_position,
+  brand: .flashlight.brand,
+  name: .flashlight.name,
+  in_stock_alternate
+}'
 ```
 
 **Expected**:
-- If rank #1 has `in_stock: false`, response includes `alternate_in_stock` object
-- Alternate contains: `id`, `brand`, `name`, `slug`, `score`, `rank`, `image_url`, `amazon_url`, etc.
-- If rank #1 has `in_stock: true`, `alternate_in_stock` is `null` or absent
+- Any item with `availability_status: "out_of_stock"` has `in_stock_alternate` object
+- Alternate contains: `id`, `slug`, `name`, `brand_name`, `score`, `rank_position`, `affiliate_url`, `image_url`
+- Alternate's `rank_position` should be lower than or equal to the OOS item's `rank_position_raw`
 
 #### 3. Verify OOS Demotion in General Listing
 ```bash
-curl 'http://localhost:8080/flashlights?page=1&page_size=20&sort_by=overall_score&order=desc' | jq '.items[] | {id, brand, name, in_stock: .amazon_in_stock, score: .overall_score}'
+curl 'http://localhost:8080/flashlights?page=1&page_size=20&sort_by=overall_score&order=desc' | jq '.items[] | {
+  id,
+  brand,
+  name,
+  availability_status,
+  score: .overall_score
+}'
 ```
 
 **Expected**:
-- In-stock products appear first
-- User's sort order (e.g., by score) is respected within each stock group
+- Items with `availability_status: "in_stock"` or `"unknown"` appear first
+- Items with `availability_status: "out_of_stock"` appear last
+- User's sort order (overall_score DESC) respected within each availability group
 
 #### 4. Verify Catalog Count
 ```bash
@@ -185,18 +250,50 @@ LIMIT 10;
 **For W1-02 (Frontend Hero Badge)**:
 
 The API now exposes these fields for frontend use:
-- `flashlight.amazon_in_stock` (boolean) - Stock status of the product
-- `alternate_in_stock` (object, optional) - The top in-stock pick when #1 is OOS
+
+1. **Stock Status**:
+   - `in_stock`: `boolean | null` (raw DB value)
+   - `availability_status`: `'in_stock' | 'out_of_stock' | 'unknown'` (derived enum)
+
+2. **Ranking**:
+   - `rank_position`: availability-aware rank
+   - `rank_position_raw`: optional score-only rank (for comparison)
+
+3. **Alternate**:
+   - `in_stock_alternate`: object when item is OOS, containing top in-stock peer
 
 **Suggested Frontend Implementation**:
 ```tsx
-{ranking.flashlight.amazon_in_stock === false && ranking.alternate_in_stock && (
+{ranking.flashlight.availability_status === 'out_of_stock' && ranking.in_stock_alternate && (
   <div className="stock-alert">
-    <p>Current #1 is out of stock</p>
-    <div className="alternate-badge">
-      <span className="badge">Top In-Stock Pick</span>
-      <ProductCard {...ranking.alternate_in_stock} />
+    <div className="oos-notice">
+      <span className="badge badge-warning">Out of Stock</span>
+      {ranking.rank_position_raw && (
+        <span className="rank-note">
+          (Would be #{ranking.rank_position_raw} if available)
+        </span>
+      )}
     </div>
+    <div className="alternate-badge">
+      <span className="badge badge-success">Top In-Stock Pick</span>
+      <ProductCard
+        id={ranking.in_stock_alternate.id}
+        slug={ranking.in_stock_alternate.slug}
+        name={ranking.in_stock_alternate.name}
+        brand={ranking.in_stock_alternate.brand_name}
+        score={ranking.in_stock_alternate.score}
+        rank={ranking.in_stock_alternate.rank_position}
+        imageUrl={ranking.in_stock_alternate.image_url}
+        affiliateUrl={ranking.in_stock_alternate.affiliate_url}
+      />
+    </div>
+  </div>
+)}
+
+{ranking.flashlight.availability_status === 'unknown' && (
+  <div className="stock-notice">
+    <span className="badge badge-neutral">Availability Unknown</span>
+    <small>Check retailer for current stock</small>
   </div>
 )}
 ```
@@ -205,11 +302,13 @@ The API now exposes these fields for frontend use:
 
 1. **Stock Data Freshness**: Stock status is based on the most recent price snapshot in the database. If Amazon sync is delayed, stock status may be stale (typically refreshed within 5-7 days per the sync schedule).
 
-2. **Null Stock Handling**: Products without any price snapshots will have `amazon_in_stock: null` and are treated as OOS (demoted). This is conservative - better to show a potentially available product lower in the list than to promote an unknown-stock product.
+2. **Unknown Stock Handling**: Products without any price snapshots will have `in_stock: null` and `availability_status: "unknown"`. These are **NOT demoted** - they rank with in-stock products (stable partition groups in-stock + unknown together). This prevents demoting products that may actually be available but haven't been synced recently.
 
-3. **Alternate Calculation**: The alternate is only calculated for rank #1 on page 1. Other paginated results or lower-ranked OOS items do not get alternates (to avoid excessive DB queries).
+3. **Alternate Calculation**: The alternate is calculated for **any** OOS item in the response (not just rank #1). This allows Frontend to display alternates throughout paginated results. Alternates are only fetched when needed (item is OOS) to avoid excessive queries.
 
-4. **Use Case Scope**: The alternate is scoped to the same use case (e.g., tactical alternate for tactical #1). Cross-category alternates are not provided.
+4. **Use Case Scope**: The alternate is scoped to the same use case (e.g., tactical alternate for tactical rankings). Cross-category alternates are not provided.
+
+5. **Alternate Uniqueness**: Each OOS item gets its own alternate lookup, so multiple OOS items may share the same alternate (the top in-stock product) in their responses.
 
 ## Rollback Plan
 

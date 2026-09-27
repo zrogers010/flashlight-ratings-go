@@ -31,6 +31,16 @@ type flashlightFilters struct {
 	PageSize    int
 }
 
+func availabilityStatus(inStock sql.NullBool) string {
+	if !inStock.Valid {
+		return "unknown"
+	}
+	if inStock.Bool {
+		return "in_stock"
+	}
+	return "out_of_stock"
+}
+
 func (s *Server) listFlashlights(ctx context.Context, f flashlightFilters) ([]flashlightItem, int, error) {
 	where, args := buildFlashlightWhere(f)
 
@@ -145,7 +155,10 @@ LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
 LEFT JOIN battery_agg ba ON ba.flashlight_id = f.id
 LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
 %s
-ORDER BY COALESCE(lp.in_stock, FALSE) DESC, %s %s, f.id ASC
+ORDER BY 
+	CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
+	%s %s,
+	f.id ASC
 LIMIT %d OFFSET %d
 `, where, sortExpr, order, f.PageSize, offset)
 
@@ -213,7 +226,8 @@ LIMIT %d OFFSET %d
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
 		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
-		item.AmazonInStock = nullBool(amazonInStock)
+		item.InStock = nullBool(amazonInStock)
+		item.AvailabilityStatus = availabilityStatus(amazonInStock)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
 		item.EDCScore = nullFloat(edc)
@@ -564,7 +578,8 @@ WHERE f.id = $1
 	item.CCTMinK = nullInt(cctMinK)
 	item.CCTMaxK = nullInt(cctMaxK)
 	item.PriceUSD = nullFloat(price)
-	item.AmazonInStock = nullBool(amazonInStock)
+	item.InStock = nullBool(amazonInStock)
+	item.AvailabilityStatus = availabilityStatus(amazonInStock)
 	item.AmazonRatingCount = nullInt(amazonRatingCount)
 	item.AmazonAverageRating = nullFloat(amazonAvgRating)
 	item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
@@ -760,7 +775,8 @@ ORDER BY f.id ASC
 		item.SwitchType = nullString(switchType)
 		item.LEDModel = nullString(ledModel)
 		item.PriceUSD = nullFloat(price)
-		item.AmazonInStock = nullBool(amazonInStock)
+		item.InStock = nullBool(amazonInStock)
+		item.AvailabilityStatus = availabilityStatus(amazonInStock)
 		item.PriceLastUpdatedAt = nullTimeString(priceUpdatedAt)
 		item.OverallScore = nullFloat(overall)
 		item.TacticalScore = nullFloat(tactical)
@@ -800,54 +816,78 @@ latest_price AS (
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
+),
+ranked_data AS (
+	SELECT
+		f.id,
+		b.name AS brand_name,
+		f.name,
+		f.slug,
+		COALESCE(fs.score, 0) AS score,
+		sp.slug AS profile_slug,
+		lp.in_stock,
+		lp.price,
+		s.max_lumens,
+		s.beam_distance_m,
+		s.waterproof_rating,
+		lm.url AS image_url,
+		la.affiliate_url,
+		ROW_NUMBER() OVER (
+			ORDER BY
+				CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
+				COALESCE(fs.score, 0) DESC,
+				f.id ASC
+		) AS rank_position,
+		ROW_NUMBER() OVER (
+			ORDER BY
+				COALESCE(fs.score, 0) DESC,
+				f.id ASC
+		) AS rank_position_raw
+	FROM flashlights f
+	JOIN brands b ON b.id = f.brand_id
+	LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
+	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
+	JOIN selected_profile sp ON TRUE
+	LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
+		AND fs.profile_id = sp.id
+		AND fs.run_id = (SELECT id FROM latest_run)
+	LEFT JOIN LATERAL (
+		SELECT m.url
+		FROM flashlight_media m
+		WHERE m.flashlight_id = f.id
+		  AND m.media_type = 'image'
+		ORDER BY m.sort_order ASC, m.id ASC
+		LIMIT 1
+	) lm ON TRUE
+	LEFT JOIN LATERAL (
+		SELECT al.affiliate_url
+		FROM affiliate_links al
+		WHERE al.flashlight_id = f.id
+		  AND al.provider = 'amazon'
+		  AND al.region_code = 'US'
+		  AND al.is_active = TRUE
+		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
+		LIMIT 1
+	) la ON TRUE
+	WHERE f.is_active = TRUE
 )
 SELECT
-	ROW_NUMBER() OVER (
-		ORDER BY
-			COALESCE(lp.in_stock, FALSE) DESC,
-			COALESCE(fs.score, 0) DESC,
-			f.id ASC
-	) AS rank_position,
-	COALESCE(fs.score, 0) AS score,
-	sp.slug,
-	f.id,
-	b.name,
-	f.name,
-	f.slug,
-	lm.url,
-	la.affiliate_url,
-	s.max_lumens,
-	s.beam_distance_m,
-	s.waterproof_rating,
-	lp.price,
-	lp.in_stock
-FROM flashlights f
-JOIN brands b ON b.id = f.brand_id
-LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
-LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
-JOIN selected_profile sp ON TRUE
-LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
-	AND fs.profile_id = sp.id
-	AND fs.run_id = (SELECT id FROM latest_run)
-LEFT JOIN LATERAL (
-	SELECT m.url
-	FROM flashlight_media m
-	WHERE m.flashlight_id = f.id
-	  AND m.media_type = 'image'
-	ORDER BY m.sort_order ASC, m.id ASC
-	LIMIT 1
-) lm ON TRUE
-LEFT JOIN LATERAL (
-	SELECT al.affiliate_url
-	FROM affiliate_links al
-	WHERE al.flashlight_id = f.id
-	  AND al.provider = 'amazon'
-	  AND al.region_code = 'US'
-	  AND al.is_active = TRUE
-	ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
-	LIMIT 1
-) la ON TRUE
-WHERE f.is_active = TRUE
+	rank_position,
+	rank_position_raw,
+	score,
+	profile_slug,
+	id,
+	brand_name,
+	name,
+	slug,
+	image_url,
+	affiliate_url,
+	max_lumens,
+	beam_distance_m,
+	waterproof_rating,
+	price,
+	in_stock
+FROM ranked_data
 ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
 `
@@ -868,7 +908,8 @@ LIMIT $2 OFFSET $3
 			inStock                         sql.NullBool
 		)
 		if err := rows.Scan(
-			&item.Rank,
+			&item.RankPosition,
+			&item.RankPositionRaw,
 			&item.Score,
 			&item.Profile,
 			&item.Flashlight.ID,
@@ -891,7 +932,8 @@ LIMIT $2 OFFSET $3
 		item.Flashlight.MaxLumens = nullInt(maxLumens)
 		item.Flashlight.BeamDistanceM = nullInt(beamDist)
 		item.Flashlight.WaterproofRating = nullString(waterproof)
-		item.Flashlight.AmazonInStock = nullBool(inStock)
+		item.Flashlight.InStock = nullBool(inStock)
+		item.Flashlight.AvailabilityStatus = availabilityStatus(inStock)
 		if price.Valid {
 			item.Flashlight.PriceUSD = &price.Float64
 		}
@@ -907,13 +949,12 @@ LIMIT $2 OFFSET $3
 		return nil, 0, err
 	}
 
-	// If the top-ranked item (rank 1 on page 1) is OOS, find the first in-stock alternate
-	if page == 1 && len(out) > 0 && out[0].Rank == 1 {
-		topInStock := out[0].Flashlight.AmazonInStock
-		if topInStock != nil && !*topInStock {
-			alternate, err := s.findInStockAlternate(ctx, useCase, out[0].Flashlight.ID)
+	// Find in-stock alternates for OOS items
+	for i := range out {
+		if out[i].Flashlight.AvailabilityStatus == "out_of_stock" {
+			alternate, err := s.findInStockAlternate(ctx, useCase, out[i].Flashlight.ID)
 			if err == nil && alternate != nil {
-				out[0].AlternateInStock = alternate
+				out[i].InStockAlternate = alternate
 			}
 		}
 	}
@@ -921,7 +962,7 @@ LIMIT $2 OFFSET $3
 	return out, total, nil
 }
 
-func (s *Server) findInStockAlternate(ctx context.Context, useCase string, excludeID int64) (*alternateInStock, error) {
+func (s *Server) findInStockAlternate(ctx context.Context, useCase string, excludeID int64) (*inStockAlternate, error) {
 	query := `
 WITH latest_run AS (
 	SELECT id
@@ -944,76 +985,82 @@ latest_price AS (
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
+),
+ranked_data AS (
+	SELECT
+		f.id,
+		b.name AS brand_name,
+		f.name,
+		f.slug,
+		COALESCE(fs.score, 0) AS score,
+		lm.url AS image_url,
+		la.affiliate_url,
+		ROW_NUMBER() OVER (
+			ORDER BY
+				CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
+				COALESCE(fs.score, 0) DESC,
+				f.id ASC
+		) AS rank_position
+	FROM flashlights f
+	JOIN brands b ON b.id = f.brand_id
+	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
+	JOIN selected_profile sp ON TRUE
+	LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
+		AND fs.profile_id = sp.id
+		AND fs.run_id = (SELECT id FROM latest_run)
+	LEFT JOIN LATERAL (
+		SELECT m.url
+		FROM flashlight_media m
+		WHERE m.flashlight_id = f.id
+		  AND m.media_type = 'image'
+		ORDER BY m.sort_order ASC, m.id ASC
+		LIMIT 1
+	) lm ON TRUE
+	LEFT JOIN LATERAL (
+		SELECT al.affiliate_url
+		FROM affiliate_links al
+		WHERE al.flashlight_id = f.id
+		  AND al.provider = 'amazon'
+		  AND al.region_code = 'US'
+		  AND al.is_active = TRUE
+		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
+		LIMIT 1
+	) la ON TRUE
+	WHERE f.is_active = TRUE
+	  AND f.id != $2
+	  AND lp.in_stock = TRUE
 )
 SELECT
-	ROW_NUMBER() OVER (
-		ORDER BY
-			COALESCE(lp.in_stock, FALSE) DESC,
-			COALESCE(fs.score, 0) DESC,
-			f.id ASC
-	) AS rank_position,
-	COALESCE(fs.score, 0) AS score,
-	f.id,
-	b.name,
-	f.name,
-	f.slug,
-	lm.url,
-	la.affiliate_url,
-	s.max_lumens,
-	s.beam_distance_m,
-	lp.price
-FROM flashlights f
-JOIN brands b ON b.id = f.brand_id
-LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
-LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
-JOIN selected_profile sp ON TRUE
-LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
-	AND fs.profile_id = sp.id
-	AND fs.run_id = (SELECT id FROM latest_run)
-LEFT JOIN LATERAL (
-	SELECT m.url
-	FROM flashlight_media m
-	WHERE m.flashlight_id = f.id
-	  AND m.media_type = 'image'
-	ORDER BY m.sort_order ASC, m.id ASC
-	LIMIT 1
-) lm ON TRUE
-LEFT JOIN LATERAL (
-	SELECT al.affiliate_url
-	FROM affiliate_links al
-	WHERE al.flashlight_id = f.id
-	  AND al.provider = 'amazon'
-	  AND al.region_code = 'US'
-	  AND al.is_active = TRUE
-	ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
-	LIMIT 1
-) la ON TRUE
-WHERE f.is_active = TRUE
-  AND f.id != $2
-  AND COALESCE(lp.in_stock, FALSE) = TRUE
+	id,
+	slug,
+	name,
+	brand_name,
+	score,
+	rank_position,
+	affiliate_url,
+	image_url
+FROM ranked_data
 ORDER BY rank_position ASC
 LIMIT 1
 `
 
 	var (
-		alternate                       alternateInStock
-		imageURL, amazonURL             sql.NullString
-		maxLumens, beamDist             sql.NullInt64
-		price                           sql.NullFloat64
+		alternate           inStockAlternate
+		imageURL            sql.NullString
+		affiliateURL        sql.NullString
+		score               float64
+		rankPosition        int
 	)
 
 	err := s.db.QueryRowContext(ctx, query, useCase, excludeID).Scan(
-		&alternate.Rank,
-		&alternate.Score,
 		&alternate.ID,
-		&alternate.Brand,
-		&alternate.Name,
 		&alternate.Slug,
+		&alternate.Name,
+		&alternate.BrandName,
+		&score,
+		&rankPosition,
+		&affiliateURL,
 		&imageURL,
-		&amazonURL,
-		&maxLumens,
-		&beamDist,
-		&price,
 	)
 
 	if err != nil {
@@ -1023,14 +1070,11 @@ LIMIT 1
 		return nil, err
 	}
 
-	alternate.Score = math.Round(alternate.Score*10) / 10
+	score = math.Round(score*10) / 10
+	alternate.Score = &score
+	alternate.RankPosition = &rankPosition
+	alternate.AffiliateURL = nullString(affiliateURL)
 	alternate.ImageURL = nullString(imageURL)
-	alternate.AmazonURL = nullString(amazonURL)
-	alternate.MaxLumens = nullInt(maxLumens)
-	alternate.BeamDistanceM = nullInt(beamDist)
-	if price.Valid {
-		alternate.PriceUSD = &price.Float64
-	}
 
 	return &alternate, nil
 }
