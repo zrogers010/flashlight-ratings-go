@@ -36,29 +36,22 @@ async function resolveOne(handle: string): Promise<FlashlightDetail> {
   return fetchFlashlightBySlug(handle);
 }
 
-// Same param-extraction shape as the page, kept duplicated rather than
-// shared because Next 14's image route handler runs in a separate module
-// graph; pulling the helper would force an extra import boundary for ~6
-// lines of code.
-function extractHalves(params: Record<string, string>): { a: string; b: string } | null {
-  if (params["a"] && params["b"]) return { a: params["a"], b: params["b"] };
-  for (const value of Object.values(params)) {
-    if (typeof value === "string" && value.includes("-vs-")) {
-      const idx = value.indexOf("-vs-");
-      const a = value.slice(0, idx);
-      const b = value.slice(idx + "-vs-".length);
-      if (a && b) return { a, b };
-    }
-  }
+function parseSlug(slug: string): { a: string; b: string } | null {
+  if (!slug.includes("-vs-")) return null;
+  const idx = slug.indexOf("-vs-");
+  const a = slug.slice(0, idx);
+  const b = slug.slice(idx + "-vs-".length);
+  if (a && b) return { a, b };
   return null;
 }
 
 export default async function OpengraphImage({
   params,
 }: {
-  params: Promise<Record<string, string>>;
+  params: Promise<{ slug: string }>;
 }) {
-  const halves = extractHalves(await params);
+  const { slug } = await params;
+  const halves = parseSlug(slug);
   if (!halves) return fallback();
 
   let a: FlashlightDetail;

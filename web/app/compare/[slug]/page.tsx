@@ -16,21 +16,15 @@ import { compareUrl } from "@/lib/compare-url";
 
 export const revalidate = 3600;
 
-// Pre-render the top 30 x 30 = 435 vs-pages at build time using slug URLs.
-// Matches the sitemap so Google can crawl them straight from a static cache.
-// Pairs beyond the top-30 still resolve on demand via ISR.
 export async function generateStaticParams() {
   try {
     const slugs = await fetchAllSlugs();
     const top = slugs.filter((s) => s.slug).slice(0, 30);
-    const params: Record<string, string>[] = [];
+    const params: { slug: string }[] = [];
     for (let i = 0; i < top.length; i++) {
       for (let j = i + 1; j < top.length; j++) {
         const [a, b] = [top[i].slug, top[j].slug].sort();
-        // Folder is `[a]-vs-[b]` which Next 14 collapses into a single
-        // segment captured under whichever key matches first. We provide
-        // both a/b and the collapsed shape so Next can pick the right one.
-        params.push({ a, b });
+        params.push({ slug: `${a}-vs-${b}` });
       }
     }
     return params;
@@ -60,34 +54,15 @@ function bestFor(d: FlashlightDetail) {
   return picks[0]?.label || "General Use";
 }
 
-// Next.js 14 collapses the folder name `[a]-vs-[b]` into a single dynamic
-// segment (key like `a]-vs-[b`) instead of two captures. We extract the
-// halves from whichever shape we get to stay compatible.
-type Params = Record<string, string>;
-
-function extractHalves(params: Params): { a: string; b: string } | null {
-  if (params["a"] && params["b"]) {
-    return { a: params["a"], b: params["b"] };
-  }
-  for (const value of Object.values(params)) {
-    if (typeof value === "string" && value.includes("-vs-")) {
-      // Slugs themselves can contain hyphens (e.g. "fenix-pd36r"). The split
-      // separator is the literal "-vs-". Use the FIRST occurrence so a slug
-      // like "fenix-vs-something-vs-other" picks "fenix" / "something-vs-other"
-      // — but in practice no real slug contains "-vs-" so this is safe.
-      const idx = value.indexOf("-vs-");
-      const a = value.slice(0, idx);
-      const b = value.slice(idx + "-vs-".length);
-      if (a && b) return { a, b };
-    }
-  }
+function parseSlug(slug: string): { a: string; b: string } | null {
+  if (!slug.includes("-vs-")) return null;
+  const idx = slug.indexOf("-vs-");
+  const a = slug.slice(0, idx);
+  const b = slug.slice(idx + "-vs-".length);
+  if (a && b) return { a, b };
   return null;
 }
 
-// resolveOne accepts either a numeric ID ("24") or a slug ("acebeam-e75")
-// and returns the FlashlightDetail. Numeric strings hit the by-ID endpoint
-// for back-compat with old /compare/24-vs-37 URLs; slug strings hit the
-// by-slug helper, which is the canonical form going forward.
 function isNumericID(s: string): boolean {
   return /^\d+$/.test(s);
 }
@@ -99,8 +74,8 @@ async function resolveOne(handle: string): Promise<FlashlightDetail> {
   return fetchFlashlightBySlug(handle);
 }
 
-async function loadPair(params: Params) {
-  const halves = extractHalves(params);
+async function loadPair(slug: string) {
+  const halves = parseSlug(slug);
   if (!halves) return null;
 
   try {
@@ -114,8 +89,9 @@ async function loadPair(params: Params) {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const pair = await loadPair(await params);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const pair = await loadPair(slug);
   if (!pair) return { title: "Comparison Not Found" };
   const { a, b } = pair;
   const nameA = `${a.brand} ${a.name}`;
@@ -148,8 +124,9 @@ function verdictText(a: FlashlightDetail, b: FlashlightDetail): string {
   return `These two are closely matched. The ${nameA} scores ${fmt(scoreA, 1)} (best for ${bestA.toLowerCase()}) while the ${nameB} scores ${fmt(scoreB, 1)} (best for ${bestB.toLowerCase()}). Your decision should come down to which use case matters more to you.`;
 }
 
-export default async function VsPage({ params }: { params: Promise<Params> }) {
-  const pair = await loadPair(await params);
+export default async function VsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const pair = await loadPair(slug);
   if (!pair) notFound();
   const { a, b } = pair;
 
