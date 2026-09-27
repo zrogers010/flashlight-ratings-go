@@ -9,7 +9,7 @@
 
 | Concern | Implemented? | Where |
 |---|---|---|
-| Periodic price/rating refresh | ✅ Full catalog 3×/day (default) | `scripts/deploy.sh install-cron`, `internal/rainforest/sync.go` |
+| Periodic price/rating refresh | ✅ Full catalog 2×/day (default) | `scripts/deploy.sh install-cron`, `internal/rainforest/sync.go` |
 | Official-API price data (Creators API primary) | ✅ With Rainforest failover | `internal/amazon/creators_client.go`, `internal/amazon/catalog_source.go` |
 | New ASIN discovery | ✅ Quality-gated, per brand x category | `internal/discovery/`, `-mode=discover` (legacy: `internal/rainforest/discover.go`) |
 | Recoverable unavailable listings | ✅ Soft-disable after N misses; auto-re-enable | `internal/rainforest/sync.go` |
@@ -26,10 +26,10 @@
    Postgres is reloaded from the CSV after every sync via
    `scripts/import-manual-catalog.sh`.
 
-2. **Cadence (default after larger Rainforest plan):** full-catalog sync
-   **3× per day** via `bash scripts/deploy.sh install-cron`
-   (`CRON_SCHEDULE=0 6,14,22 * * *`, `SYNC_ROTATE_DAYS=0`).
-   - Every run refreshes **all** ASINs — average age ~4 hours, worst case ~8h.
+2. **Cadence (default for 10k credits/month plan):** full-catalog sync
+   **2× per day** via `bash scripts/deploy.sh install-cron`
+   (`CRON_SCHEDULE=0 6,18 * * *`, `SYNC_ROTATE_DAYS=0`).
+   - Every run refreshes **all** ASINs — average age ~6 hours, worst case ~12h.
    - For very large catalogs, fall back to rotation with
      `bash scripts/deploy.sh install-cron-rotated` and `ROTATE_DAYS=N`
      (shard = `(UTC day-of-year - 1) mod N`, each ASIN once per N days).
@@ -60,8 +60,8 @@
    The database import deactivates its affiliate link and the UI replaces the
    CTA with “Currently unavailable.” The catalog row remains, so later syncs
    keep checking it and automatically restore the CTA after a purchasable
-   response. With 3×/day full sync and `PRUNE_THRESHOLD=2`, a bad offer is
-   hidden within ~16 hours.
+   response. With 2×/day full sync and `PRUNE_THRESHOLD=2`, a bad offer is
+   hidden within ~24 hours.
 
 6. **Persistence across deploys.** `scripts/deploy.sh` does
    `git reset --hard origin/main`, which would normally wipe the cron's
@@ -77,7 +77,8 @@ For a catalog of ~110 ASINs (1 Rainforest credit ≈ 1 product call):
 
 | Setup | Credits/day | Credits/month | Avg price age | Bad-offer disable |
 |---|---|---|---|---|
-| **`install-cron` 3×/day full (recommended)** | **~330** | **~10k** | **~4h** | **~16h** |
+| **`install-cron` 2×/day full (recommended for 10k plan)** | **~220** | **~6.6k** | **~6h** | **~24h** |
+| `install-cron` 3×/day (`0 6,14,22 * * *`) | ~330 | ~10k | ~4h | ~16h |
 | `install-cron` every 6h (`0 */6 * * *`) | ~440 | ~13k | ~3h | ~12h |
 | Daily full (`0 9 * * *`, rotate=0) | ~110 | ~3.3k | ~12h | ~2 days |
 | Rotated `ROTATE_DAYS=3` once/day | ~37 | ~1.1k | ~36h | ~6 days |
@@ -88,7 +89,10 @@ Install / reinstall the recommended schedule on the server:
 # After deploy — replaces older weekly / rotated entries
 bash scripts/deploy.sh install-cron
 
-# More aggressive (every 6 hours)
+# More aggressive (3×/day for larger plans)
+CRON_SCHEDULE="0 6,14,22 * * *" bash scripts/deploy.sh install-cron
+
+# Even more aggressive (every 6 hours)
 CRON_SCHEDULE="0 */6 * * *" bash scripts/deploy.sh install-cron
 
 # Large catalog: spread credits with rotation instead
@@ -108,7 +112,7 @@ last refreshed that ASIN), not “verified.” CTA remains **Check Price on Amaz
   - `As an Amazon Associate we earn from qualifying purchases.`
 - Do not store or serve stale prices past allowed PA-API policy windows.
   The standard read of the policy is **24 hours**. With the recommended
-  3×/day full sync, average age is ~4h and worst case ~8h — well inside
+  2×/day full sync, average age is ~6h and worst case ~12h — well inside
   that window. If you fall back to multi-day rotation, keep CTA copy as
   “Check Price on Amazon” and show honest “Last checked …” labels.
 - CTA copy must be:
