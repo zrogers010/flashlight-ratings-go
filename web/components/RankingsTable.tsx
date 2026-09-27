@@ -155,6 +155,8 @@ export function RankingsTable({
           {sorted.map((item) => {
             const isChecked = mounted && compareItems.some((c) => c.id === item.flashlight.id);
             const disabled = isFull && !isChecked;
+            const isOutOfStock = item.flashlight.availability_status === 'out_of_stock';
+            const hasAlternate = item.flashlight.in_stock_alternate != null;
 
             return (
               <tr
@@ -227,10 +229,26 @@ export function RankingsTable({
                     >
                       {item.flashlight.name}
                     </Link>
+                    {isOutOfStock && (
+                      <span className="badge badge-orange" style={{ marginLeft: 6, fontSize: "0.7rem", fontWeight: 500 }}>
+                        Out of stock
+                      </span>
+                    )}
                   </div>
                   <span className="show-mobile-inline" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
                     {item.flashlight.brand}
                   </span>
+                  {isOutOfStock && hasAlternate && item.flashlight.in_stock_alternate && (
+                    <div style={{ marginTop: 4 }}>
+                      <Link
+                        href={`/reviews/${item.flashlight.in_stock_alternate.slug}`}
+                        className="chip chip-alt"
+                        style={{ fontSize: "0.75rem", display: "inline-block" }}
+                      >
+                        Alt: {item.flashlight.in_stock_alternate.brand_name} {item.flashlight.in_stock_alternate.name}
+                      </Link>
+                    </div>
+                  )}
                 </td>
                 <td className="hide-mobile" style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
                   {item.flashlight.max_lumens ? item.flashlight.max_lumens.toLocaleString() : "—"}

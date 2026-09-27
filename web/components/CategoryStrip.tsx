@@ -62,6 +62,11 @@ export function CategoryStrip({
   // Infer profile from the first item (all items in a strip share a profile).
   const profile = items[0].profile;
 
+  // For hero/top-pick surfaces: if #1 is OOS and has an alternate, add a notice
+  const firstItem = items[0];
+  const isFirstOOS = firstItem.flashlight.availability_status === 'out_of_stock';
+  const hasAlternate = firstItem.flashlight.in_stock_alternate != null;
+
   return (
     <div className="panel panel-tight category-strip-panel">
       <div className="section-header dashboard-section-head">
@@ -76,6 +81,17 @@ export function CategoryStrip({
       {description ? (
         <p className="muted dashboard-section-lead">{description}</p>
       ) : null}
+      {isFirstOOS && hasAlternate && firstItem.flashlight.in_stock_alternate && (
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 6, fontSize: "0.88rem" }}>
+          <strong>Top pick currently out of stock.</strong> In-stock alternative:{" "}
+          <Link
+            href={`/reviews/${firstItem.flashlight.in_stock_alternate.slug}`}
+            style={{ fontWeight: 600 }}
+          >
+            {firstItem.flashlight.in_stock_alternate.brand_name} {firstItem.flashlight.in_stock_alternate.name}
+          </Link>
+        </div>
+      )}
       <div className="category-strip">
         {items.map((item) => (
           <div key={item.flashlight.id} className="category-strip-item">
