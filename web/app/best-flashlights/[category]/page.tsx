@@ -152,6 +152,20 @@ const categoryMap: Record<string, CategoryConfig> = {
       content:
         "Flood refers to wide, even light distribution — ideal for lighting up rooms, campsites, or work areas. High-lumen flashlights with wide beam angles or TIR optics designed for flood produce the most usable light at close to medium range. Multi-emitter designs often excel here. Our flood score weights lumens (50%), runtime (25%), price (15%), and durability (10%)."
     }
+  },
+  "weapon-mount": {
+    label: "Weapon Mount",
+    rankingKey: "tactical",
+    useCaseFilter: "weapon-mount",
+    sortField: "tactical_score",
+    h1: "Best Weapon-Mounted Flashlights",
+    description:
+      "Top weapon-mounted flashlights for pistols, rifles, and shotguns. Rated for recoil resistance, activation, and tactical illumination.",
+    guide: {
+      title: "Choosing a Weapon Light",
+      content:
+        "Weapon-mounted lights must withstand repeated recoil impulse and provide instant activation under stress. For pistols, look for compact rail-mount models with ambidextrous switches and 300-1000 lumens. For long guns, prioritize remote pressure switches, durable housings rated for rifle recoil, and 1000+ lumens with good throw. Leading brands include Streamlight (TLR series), SureFire (X-series pistol, M-series rifle), and Olight. Our weapon-mount ranking uses tactical score, emphasizing durability, candela, and activation ergonomics."
+    }
   }
 };
 
