@@ -1,3 +1,7 @@
+www.{$DOMAIN:flashlightratings.com} {
+	redir https://{$DOMAIN:flashlightratings.com}{uri} permanent
+}
+
 {$DOMAIN:flashlightratings.com} {
 	encode gzip zstd
 
