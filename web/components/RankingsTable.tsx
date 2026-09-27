@@ -47,7 +47,7 @@ export function RankingsTable({
   const seedSignature = useMemo(() => {
     if (preselectTopN <= 0) return "";
     return [...items]
-      .sort((a, b) => a.rank - b.rank)
+      .sort((a, b) => a.rank_position - b.rank_position)
       .slice(0, preselectTopN)
       .map((i) => i.flashlight.id)
       .join(",");
@@ -57,7 +57,7 @@ export function RankingsTable({
     if (!mounted || !seedSignature) return;
 
     const seed = [...items]
-      .sort((a, b) => a.rank - b.rank)
+      .sort((a, b) => a.rank_position - b.rank_position)
       .slice(0, preselectTopN)
       .map((i) => ({
         id: i.flashlight.id,
@@ -88,7 +88,7 @@ export function RankingsTable({
       let cmp = 0;
       switch (sortKey) {
         case "rank":
-          cmp = a.rank - b.rank;
+          cmp = a.rank_position - b.rank_position;
           break;
         case "score":
           cmp = a.score - b.score;
@@ -156,7 +156,7 @@ export function RankingsTable({
             const isChecked = mounted && compareItems.some((c) => c.id === item.flashlight.id);
             const disabled = isFull && !isChecked;
             const isOutOfStock = item.flashlight.availability_status === 'out_of_stock';
-            const hasAlternate = item.flashlight.in_stock_alternate != null;
+            const hasAlternate = item.in_stock_alternate != null;
 
             return (
               <tr
@@ -206,7 +206,7 @@ export function RankingsTable({
                     fontWeight: 700,
                     color: "var(--text-secondary)",
                   }}>
-                    #{item.rank}
+                    #{item.rank_position}
                   </span>
                 </td>
                 <td>
@@ -238,14 +238,14 @@ export function RankingsTable({
                   <span className="show-mobile-inline" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
                     {item.flashlight.brand}
                   </span>
-                  {isOutOfStock && hasAlternate && item.flashlight.in_stock_alternate && (
+                  {isOutOfStock && hasAlternate && item.in_stock_alternate && (
                     <div style={{ marginTop: 4 }}>
                       <Link
-                        href={`/reviews/${item.flashlight.in_stock_alternate.slug}`}
+                        href={`/reviews/${item.in_stock_alternate.slug}`}
                         className="chip chip-alt"
                         style={{ fontSize: "0.75rem", display: "inline-block" }}
                       >
-                        Alt: {item.flashlight.in_stock_alternate.brand_name} {item.flashlight.in_stock_alternate.name}
+                        Alt: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
                       </Link>
                     </div>
                   )}

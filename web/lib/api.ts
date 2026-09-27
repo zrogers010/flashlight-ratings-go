@@ -10,7 +10,8 @@ export type InStockAlternate = {
 };
 
 export type RankingItem = {
-  rank: number;
+  rank_position: number;
+  rank_position_raw?: number;
   score: number;
   profile: string;
   flashlight: {
@@ -24,12 +25,10 @@ export type RankingItem = {
     beam_distance_m?: number;
     waterproof_rating?: string;
     price_usd?: number;
-    rank_position?: number;
-    rank_position_raw?: number;
     in_stock?: boolean | null;
     availability_status?: 'in_stock' | 'out_of_stock' | 'unknown';
-    in_stock_alternate?: InStockAlternate | null;
   };
+  in_stock_alternate?: InStockAlternate | null;
 };
 
 export type MetricBreakdown = {
