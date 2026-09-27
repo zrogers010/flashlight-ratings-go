@@ -1,3 +1,14 @@
+export type InStockAlternate = {
+  id: number;
+  slug: string;
+  name: string;
+  brand_name: string;
+  score?: number;
+  rank_position?: number;
+  affiliate_url?: string;
+  image_url?: string | null;
+};
+
 export type RankingItem = {
   rank: number;
   score: number;
@@ -13,6 +24,11 @@ export type RankingItem = {
     beam_distance_m?: number;
     waterproof_rating?: string;
     price_usd?: number;
+    rank_position?: number;
+    rank_position_raw?: number;
+    in_stock?: boolean | null;
+    availability_status?: 'in_stock' | 'out_of_stock' | 'unknown';
+    in_stock_alternate?: InStockAlternate | null;
   };
 };
 
@@ -51,6 +67,11 @@ export type FlashlightItem = {
   flood_score?: number;
   battery_types?: string[];
   use_case_tags?: string[];
+  rank_position?: number;
+  rank_position_raw?: number;
+  in_stock?: boolean | null;
+  availability_status?: 'in_stock' | 'out_of_stock' | 'unknown';
+  in_stock_alternate?: InStockAlternate | null;
 };
 
 export type FlashlightDetail = FlashlightItem & {

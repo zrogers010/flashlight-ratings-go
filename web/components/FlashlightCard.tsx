@@ -57,6 +57,8 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
   const primaryBattery = item.battery_types?.[0];
   const tags = (item.use_case_tags || []).slice(0, 2);
   const priceFresh = getPriceFreshness(item.price_last_updated_at);
+  const isOutOfStock = item.availability_status === 'out_of_stock';
+  const hasAlternate = item.in_stock_alternate != null;
 
   return (
     <article
@@ -68,7 +70,10 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
 
       <div className="image-card">
         <ImageWithFallback src={item.image_url} alt={`${item.brand} ${item.name}`} />
-        {priceFresh?.showCardBadge && (
+        {isOutOfStock && (
+          <span className="oos-badge">Out of stock</span>
+        )}
+        {!isOutOfStock && priceFresh?.showCardBadge && (
           <span className="price-fresh-badge">Checked today</span>
         )}
       </div>
@@ -120,6 +125,18 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
           />
         </div>
       </div>
+
+      {isOutOfStock && hasAlternate && item.in_stock_alternate && (
+        <div style={{ marginTop: 8 }}>
+          <Link
+            href={`/reviews/${item.in_stock_alternate.slug}`}
+            className="chip chip-alt"
+            style={{ fontSize: "0.8rem", display: "inline-block" }}
+          >
+            In stock alternative: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
+          </Link>
+        </div>
+      )}
 
       <QuickSpecTooltip item={item} />
     </article>
