@@ -65,7 +65,7 @@ export function CategoryStrip({
   // For hero/top-pick surfaces: if #1 is OOS and has an alternate, add a notice
   const firstItem = items[0];
   const isFirstOOS = firstItem.flashlight.availability_status === 'out_of_stock';
-  const hasAlternate = firstItem.flashlight.in_stock_alternate != null;
+  const hasAlternate = firstItem.in_stock_alternate != null;
 
   return (
     <div className="panel panel-tight category-strip-panel">
@@ -81,14 +81,14 @@ export function CategoryStrip({
       {description ? (
         <p className="muted dashboard-section-lead">{description}</p>
       ) : null}
-      {isFirstOOS && hasAlternate && firstItem.flashlight.in_stock_alternate && (
+      {isFirstOOS && hasAlternate && firstItem.in_stock_alternate && (
         <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 6, fontSize: "0.88rem" }}>
           <strong>Top pick currently out of stock.</strong> In-stock alternative:{" "}
           <Link
-            href={`/reviews/${firstItem.flashlight.in_stock_alternate.slug}`}
+            href={`/reviews/${firstItem.in_stock_alternate.slug}`}
             style={{ fontWeight: 600 }}
           >
-            {firstItem.flashlight.in_stock_alternate.brand_name} {firstItem.flashlight.in_stock_alternate.name}
+            {firstItem.in_stock_alternate.brand_name} {firstItem.in_stock_alternate.name}
           </Link>
         </div>
       )}
@@ -97,7 +97,7 @@ export function CategoryStrip({
           <div key={item.flashlight.id} className="category-strip-item">
             <FlashlightCard
               item={rankingItemToFlashlightItem(item, profile)}
-              rank={item.rank}
+              rank={item.rank_position}
             />
           </div>
         ))}

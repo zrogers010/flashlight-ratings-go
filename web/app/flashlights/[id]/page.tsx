@@ -148,7 +148,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
   ];
   for (const cat of allRanks) {
     const match = cat.items.find((r) => r.flashlight.id === data.id);
-    if (match) rankBadges.push({ label: cat.label, rank: match.rank });
+    if (match) rankBadges.push({ label: cat.label, rank: match.rank_position });
   }
 
   const rawImages = data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : [];
