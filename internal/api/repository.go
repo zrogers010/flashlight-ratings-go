@@ -246,6 +246,21 @@ LIMIT %d OFFSET %d
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// Attach in-stock alternates for out-of-stock items
+	useCase := f.UseCase
+	if useCase == "" {
+		useCase = "overall"
+	}
+	for i := range items {
+		if items[i].AvailabilityStatus == "out_of_stock" {
+			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID)
+			if err == nil && alternate != nil {
+				items[i].InStockAlternate = alternate
+			}
+		}
+	}
+
 	return items, total, nil
 }
 
@@ -788,7 +803,21 @@ ORDER BY f.id ASC
 		item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 		items = append(items, item)
 	}
-	return items, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Attach in-stock alternates for out-of-stock items
+	for i := range items {
+		if items[i].AvailabilityStatus == "out_of_stock" {
+			alternate, err := s.findInStockAlternate(ctx, "overall", items[i].ID)
+			if err == nil && alternate != nil {
+				items[i].InStockAlternate = alternate
+			}
+		}
+	}
+
+	return items, nil
 }
 
 func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize int) ([]rankedResponse, int, error) {
