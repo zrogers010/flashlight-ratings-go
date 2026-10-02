@@ -283,10 +283,12 @@ LIMIT %d OFFSET %d
 		}
 		
 		item := iws.item
-		isOOS := item.AvailabilityStatus == "out_of_stock" || 
-			item.AmazonURL == nil || *item.AmazonURL == ""
+		// FLR-QA-01 fix: Check for non-in-stock status OR missing affiliate_url
+		// Catches "out_of_stock" AND "unknown" statuses, plus any items without valid buy buttons
+		hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
+		needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 		
-		if isOOS {
+		if needsAlternate {
 			alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, iws.overallScore)
 			if err == nil && alternate != nil {
 				item.InStockAlternate = alternate
@@ -844,9 +846,12 @@ ORDER BY f.id ASC
 		return nil, err
 	}
 
-	// Attach in-stock alternates for out-of-stock items
+	// Attach in-stock alternates for out-of-stock or missing affiliate items
 	for i := range items {
-		if items[i].AvailabilityStatus == "out_of_stock" {
+		hasValidAffiliateURL := items[i].AmazonURL != nil && *items[i].AmazonURL != ""
+		needsAlternate := items[i].AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
+		
+		if needsAlternate {
 			overallScore := 0.0
 			if items[i].OverallScore != nil {
 				overallScore = *items[i].OverallScore
@@ -1063,10 +1068,12 @@ LIMIT $2 OFFSET $3
 		}
 		
 		item := iws.item
-		isOOS := item.Flashlight.AvailabilityStatus == "out_of_stock" || 
-			item.Flashlight.AmazonURL == nil || *item.Flashlight.AmazonURL == ""
+		// FLR-QA-01 fix: Check for non-in-stock status OR missing affiliate_url
+		// Catches "out_of_stock" AND "unknown" statuses, plus any items without valid buy buttons
+		hasValidAffiliateURL := item.Flashlight.AmazonURL != nil && *item.Flashlight.AmazonURL != ""
+		needsAlternate := item.Flashlight.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 		
-		if isOOS {
+		if needsAlternate {
 			// FLR-QA-01 follow-up #3: For rankings use_case=overall, prefer item's own primary use_case
 			altUseCase := useCase
 			if useCase == "overall" {

@@ -89,4 +89,19 @@ check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
   'if (.items | map(select(.in_stock_alternate != null)) | length) > 0 then (.items[] | select(.in_stock_alternate != null) | .in_stock_alternate | type == "object" and has("id") and has("slug") and has("name") and has("brand_name")) else true end' \
   "weapon-mount: alternate structure valid"
 
+# FLR-QA-01: rankings should not have OOS/unknown items without alternates
+check_json "/rankings?use_case=tactical&page=1&page_size=50" \
+  '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
+  "tactical rankings: no OOS/unknown without alternates"
+
+# FLR-QA-01: rankings top-10 should not have OOS without alternates
+check_json "/rankings?use_case=tactical&page=1&page_size=10" \
+  '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
+  "tactical rankings top-10: no OOS/unknown without alternates"
+
+# FLR-QA-01: EDC rankings should not have OOS/unknown items without alternates
+check_json "/rankings?use_case=edc&page=1&page_size=50" \
+  '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
+  "edc rankings: no OOS/unknown without alternates"
+
 echo "→ All smoke checks passed"
