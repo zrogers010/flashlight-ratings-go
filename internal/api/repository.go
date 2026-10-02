@@ -654,35 +654,13 @@ WHERE f.id = $1
 	hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
 	needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 	if needsAlternate {
-		// FLR-QA-01 retest #5: Select best use_case for alt lookup
-		// Prefer non-specialty tags (tactical/edc/throw/flood/weapon-mount) over specialty (diving/camping/search-rescue/penlight/keychain/toy)
-		useCase := ""
-		if len(item.UseCaseTags) > 0 {
-			// Find first non-specialty use_case
-			for _, tag := range item.UseCaseTags {
-				if !isSpecialtyLikeUseCase(tag) {
-					useCase = tag
-					break
-				}
-			}
-			// If all tags are specialty-like, try family mapping
-			if useCase == "" {
-				for _, tag := range item.UseCaseTags {
-					family := mapUseCaseToFamily(tag)
-					if family != "" {
-						useCase = family
-						break
-					}
-				}
-			}
-			// Last resort: use first tag
-			if useCase == "" {
-				useCase = item.UseCaseTags[0]
-			}
-		}
-		// Fallback to overall if no use_case tags
-		if useCase == "" {
-			useCase = "overall"
+		// Use confidence-based primary non-specialty use_case for alt lookup
+		// If highest-confidence tag is specialty-like (diving/camping/search-rescue/penlight/keychain/toy),
+		// try next tag in confidence order, then fall back to overall
+		useCase := "overall"
+		primaryUseCase, err := s.getFlashlightPrimaryNonSpecialtyUseCase(ctx, item.ID)
+		if err == nil && primaryUseCase != "" {
+			useCase = primaryUseCase
 		}
 		overallScore := 0.0
 		if item.OverallScore != nil {
@@ -897,11 +875,18 @@ ORDER BY f.id ASC
 		needsAlternate := items[i].AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 		
 		if needsAlternate {
+			// Use confidence-based primary non-specialty use_case for each product
+			useCase := "overall"
+			primaryUseCase, err := s.getFlashlightPrimaryNonSpecialtyUseCase(ctx, items[i].ID)
+			if err == nil && primaryUseCase != "" {
+				useCase = primaryUseCase
+			}
+			
 			overallScore := 0.0
 			if items[i].OverallScore != nil {
 				overallScore = *items[i].OverallScore
 			}
-			alternate, err := s.findInStockAlternate(ctx, "overall", items[i].ID, overallScore)
+			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID, overallScore)
 			if err == nil && alternate != nil {
 				items[i].InStockAlternate = alternate
 			}
@@ -1212,6 +1197,35 @@ LIMIT 1
 		return "", err
 	}
 	return slug, nil
+}
+
+// getFlashlightPrimaryNonSpecialtyUseCase returns the highest-confidence non-specialty-like use_case
+// Skips diving, camping, search-rescue, penlight, keychain, toy in confidence order
+func (s *Server) getFlashlightPrimaryNonSpecialtyUseCase(ctx context.Context, flashlightID int64) (string, error) {
+	query := `
+SELECT u.slug
+FROM flashlight_use_cases fuc
+JOIN use_cases u ON u.id = fuc.use_case_id
+WHERE fuc.flashlight_id = $1
+ORDER BY fuc.confidence DESC, u.slug ASC
+`
+	rows, err := s.db.QueryContext(ctx, query, flashlightID)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	
+	for rows.Next() {
+		var slug string
+		if err := rows.Scan(&slug); err != nil {
+			return "", err
+		}
+		if !isSpecialtyLikeUseCase(slug) {
+			return slug, nil
+		}
+	}
+	
+	return "", rows.Err()
 }
 
 // isSpecialtyUseCase returns true if the use_case is a specialty category (penlight, keychain, toy)
