@@ -155,7 +155,9 @@ export function RankingsTable({
           {sorted.map((item) => {
             const isChecked = mounted && compareItems.some((c) => c.id === item.flashlight.id);
             const disabled = isFull && !isChecked;
+            const inStock = item.flashlight.in_stock;
             const isOutOfStock = item.flashlight.availability_status === 'out_of_stock';
+            const primaryUnavailable = !item.flashlight.amazon_url || inStock === false;
             const hasAlternate = item.in_stock_alternate != null;
 
             return (
@@ -238,7 +240,7 @@ export function RankingsTable({
                   <span className="show-mobile-inline" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
                     {item.flashlight.brand}
                   </span>
-                  {isOutOfStock && hasAlternate && item.in_stock_alternate && (
+                  {primaryUnavailable && hasAlternate && item.in_stock_alternate && (
                     <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                       {item.in_stock_alternate.affiliate_url ? (
                         <a
