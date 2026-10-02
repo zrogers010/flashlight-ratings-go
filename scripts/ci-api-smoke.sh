@@ -97,7 +97,7 @@ echo "→ Validating EDC top-10 for FLR-QA-01 retest #3"
 EDC_BODY="$(curl -sf "${API}/rankings?use_case=edc&page=1&page_size=10")" || fail "EDC top-10: request failed"
 
 # Check no badge-only
-EDC_BADGE_ONLY_COUNT="$(echo "${EDC_BODY}" | jq '[.items[] | select((.flashlight.affiliate_url == null or .flashlight.affiliate_url == "") and .in_stock_alternate == null)] | length')"
+EDC_BADGE_ONLY_COUNT="$(echo "${EDC_BODY}" | jq '[.items[] | select((.flashlight.amazon_url == null or .flashlight.amazon_url == "") and .in_stock_alternate == null)] | length')"
 [[ "${EDC_BADGE_ONLY_COUNT}" == "0" ]] || fail "EDC top-10 has ${EDC_BADGE_ONLY_COUNT} badge-only items"
 echo "OK  EDC top-10: no badge-only items"
 
