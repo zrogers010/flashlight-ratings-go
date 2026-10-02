@@ -265,6 +265,9 @@ export default async function BreakdownArticlePage({
   const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
   const priceFresh = getPriceFreshness(data.price_last_updated_at);
 
+  const inStock = data.in_stock !== undefined && data.in_stock !== null ? data.in_stock : data.amazon_in_stock;
+  const primaryUnavailable = !data.amazon_url || inStock === false;
+
   return (
     <article className="grid review-article">
       <ArticleStructuredData
@@ -327,7 +330,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="lg"
               priceUpdatedAt={data.price_last_updated_at}
-              inStock={data.amazon_in_stock}
+              inStock={inStock}
             />
             <Link
               href={`/flashlights/${data.id}`}
@@ -336,6 +339,48 @@ export default async function BreakdownArticlePage({
               View Full Specs →
             </Link>
           </div>
+          {primaryUnavailable && data.in_stock_alternate && (
+            <div style={{ marginTop: 12 }}>
+              <strong style={{ fontSize: "0.85rem", color: "var(--teal)", display: "block", marginBottom: 8 }}>
+                Best available alternative:
+              </strong>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                {data.in_stock_alternate.affiliate_url && (
+                  <a
+                    href={data.in_stock_alternate.affiliate_url}
+                    target="_blank"
+                    rel="nofollow sponsored noopener noreferrer"
+                    className="buy-amazon-btn"
+                    style={{ fontSize: "0.9rem" }}
+                  >
+                    {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                )}
+                <Link
+                  href={`/reviews/${data.in_stock_alternate.slug}`}
+                  className="chip chip-alt"
+                  style={{ fontSize: "0.85rem" }}
+                >
+                  {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name} review
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
         {images.length > 0 && (
           <div className="review-hero-image">
@@ -648,7 +693,7 @@ export default async function BreakdownArticlePage({
             price_usd={data.price_usd}
             size="lg"
             priceUpdatedAt={data.price_last_updated_at}
-            inStock={data.amazon_in_stock}
+            inStock={inStock}
           />
           <Link
             href={`/flashlights/${data.id}`}
@@ -665,6 +710,48 @@ export default async function BreakdownArticlePage({
             Compare Models
           </Link>
         </div>
+        {primaryUnavailable && data.in_stock_alternate && (
+          <div style={{ marginTop: 16 }}>
+            <strong style={{ fontSize: "0.85rem", color: "var(--teal)", display: "block", marginBottom: 8 }}>
+              Best available alternative:
+            </strong>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              {data.in_stock_alternate.affiliate_url && (
+                <a
+                  href={data.in_stock_alternate.affiliate_url}
+                  target="_blank"
+                  rel="nofollow sponsored noopener noreferrer"
+                  className="buy-amazon-btn"
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name}
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              )}
+              <Link
+                href={`/reviews/${data.in_stock_alternate.slug}`}
+                className="chip chip-alt"
+                style={{ fontSize: "0.85rem" }}
+              >
+                {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name} review
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Competitors ──────────────────────── */}
@@ -709,7 +796,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="sm"
               priceUpdatedAt={data.price_last_updated_at}
-              inStock={data.amazon_in_stock}
+              inStock={inStock}
             />
           </div>
         </div>
