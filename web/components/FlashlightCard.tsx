@@ -63,7 +63,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
 
   return (
     <article
-      className="product-card product-card--tooltip"
+      className={`product-card product-card--tooltip${isOutOfStock ? " product-card--oos" : ""}`}
       data-product={`${item.brand} ${item.name}`}
       data-brand={item.brand}
     >
@@ -128,14 +128,43 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
       </div>
 
       {isOutOfStock && hasAlternate && item.in_stock_alternate && (
-        <div style={{ marginTop: 8 }}>
-          <Link
-            href={`/reviews/${item.in_stock_alternate.slug}`}
-            className="chip chip-alt"
-            style={{ fontSize: "0.8rem", display: "inline-block" }}
-          >
-            In stock alternative: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
-          </Link>
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <strong style={{ fontSize: "0.78rem", color: "var(--teal)" }}>Best available alternative:</strong>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+            {item.in_stock_alternate.affiliate_url ? (
+              <a
+                href={item.in_stock_alternate.affiliate_url}
+                target="_blank"
+                rel="nofollow sponsored noopener noreferrer"
+                className="buy-amazon-btn"
+                style={{ fontSize: "0.74rem", padding: "5px 10px", position: "relative", zIndex: 2 }}
+              >
+                {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+            ) : null}
+            <Link
+              href={`/reviews/${item.in_stock_alternate.slug}`}
+              className="chip chip-alt"
+              style={{ fontSize: "0.74rem", display: "inline-block", position: "relative", zIndex: 2 }}
+            >
+              {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name} review
+            </Link>
+          </div>
         </div>
       )}
 

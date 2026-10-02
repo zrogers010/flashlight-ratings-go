@@ -5005,3 +5005,12 @@ select:focus, input:focus {
   border-color: var(--teal);
   color: var(--teal-hover);
 }
+
+/* Visual demotion for out-of-stock cards */
+.product-card--oos {
+  opacity: 0.65;
+}
+
+.product-card--oos .image-card {
+  filter: grayscale(0.4);
+}

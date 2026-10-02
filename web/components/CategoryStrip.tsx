@@ -86,12 +86,25 @@ export function CategoryStrip({
       ) : null}
       {isFirstOOS && hasAlternate && firstItem.in_stock_alternate && (
         <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 6, fontSize: "0.88rem" }}>
-          <strong>Top pick currently out of stock.</strong> In-stock alternative:{" "}
+          <strong>Top pick currently out of stock.</strong> Best available alternative:{" "}
+          {firstItem.in_stock_alternate.affiliate_url ? (
+            <>
+              <a
+                href={firstItem.in_stock_alternate.affiliate_url}
+                target="_blank"
+                rel="nofollow sponsored noopener noreferrer"
+                style={{ fontWeight: 600, color: "var(--accent)" }}
+              >
+                {firstItem.in_stock_alternate.brand_name} {firstItem.in_stock_alternate.name}
+              </a>
+              {" · "}
+            </>
+          ) : null}
           <Link
             href={`/reviews/${firstItem.in_stock_alternate.slug}`}
             style={{ fontWeight: 600 }}
           >
-            {firstItem.in_stock_alternate.brand_name} {firstItem.in_stock_alternate.name}
+            {firstItem.in_stock_alternate.affiliate_url ? "Review" : `${firstItem.in_stock_alternate.brand_name} ${firstItem.in_stock_alternate.name}`}
           </Link>
         </div>
       )}
