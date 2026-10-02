@@ -44,12 +44,23 @@ func availabilityStatus(inStock sql.NullBool) string {
 func (s *Server) listFlashlights(ctx context.Context, f flashlightFilters) ([]flashlightItem, int, error) {
 	where, args := buildFlashlightWhere(f)
 
+	// FLR-QA-01 follow-up #2: Apply lumen filter to category list (use_case filter) the same as rankings
+	// Exclude max_lumens < 100 UNLESS requested use_case is specialty (penlight, keychain, toy)
+	lumenFilter := ""
+	if f.UseCase != "" && f.UseCase != "penlight" && f.UseCase != "keychain" && f.UseCase != "toy" {
+		lumenFilter = `
+	  AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
+	}
+
 	sortExpr := sortColumn(f.SortBy)
 	order := "DESC"
 	if strings.EqualFold(f.Order, "asc") {
 		order = "ASC"
 	}
 	offset := (f.Page - 1) * f.PageSize
+
+	// FLR-QA-01 follow-up #1: Over-fetch to allow for filtering OOS without alternates
+	fetchLimit := f.PageSize * 3
 
 	query := fmt.Sprintf(`
 WITH latest_run AS (
@@ -154,13 +165,13 @@ LEFT JOIN latest_media lm ON lm.flashlight_id = f.id
 LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
 LEFT JOIN battery_agg ba ON ba.flashlight_id = f.id
 LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
-%s
+%s%s
 ORDER BY 
 	CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
 	%s %s,
 	f.id ASC
 LIMIT %d OFFSET %d
-`, where, sortExpr, order, f.PageSize, offset)
+`, where, lumenFilter, sortExpr, order, fetchLimit, offset)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -168,7 +179,13 @@ LIMIT %d OFFSET %d
 	}
 	defer rows.Close()
 
-	items := make([]flashlightItem, 0, f.PageSize)
+	// FLR-QA-01 follow-up: Over-fetch candidates to filter OOS without alternates
+	type itemWithScore struct {
+		item         flashlightItem
+		overallScore float64
+	}
+	candidates := make([]itemWithScore, 0, fetchLimit)
+	
 	for rows.Next() {
 		var (
 			item                                               flashlightItem
@@ -236,7 +253,12 @@ LIMIT %d OFFSET %d
 		item.FloodScore = nullFloat(flood)
 		item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
 		item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
-		items = append(items, item)
+		
+		overallScore := 0.0
+		if overall.Valid {
+			overallScore = overall.Float64
+		}
+		candidates = append(candidates, itemWithScore{item: item, overallScore: overallScore})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
@@ -247,21 +269,32 @@ LIMIT %d OFFSET %d
 		return nil, 0, err
 	}
 
-	// Attach in-stock alternates for out-of-stock items
+	// FLR-QA-01 follow-up #1: Attach alternates and filter out OOS without alternates
+	// Use the requested use_case for the alt ladder (not hardcoded "overall")
 	useCase := f.UseCase
 	if useCase == "" {
 		useCase = "overall"
 	}
-	for i := range items {
-		if items[i].AvailabilityStatus == "out_of_stock" {
-			overallScore := 0.0
-			if items[i].OverallScore != nil {
-				overallScore = *items[i].OverallScore
-			}
-			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID, overallScore)
+	
+	items := make([]flashlightItem, 0, f.PageSize)
+	for _, iws := range candidates {
+		if len(items) >= f.PageSize {
+			break
+		}
+		
+		item := iws.item
+		isOOS := item.AvailabilityStatus == "out_of_stock" || 
+			item.AmazonURL == nil || *item.AmazonURL == ""
+		
+		if isOOS {
+			alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, iws.overallScore)
 			if err == nil && alternate != nil {
-				items[i].InStockAlternate = alternate
+				item.InStockAlternate = alternate
+				items = append(items, item)
 			}
+			// FLR-QA-01 follow-up: If no alternate, exclude from list (backend demotion)
+		} else {
+			items = append(items, item)
 		}
 	}
 
@@ -1034,8 +1067,18 @@ LIMIT $2 OFFSET $3
 			item.Flashlight.AmazonURL == nil || *item.Flashlight.AmazonURL == ""
 		
 		if isOOS {
+			// FLR-QA-01 follow-up #3: For rankings use_case=overall, prefer item's own primary use_case
+			altUseCase := useCase
+			if useCase == "overall" {
+				// Look up the item's primary use_case to avoid recommending penlight/keychain/toy as alts
+				primaryUseCase, err := s.getFlashlightPrimaryUseCase(ctx, item.Flashlight.ID)
+				if err == nil && primaryUseCase != "" && !isSpecialtyUseCase(primaryUseCase) {
+					altUseCase = primaryUseCase
+				}
+			}
+			
 			// FLR-QA-01 nit #2: Pass overall_score for closest matching
-			alternate, err := s.findInStockAlternate(ctx, useCase, item.Flashlight.ID, iws.overallScore)
+			alternate, err := s.findInStockAlternate(ctx, altUseCase, item.Flashlight.ID, iws.overallScore)
 			if err == nil && alternate != nil {
 				item.InStockAlternate = alternate
 				out = append(out, item)
@@ -1095,6 +1138,33 @@ func mapUseCaseToFamily(useCase string) string {
 	default:
 		return ""
 	}
+}
+
+// getFlashlightPrimaryUseCase returns the primary (highest confidence) use_case for a flashlight
+// Used for overall rankings to prefer same-category alternates
+func (s *Server) getFlashlightPrimaryUseCase(ctx context.Context, flashlightID int64) (string, error) {
+	query := `
+SELECT u.slug
+FROM flashlight_use_cases fuc
+JOIN use_cases u ON u.id = fuc.use_case_id
+WHERE fuc.flashlight_id = $1
+ORDER BY fuc.confidence DESC, u.slug ASC
+LIMIT 1
+`
+	var slug string
+	err := s.db.QueryRowContext(ctx, query, flashlightID).Scan(&slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return slug, nil
+}
+
+// isSpecialtyUseCase returns true if the use_case is a specialty category (penlight, keychain, toy)
+func isSpecialtyUseCase(useCase string) bool {
+	return useCase == "penlight" || useCase == "keychain" || useCase == "toy"
 }
 
 func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase string, excludeID int64, sourceOverallScore float64, matchClosestScore bool) (*inStockAlternate, error) {
