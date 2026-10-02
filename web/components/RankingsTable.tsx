@@ -239,14 +239,26 @@ export function RankingsTable({
                     {item.flashlight.brand}
                   </span>
                   {isOutOfStock && hasAlternate && item.in_stock_alternate && (
-                    <div style={{ marginTop: 4 }}>
-                      <Link
-                        href={`/reviews/${item.in_stock_alternate.slug}`}
-                        className="chip chip-alt"
-                        style={{ fontSize: "0.75rem", display: "inline-block" }}
-                      >
-                        Alt: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
-                      </Link>
+                    <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                      {item.in_stock_alternate.affiliate_url ? (
+                        <a
+                          href={item.in_stock_alternate.affiliate_url}
+                          target="_blank"
+                          rel="nofollow sponsored noopener noreferrer"
+                          className="chip chip-alt"
+                          style={{ fontSize: "0.7rem", display: "inline-block" }}
+                        >
+                          Alt: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
+                        </a>
+                      ) : (
+                        <Link
+                          href={`/reviews/${item.in_stock_alternate.slug}`}
+                          className="chip chip-alt"
+                          style={{ fontSize: "0.7rem", display: "inline-block" }}
+                        >
+                          Alt: {item.in_stock_alternate.brand_name} {item.in_stock_alternate.name}
+                        </Link>
+                      )}
                     </div>
                   )}
                 </td>
