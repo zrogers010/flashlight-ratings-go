@@ -25,7 +25,7 @@ usage() {
   echo "  setup                  First-time server setup (run as ec2-user with sudo)"
   echo "  deploy                 Pull latest code and deploy (run as deploy user)"
   echo "  install-cron           Install frequent FULL-catalog Rainforest sync"
-  echo "                          (default: 3×/day UTC — 06:00, 14:00, 22:00)"
+  echo "                          (default: 2×/day UTC — 06:00, 18:00)"
   echo "  install-cron-rotated   Install daily cron that refreshes 1/N of the catalog"
   echo "                          (default N=1 = full catalog once/day; raise N for"
   echo "                          larger catalogs to spread Rainforest credits)"
@@ -381,14 +381,16 @@ do_catalog_sync() {
 # INSTALL-CRON — frequent FULL-catalog Rainforest sync
 #   Usage:  bash scripts/deploy.sh install-cron
 #
-# Default: refresh the entire catalog 3× per day (06:00 / 14:00 / 22:00 UTC).
-# Tuned for a larger Rainforest plan where credits support full sweeps.
+# Default: refresh the entire catalog 2× per day (06:00 / 18:00 UTC).
+# Tuned for a 10k credits/month Rainforest plan with headroom for occasional
+# manual or discover runs.
 # SYNC_ROTATE_DAYS=0 means every run touches all ASINs.
 #
 # Override examples:
-#   CRON_SCHEDULE="0 */6 * * *" bash scripts/deploy.sh install-cron   # every 6h
-#   CRON_SCHEDULE="0 9 * * *"   bash scripts/deploy.sh install-cron   # once daily
-#   PRUNE_THRESHOLD=2           bash scripts/deploy.sh install-cron
+#   CRON_SCHEDULE="0 6,14,22 * * *" bash scripts/deploy.sh install-cron  # 3×/day
+#   CRON_SCHEDULE="0 */6 * * *"     bash scripts/deploy.sh install-cron  # every 6h
+#   CRON_SCHEDULE="0 9 * * *"       bash scripts/deploy.sh install-cron  # once daily
+#   PRUNE_THRESHOLD=2               bash scripts/deploy.sh install-cron
 # ═════════════════════════════════════════════════════════════════════
 do_install_cron() {
   if ! command -v crontab >/dev/null 2>&1; then
@@ -402,8 +404,8 @@ do_install_cron() {
     exit 1
   fi
 
-  # 3×/day full catalog — keeps average price age ~4h for a ~100–300 ASIN set.
-  CRON_SCHEDULE="${CRON_SCHEDULE:-0 6,14,22 * * *}"
+  # 2×/day full catalog — keeps average price age ~6h for a ~100 ASIN set.
+  CRON_SCHEDULE="${CRON_SCHEDULE:-0 6,18 * * *}"
   PRUNE_THRESHOLD="${PRUNE_THRESHOLD:-2}"
   CRON_LOG="${CRON_LOG:-${HOME}/catalog-sync.log}"
   CRON_TAG="# flashlightratings-catalog-sync"
@@ -469,7 +471,7 @@ do_install_cron_rotated() {
     exit 1
   fi
 
-  # Prefer install-cron (3×/day full) when credits allow. Use this path when
+  # Prefer install-cron (2×/day full) when credits allow. Use this path when
   # the catalog grows large enough that a full sweep per run is too expensive —
   # e.g. ROTATE_DAYS=3 spreads ~300+ ASINs across three daily shards.
   ROTATE_DAYS="${ROTATE_DAYS:-1}"
