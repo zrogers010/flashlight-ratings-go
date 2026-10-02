@@ -823,7 +823,27 @@ ORDER BY f.id ASC
 func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize int) ([]rankedResponse, int, error) {
 	offset := (page - 1) * pageSize
 
-	query := `
+	// BE-02: For overall/best featured lists, exclude non-primary lights:
+	// - use_case in {penlight, keychain, toy}
+	// - max_lumens < 100
+	// BE-01: For overall/best featured lists, exclude non-buyable lights:
+	// - NULL or empty affiliate_url (must have working Amazon/affiliate link)
+	featuredFilter := ""
+	if useCase == "overall" {
+		featuredFilter = `
+		AND NOT EXISTS (
+			SELECT 1
+			FROM flashlight_use_cases fuc
+			JOIN use_cases uc ON uc.id = fuc.use_case_id
+			WHERE fuc.flashlight_id = f.id
+			  AND uc.slug IN ('penlight', 'keychain', 'toy')
+		)
+		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
+		AND la.affiliate_url IS NOT NULL
+		AND la.affiliate_url != ''`
+	}
+
+	query := fmt.Sprintf(`
 WITH latest_run AS (
 	SELECT id
 	FROM scoring_runs
@@ -898,7 +918,7 @@ ranked_data AS (
 		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
 		LIMIT 1
 	) la ON TRUE
-	WHERE f.is_active = TRUE
+	WHERE f.is_active = TRUE%s
 )
 SELECT
 	rank_position,
@@ -919,7 +939,7 @@ SELECT
 FROM ranked_data
 ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
-`
+`, featuredFilter)
 
 	rows, err := s.db.QueryContext(ctx, query, useCase, pageSize, offset)
 	if err != nil {
@@ -972,7 +992,33 @@ LIMIT $2 OFFSET $3
 		return nil, 0, err
 	}
 
-	countQuery := `SELECT COUNT(*) FROM flashlights WHERE is_active = TRUE`
+	// Count matching the same filters as the main query
+	countQuery := `SELECT COUNT(*) FROM flashlights f 
+		LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id 
+		LEFT JOIN LATERAL (
+			SELECT al.affiliate_url
+			FROM affiliate_links al
+			WHERE al.flashlight_id = f.id
+			  AND al.provider = 'amazon'
+			  AND al.region_code = 'US'
+			  AND al.is_active = TRUE
+			ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
+			LIMIT 1
+		) la ON TRUE
+		WHERE f.is_active = TRUE`
+	if useCase == "overall" {
+		countQuery += `
+		AND NOT EXISTS (
+			SELECT 1
+			FROM flashlight_use_cases fuc
+			JOIN use_cases uc ON uc.id = fuc.use_case_id
+			WHERE fuc.flashlight_id = f.id
+			  AND uc.slug IN ('penlight', 'keychain', 'toy')
+		)
+		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
+		AND la.affiliate_url IS NOT NULL
+		AND la.affiliate_url != ''`
+	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, err
@@ -992,6 +1038,7 @@ LIMIT $2 OFFSET $3
 }
 
 func (s *Server) findInStockAlternate(ctx context.Context, useCase string, excludeID int64) (*inStockAlternate, error) {
+	// BE-03: Find highest-ranked in-stock peer in the same use_case
 	query := `
 WITH latest_run AS (
 	SELECT id
@@ -1058,6 +1105,13 @@ ranked_data AS (
 	WHERE f.is_active = TRUE
 	  AND f.id != $2
 	  AND lp.in_stock = TRUE
+	  AND EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases uc ON uc.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND uc.slug = $1
+	  )
 )
 SELECT
 	id,

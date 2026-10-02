@@ -52,15 +52,20 @@ func main() {
 	runCycle := func() {
 		log.Println("worker cycle started")
 
+		// BE-04: Check for stale data before sync
+		checkDataStaleness(ctx, db)
+
 		syncCtx, cancelSync := context.WithTimeout(ctx, cfg.syncTimeout)
 		syncer := amazon.NewSyncer(db, client, cfg.amazonSync)
 		if err := syncer.Run(syncCtx); err != nil {
 			// The CSV catalog sync keeps the DB fresh independently, so a
 			// failed Amazon pull (e.g. Creators API eligibility lapse) must
 			// not block score recomputation.
-			log.Printf("amazon sync failed (continuing to scoring): %v", err)
+			// BE-04: Log Creators→Rainforest failover scenario
+			log.Printf("⚠️  amazon sync failed (continuing to scoring): %v", err)
+			log.Printf("📋 NOTE: If Creators API is unavailable, consider Rainforest API fallback")
 		} else {
-			log.Println("amazon sync completed")
+			log.Println("✅ amazon sync completed")
 		}
 		cancelSync()
 
@@ -162,4 +167,47 @@ func parseCSVSet(v string) map[string]struct{} {
 		out[norm] = struct{}{}
 	}
 	return out
+}
+
+// BE-04: Check for stale OOS and in-stock price data
+func checkDataStaleness(ctx context.Context, db *sql.DB) {
+	// Check for OOS items stuck for >48 hours
+	oosQuery := `
+SELECT COUNT(DISTINCT fps.flashlight_id)
+FROM flashlight_price_snapshots fps
+JOIN (
+	SELECT flashlight_id, MAX(captured_at) AS latest
+	FROM flashlight_price_snapshots
+	WHERE currency_code = 'USD'
+	GROUP BY flashlight_id
+) latest_snap ON fps.flashlight_id = latest_snap.flashlight_id AND fps.captured_at = latest_snap.latest
+WHERE fps.in_stock = FALSE
+  AND fps.captured_at < NOW() - INTERVAL '48 hours'
+`
+	var oosCount int
+	if err := db.QueryRowContext(ctx, oosQuery).Scan(&oosCount); err != nil {
+		log.Printf("⚠️  failed to check OOS staleness: %v", err)
+	} else if oosCount > 0 {
+		log.Printf("⚠️  %d flashlights marked OOS for >48 hours", oosCount)
+	}
+
+	// Check for in-stock items with stale prices >24 hours
+	staleQuery := `
+SELECT COUNT(DISTINCT fps.flashlight_id)
+FROM flashlight_price_snapshots fps
+JOIN (
+	SELECT flashlight_id, MAX(captured_at) AS latest
+	FROM flashlight_price_snapshots
+	WHERE currency_code = 'USD'
+	GROUP BY flashlight_id
+) latest_snap ON fps.flashlight_id = latest_snap.flashlight_id AND fps.captured_at = latest_snap.latest
+WHERE fps.in_stock = TRUE
+  AND fps.captured_at < NOW() - INTERVAL '24 hours'
+`
+	var staleCount int
+	if err := db.QueryRowContext(ctx, staleQuery).Scan(&staleCount); err != nil {
+		log.Printf("⚠️  failed to check price staleness: %v", err)
+	} else if staleCount > 0 {
+		log.Printf("⚠️  %d in-stock flashlights have prices >24 hours old", staleCount)
+	}
 }
