@@ -203,6 +203,7 @@ type inStockAlternate struct {
 	RankPosition *int     `json:"rank_position,omitempty"`
 	AffiliateURL *string  `json:"affiliate_url,omitempty"`
 	ImageURL     *string  `json:"image_url,omitempty"`
+	UseCaseTags  []string `json:"use_case_tags,omitempty"`
 }
 
 type finderResponse struct {

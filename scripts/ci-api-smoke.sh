@@ -61,6 +61,52 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
   '.items | type == "array"' \
   "rankings tactical"
 
+# FLR-QA-01 retest #3: Tactical top-10 validation
+# - No badge-only (items without buyable affiliate_url that also lack in_stock_alternate)
+# - No specialty (penlight|keychain|toy) slugs in in_stock_alternate
+echo "→ Validating tactical top-10 for FLR-QA-01 retest #3"
+TACTICAL_BODY="$(curl -sf "${API}/rankings?use_case=tactical&page=1&page_size=10")" || fail "tactical top-10: request failed"
+
+# Check no badge-only: items with null/missing amazon_url must have in_stock_alternate
+BADGE_ONLY_COUNT="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select((.flashlight.amazon_url == null or .flashlight.amazon_url == "") and .in_stock_alternate == null)] | length')"
+[[ "${BADGE_ONLY_COUNT}" == "0" ]] || fail "tactical top-10 has ${BADGE_ONLY_COUNT} badge-only items (no amazon_url and no in_stock_alternate)"
+echo "OK  tactical top-10: no badge-only items"
+
+# Check no specialty alternates: in_stock_alternate must not have penlight|keychain|toy in use_case_tags
+SPECIALTY_ALT_COUNT="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select(.in_stock_alternate != null and (.in_stock_alternate.use_case_tags | any(. == "penlight" or . == "keychain" or . == "toy")))] | length')"
+[[ "${SPECIALTY_ALT_COUNT}" == "0" ]] || fail "tactical top-10 has ${SPECIALTY_ALT_COUNT} items with specialty alternates (penlight/keychain/toy use_case_tags)"
+echo "OK  tactical top-10: no specialty alternates"
+
+# Document catapult-v6 expectation: either same-family/non-specialty in_stock_alternate with buyable URL, or demoted
+CATAPULT_IN_TOP10="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select(.flashlight.slug == "catapult-v6")] | length')"
+if [[ "${CATAPULT_IN_TOP10}" != "0" ]]; then
+  # If catapult-v6 is in top-10, validate it has either a buyable primary amazon_url or a valid non-specialty alternate
+  CATAPULT_ALT_TAGS="$(echo "${TACTICAL_BODY}" | jq -r '.items[] | select(.flashlight.slug == "catapult-v6") | .in_stock_alternate.use_case_tags // [] | @json')"
+  CATAPULT_PRIMARY_URL="$(echo "${TACTICAL_BODY}" | jq -r '.items[] | select(.flashlight.slug == "catapult-v6") | .flashlight.amazon_url // "null"')"
+  
+  if [[ "${CATAPULT_PRIMARY_URL}" == "null" ]] && echo "${CATAPULT_ALT_TAGS}" | jq -e 'any(. == "penlight" or . == "keychain" or . == "toy")' >/dev/null 2>&1; then
+    fail "catapult-v6 in tactical top-10 with null primary URL and specialty alternate tags (${CATAPULT_ALT_TAGS})"
+  fi
+  echo "OK  catapult-v6 in tactical top-10 with valid affiliate or non-specialty alternate"
+else
+  echo "OK  catapult-v6 demoted from tactical top-10 (expected if no valid affiliate or alternate)"
+fi
+
+# FLR-QA-01 retest #3: EDC top-10 validation
+echo "→ Validating EDC top-10 for FLR-QA-01 retest #3"
+EDC_BODY="$(curl -sf "${API}/rankings?use_case=edc&page=1&page_size=10")" || fail "EDC top-10: request failed"
+
+# Check no badge-only
+EDC_BADGE_ONLY_COUNT="$(echo "${EDC_BODY}" | jq '[.items[] | select((.flashlight.amazon_url == null or .flashlight.amazon_url == "") and .in_stock_alternate == null)] | length')"
+[[ "${EDC_BADGE_ONLY_COUNT}" == "0" ]] || fail "EDC top-10 has ${EDC_BADGE_ONLY_COUNT} badge-only items"
+echo "OK  EDC top-10: no badge-only items"
+
+# Check no specialty alternates
+EDC_SPECIALTY_ALT_COUNT="$(echo "${EDC_BODY}" | jq '[.items[] | select(.in_stock_alternate != null and (.in_stock_alternate.use_case_tags | any(. == "penlight" or . == "keychain" or . == "toy")))] | length')"
+[[ "${EDC_SPECIALTY_ALT_COUNT}" == "0" ]] || fail "EDC top-10 has ${EDC_SPECIALTY_ALT_COUNT} items with specialty alternates (penlight/keychain/toy use_case_tags)"
+echo "OK  EDC top-10: no specialty alternates"
+
+
 check_json "/compare?ids=${ID}" \
   '.items | type == "array" and length >= 1 and all(.[]; if .price_usd != null then (.in_stock | type == "boolean") else true end)' \
   "compare"
