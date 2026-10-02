@@ -254,7 +254,11 @@ LIMIT %d OFFSET %d
 	}
 	for i := range items {
 		if items[i].AvailabilityStatus == "out_of_stock" {
-			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID)
+			overallScore := 0.0
+			if items[i].OverallScore != nil {
+				overallScore = *items[i].OverallScore
+			}
+			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID, overallScore)
 			if err == nil && alternate != nil {
 				items[i].InStockAlternate = alternate
 			}
@@ -810,7 +814,11 @@ ORDER BY f.id ASC
 	// Attach in-stock alternates for out-of-stock items
 	for i := range items {
 		if items[i].AvailabilityStatus == "out_of_stock" {
-			alternate, err := s.findInStockAlternate(ctx, "overall", items[i].ID)
+			overallScore := 0.0
+			if items[i].OverallScore != nil {
+				overallScore = *items[i].OverallScore
+			}
+			alternate, err := s.findInStockAlternate(ctx, "overall", items[i].ID, overallScore)
 			if err == nil && alternate != nil {
 				items[i].InStockAlternate = alternate
 			}
@@ -823,25 +831,28 @@ ORDER BY f.id ASC
 func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize int) ([]rankedResponse, int, error) {
 	offset := (page - 1) * pageSize
 
-	// BE-02: For overall/best featured lists, exclude non-primary lights:
-	// - use_case in {penlight, keychain, toy}
-	// - max_lumens < 100
-	// BE-01: For overall/best featured lists, exclude non-buyable lights:
-	// - NULL or empty affiliate_url (must have working Amazon/affiliate link)
-	featuredFilter := ""
-	if useCase == "overall" {
-		featuredFilter = `
-		AND NOT EXISTS (
-			SELECT 1
-			FROM flashlight_use_cases fuc
-			JOIN use_cases uc ON uc.id = fuc.use_case_id
-			WHERE fuc.flashlight_id = f.id
-			  AND uc.slug IN ('penlight', 'keychain', 'toy')
-		)
-		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
-		AND la.affiliate_url IS NOT NULL
-		AND la.affiliate_url != ''`
+	// FLR-QA-01 nit #3: Apply lumen filter to all use_case queries EXCEPT when requested useCase is specialty
+	lumenFilter := ""
+	if useCase != "penlight" && useCase != "keychain" && useCase != "toy" {
+		lumenFilter = `
+	  AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
 	}
+
+	// FLR-QA-01: For overall, also exclude specialty use_cases
+	overallFilter := ""
+	if useCase == "overall" {
+		overallFilter = `
+	  AND NOT EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases uc ON uc.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND uc.slug IN ('penlight', 'keychain', 'toy')
+	  )`
+	}
+
+	// FLR-QA-01 nit #1: Over-fetch to allow for filtering OOS without alternates
+	fetchLimit := pageSize * 3 // Fetch 3x to ensure enough after filtering
 
 	query := fmt.Sprintf(`
 WITH latest_run AS (
@@ -866,6 +877,15 @@ latest_price AS (
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
 ),
+latest_scores AS (
+	SELECT
+		fs.flashlight_id,
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score
+	FROM flashlight_scores fs
+	JOIN scoring_profiles sp ON sp.id = fs.profile_id
+	JOIN latest_run lr ON lr.id = fs.run_id
+	GROUP BY fs.flashlight_id
+),
 ranked_data AS (
 	SELECT
 		f.id,
@@ -873,6 +893,7 @@ ranked_data AS (
 		f.name,
 		f.slug,
 		COALESCE(fs.score, 0) AS score,
+		COALESCE(los.overall_score, 0) AS overall_score,
 		sp.slug AS profile_slug,
 		lp.in_stock,
 		lp.price,
@@ -896,6 +917,7 @@ ranked_data AS (
 	JOIN brands b ON b.id = f.brand_id
 	LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
 	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
+	LEFT JOIN latest_scores los ON los.flashlight_id = f.id
 	JOIN selected_profile sp ON TRUE
 	LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
 		AND fs.profile_id = sp.id
@@ -918,12 +940,13 @@ ranked_data AS (
 		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
 		LIMIT 1
 	) la ON TRUE
-	WHERE f.is_active = TRUE%s
+	WHERE f.is_active = TRUE%s%s
 )
 SELECT
 	rank_position,
 	rank_position_raw,
 	score,
+	overall_score,
 	profile_slug,
 	id,
 	brand_name,
@@ -939,18 +962,24 @@ SELECT
 FROM ranked_data
 ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
-`, featuredFilter)
+`, overallFilter, lumenFilter)
 
-	rows, err := s.db.QueryContext(ctx, query, useCase, pageSize, offset)
+	rows, err := s.db.QueryContext(ctx, query, useCase, fetchLimit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
-	out := make([]rankedResponse, 0, pageSize)
+	type itemWithScore struct {
+		item         rankedResponse
+		overallScore float64
+	}
+	candidates := make([]itemWithScore, 0, fetchLimit)
+	
 	for rows.Next() {
 		var (
 			item                            rankedResponse
+			overallScore                    float64
 			imageURL, amazonURL, waterproof sql.NullString
 			maxLumens, beamDist             sql.NullInt64
 			price                           sql.NullFloat64
@@ -960,6 +989,7 @@ LIMIT $2 OFFSET $3
 			&item.RankPosition,
 			&item.RankPositionRaw,
 			&item.Score,
+			&overallScore,
 			&item.Profile,
 			&item.Flashlight.ID,
 			&item.Flashlight.Brand,
@@ -986,60 +1016,96 @@ LIMIT $2 OFFSET $3
 		if price.Valid {
 			item.Flashlight.PriceUSD = &price.Float64
 		}
-		out = append(out, item)
+		candidates = append(candidates, itemWithScore{item: item, overallScore: overallScore})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
 
-	// Count matching the same filters as the main query
-	countQuery := `SELECT COUNT(*) FROM flashlights f 
-		LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id 
-		LEFT JOIN LATERAL (
-			SELECT al.affiliate_url
-			FROM affiliate_links al
-			WHERE al.flashlight_id = f.id
-			  AND al.provider = 'amazon'
-			  AND al.region_code = 'US'
-			  AND al.is_active = TRUE
-			ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
-			LIMIT 1
-		) la ON TRUE
-		WHERE f.is_active = TRUE`
-	if useCase == "overall" {
-		countQuery += `
-		AND NOT EXISTS (
-			SELECT 1
-			FROM flashlight_use_cases fuc
-			JOIN use_cases uc ON uc.id = fuc.use_case_id
-			WHERE fuc.flashlight_id = f.id
-			  AND uc.slug IN ('penlight', 'keychain', 'toy')
-		)
-		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
-		AND la.affiliate_url IS NOT NULL
-		AND la.affiliate_url != ''`
+	// FLR-QA-01 nit #1 & #2: Find alternates and filter out OOS without alternates
+	out := make([]rankedResponse, 0, pageSize)
+	for _, iws := range candidates {
+		if len(out) >= pageSize {
+			break // Have enough eligible items
+		}
+		
+		item := iws.item
+		isOOS := item.Flashlight.AvailabilityStatus == "out_of_stock" || 
+			item.Flashlight.AmazonURL == nil || *item.Flashlight.AmazonURL == ""
+		
+		if isOOS {
+			// FLR-QA-01 nit #2: Pass overall_score for closest matching
+			alternate, err := s.findInStockAlternate(ctx, useCase, item.Flashlight.ID, iws.overallScore)
+			if err == nil && alternate != nil {
+				item.InStockAlternate = alternate
+				out = append(out, item)
+			}
+			// FLR-QA-01 nit #1: If no alternate, exclude from featured (demoted)
+		} else {
+			out = append(out, item)
+		}
 	}
+
+	countQuery := `SELECT COUNT(*) FROM flashlights WHERE is_active = TRUE`
 	var total int
 	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	// Find in-stock alternates for OOS items
-	for i := range out {
-		if out[i].Flashlight.AvailabilityStatus == "out_of_stock" {
-			alternate, err := s.findInStockAlternate(ctx, useCase, out[i].Flashlight.ID)
-			if err == nil && alternate != nil {
-				out[i].InStockAlternate = alternate
-			}
-		}
-	}
-
 	return out, total, nil
 }
 
-func (s *Server) findInStockAlternate(ctx context.Context, useCase string, excludeID int64) (*inStockAlternate, error) {
-	// BE-03: Find highest-ranked in-stock peer in the same use_case
-	query := `
+func (s *Server) findInStockAlternate(ctx context.Context, useCase string, excludeID int64, sourceOverallScore float64) (*inStockAlternate, error) {
+	// Alt ladder: 
+	// 1. Primary: same use_case, in-stock, with affiliate_url (highest-ranked)
+	// 2. Fallback: sibling in same family (weapon-mount → tactical), closest overall_score match
+	// 3. If still null: return nil (item should be demoted from featured)
+	
+	// First try: same use_case, highest-ranked
+	alternate, err := s.findInStockAlternateForUseCase(ctx, useCase, excludeID, sourceOverallScore, false)
+	if err != nil {
+		return nil, err
+	}
+	if alternate != nil {
+		return alternate, nil
+	}
+
+	// Second try: family fallback, closest overall_score
+	familyUseCase := mapUseCaseToFamily(useCase)
+	if familyUseCase != "" && familyUseCase != useCase {
+		alternate, err = s.findInStockAlternateForUseCase(ctx, familyUseCase, excludeID, sourceOverallScore, true)
+		if err != nil {
+			return nil, err
+		}
+		if alternate != nil {
+			return alternate, nil
+		}
+	}
+
+	// No alternate found
+	return nil, nil
+}
+
+// mapUseCaseToFamily maps sparse niches to their parent family
+func mapUseCaseToFamily(useCase string) string {
+	switch useCase {
+	case "weapon-mount":
+		return "tactical"
+	// Add other sparse niche mappings here as needed
+	default:
+		return ""
+	}
+}
+
+func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase string, excludeID int64, sourceOverallScore float64, matchClosestScore bool) (*inStockAlternate, error) {
+	// FLR-QA-01 nit #2: For family fallback, match by closest overall_score
+	// For same use_case, match by highest rank
+	orderClause := "rank_position ASC"
+	if matchClosestScore {
+		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
+	}
+
+	query := fmt.Sprintf(`
 WITH latest_run AS (
 	SELECT id
 	FROM scoring_runs
@@ -1062,6 +1128,15 @@ latest_price AS (
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
 ),
+latest_scores AS (
+	SELECT
+		fs.flashlight_id,
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score
+	FROM flashlight_scores fs
+	JOIN scoring_profiles sp ON sp.id = fs.profile_id
+	JOIN latest_run lr ON lr.id = fs.run_id
+	GROUP BY fs.flashlight_id
+),
 ranked_data AS (
 	SELECT
 		f.id,
@@ -1069,6 +1144,7 @@ ranked_data AS (
 		f.name,
 		f.slug,
 		COALESCE(fs.score, 0) AS score,
+		COALESCE(los.overall_score, 0) AS overall_score,
 		lm.url AS image_url,
 		la.affiliate_url,
 		ROW_NUMBER() OVER (
@@ -1080,6 +1156,7 @@ ranked_data AS (
 	FROM flashlights f
 	JOIN brands b ON b.id = f.brand_id
 	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
+	LEFT JOIN latest_scores los ON los.flashlight_id = f.id
 	JOIN selected_profile sp ON TRUE
 	LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
 		AND fs.profile_id = sp.id
@@ -1105,13 +1182,8 @@ ranked_data AS (
 	WHERE f.is_active = TRUE
 	  AND f.id != $2
 	  AND lp.in_stock = TRUE
-	  AND EXISTS (
-		SELECT 1
-		FROM flashlight_use_cases fuc
-		JOIN use_cases uc ON uc.id = fuc.use_case_id
-		WHERE fuc.flashlight_id = f.id
-		  AND uc.slug = $1
-	  )
+	  AND la.affiliate_url IS NOT NULL
+	  AND la.affiliate_url != ''
 )
 SELECT
 	id,
@@ -1123,9 +1195,9 @@ SELECT
 	affiliate_url,
 	image_url
 FROM ranked_data
-ORDER BY rank_position ASC
+ORDER BY %s
 LIMIT 1
-`
+`, orderClause)
 
 	var (
 		alternate           inStockAlternate
