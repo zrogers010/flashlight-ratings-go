@@ -151,6 +151,10 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
     if (match) rankBadges.push({ label: cat.label, rank: match.rank_position });
   }
 
+  const inStock = data.in_stock !== undefined && data.in_stock !== null ? data.in_stock : data.amazon_in_stock;
+  const primaryUnavailable = !data.amazon_url || inStock === false;
+  const hasAlternate = data.in_stock_alternate != null;
+
   const rawImages = data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : [];
   const images = [...new Set(rawImages)].filter((u) => !u.includes("._SCLZZZZZZZ_"));
   const alternatives = catalog.items
@@ -242,6 +246,49 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             priceUpdatedAt={data.price_last_updated_at}
             inStock={data.amazon_in_stock}
           />
+          {primaryUnavailable && hasAlternate && data.in_stock_alternate && (
+            <div style={{ marginTop: 12 }}>
+              <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--teal)", marginBottom: 8 }}>
+                Best available alternative:
+              </strong>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {data.in_stock_alternate.affiliate_url ? (
+                  <a
+                    href={data.in_stock_alternate.affiliate_url}
+                    target="_blank"
+                    rel="nofollow sponsored noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                      style={{ marginLeft: 6 }}
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                ) : null}
+                <Link
+                  href={`/reviews/${data.in_stock_alternate.slug}`}
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name} review
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="buy-meta">
             {data.msrp_usd !== undefined && <span>MSRP: ${fmt(data.msrp_usd, 2)}</span>}
           </div>
@@ -363,6 +410,48 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
           size="lg"
           inStock={data.amazon_in_stock}
         />
+        {primaryUnavailable && hasAlternate && data.in_stock_alternate && (
+          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+            <strong style={{ fontSize: "0.85rem", color: "var(--teal)" }}>
+              Best available alternative:
+            </strong>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", alignItems: "center" }}>
+              {data.in_stock_alternate.affiliate_url ? (
+                <a
+                  href={data.in_stock_alternate.affiliate_url}
+                  target="_blank"
+                  rel="nofollow sponsored noopener noreferrer"
+                  className="buy-amazon-btn"
+                  style={{ fontSize: "0.9rem", padding: "8px 16px" }}
+                >
+                  {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name}
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              ) : null}
+              <Link
+                href={`/reviews/${data.in_stock_alternate.slug}`}
+                className="chip chip-alt"
+                style={{ fontSize: "0.85rem" }}
+              >
+                {data.in_stock_alternate.brand_name} {data.in_stock_alternate.name} review
+              </Link>
+            </div>
+          </div>
+        )}
         <p className="muted" style={{ fontSize: "0.8rem", marginTop: 10 }}>
           As an Amazon Associate we earn from qualifying purchases.
         </p>
