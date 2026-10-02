@@ -649,6 +649,27 @@ WHERE f.id = $1
 	item.ImageURLs = decodeJSONStringArray(imageURLsJSON)
 	item.Modes = decodeModesJSON(modesJSON)
 	item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
+	
+	// FLR-QA-01 retest #4: Attach in_stock_alternate for detail endpoint consistency with FE CTA
+	hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
+	needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
+	if needsAlternate {
+		// Use primary use_case for detail (highest confidence), fallback to overall
+		useCase := "overall"
+		if len(item.UseCaseTags) > 0 {
+			// Primary use case is first in sorted order from query
+			useCase = item.UseCaseTags[0]
+		}
+		overallScore := 0.0
+		if item.OverallScore != nil {
+			overallScore = *item.OverallScore
+		}
+		alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, overallScore)
+		if err == nil && alternate != nil {
+			item.InStockAlternate = alternate
+		}
+	}
+	
 	return item, nil
 }
 
@@ -1182,11 +1203,14 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
 	}
 
-	// FLR-QA-01 retest #3: Exclude specialty use cases when finding alternates for non-specialty categories
+	// FLR-QA-01 retest #3/#4: Exclude specialty use cases when finding alternates for non-specialty categories
 	// Specialty: penlight, keychain, toy
 	// Non-specialty: tactical, edc, throw, flood, weapon-mount, camping, search-rescue, etc.
+	// Retest #4: Also apply lumen filter to prevent penlight-class products (e.g. coast-g20 at 54lm)
+	// that are tagged edc/value (not tagged penlight) from being chosen as alts for tactical/EDC
 	specialtyExclusion := ""
-	if useCase != "penlight" && useCase != "keychain" && useCase != "toy" {
+	lumenFilter := ""
+	if !isSpecialtyUseCase(useCase) {
 		specialtyExclusion = `
 	  AND NOT EXISTS (
 		SELECT 1
@@ -1195,6 +1219,8 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 		WHERE fuc.flashlight_id = f.id
 		  AND uc.slug IN ('penlight', 'keychain', 'toy')
 	  )`
+		lumenFilter = `
+	  AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
 	}
 
 	query := fmt.Sprintf(`
@@ -1256,6 +1282,7 @@ ranked_data AS (
 		) AS rank_position
 	FROM flashlights f
 	JOIN brands b ON b.id = f.brand_id
+	LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
 	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 	LEFT JOIN latest_scores los ON los.flashlight_id = f.id
 	LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
@@ -1285,7 +1312,7 @@ ranked_data AS (
 	  AND f.id != $2
 	  AND lp.in_stock = TRUE
 	  AND la.affiliate_url IS NOT NULL
-	  AND la.affiliate_url != ''%s
+	  AND la.affiliate_url != ''%s%s
 )
 SELECT
 	id,
@@ -1300,7 +1327,7 @@ SELECT
 FROM ranked_data
 ORDER BY %s
 LIMIT 1
-`, specialtyExclusion, orderClause)
+`, specialtyExclusion, lumenFilter, orderClause)
 
 	var (
 		alternate           inStockAlternate
