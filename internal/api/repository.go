@@ -823,7 +823,27 @@ ORDER BY f.id ASC
 func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize int) ([]rankedResponse, int, error) {
 	offset := (page - 1) * pageSize
 
-	query := `
+	// FLR-QA-01 nit #3: Apply lumen filter to all use_case queries EXCEPT when requested useCase is specialty
+	lumenFilter := ""
+	if useCase != "penlight" && useCase != "keychain" && useCase != "toy" {
+		lumenFilter = `
+	  AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
+	}
+
+	// FLR-QA-01: For overall, also exclude specialty use_cases
+	overallFilter := ""
+	if useCase == "overall" {
+		overallFilter = `
+	  AND NOT EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases uc ON uc.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND uc.slug IN ('penlight', 'keychain', 'toy')
+	  )`
+	}
+
+	query := fmt.Sprintf(`
 WITH latest_run AS (
 	SELECT id
 	FROM scoring_runs
@@ -898,19 +918,7 @@ ranked_data AS (
 		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
 		LIMIT 1
 	) la ON TRUE
-	WHERE f.is_active = TRUE
-	  -- Exclude junk specs from all rankings: max_lumens < 100 unless specialty/keychain
-	  AND (
-		s.max_lumens IS NULL
-		OR s.max_lumens >= 100
-		OR EXISTS (
-			SELECT 1
-			FROM flashlight_use_cases fuc
-			JOIN use_cases u ON u.id = fuc.use_case_id
-			WHERE fuc.flashlight_id = f.id
-			  AND u.slug IN ('penlight', 'keychain', 'toy')
-		)
-	  )
+	WHERE f.is_active = TRUE%s%s
 )
 SELECT
 	rank_position,
@@ -931,7 +939,7 @@ SELECT
 FROM ranked_data
 ORDER BY rank_position ASC
 LIMIT $2 OFFSET $3
-`
+`, overallFilter, lumenFilter)
 
 	rows, err := s.db.QueryContext(ctx, query, useCase, pageSize, offset)
 	if err != nil {
