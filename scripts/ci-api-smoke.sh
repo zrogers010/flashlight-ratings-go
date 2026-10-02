@@ -67,9 +67,9 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
 echo "→ Validating tactical top-10 for FLR-QA-01 retest #3"
 TACTICAL_BODY="$(curl -sf "${API}/rankings?use_case=tactical&page=1&page_size=10")" || fail "tactical top-10: request failed"
 
-# Check no badge-only: items with null/missing affiliate_url must have in_stock_alternate
-BADGE_ONLY_COUNT="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select((.flashlight.affiliate_url == null or .flashlight.affiliate_url == "") and .in_stock_alternate == null)] | length')"
-[[ "${BADGE_ONLY_COUNT}" == "0" ]] || fail "tactical top-10 has ${BADGE_ONLY_COUNT} badge-only items (no affiliate_url and no in_stock_alternate)"
+# Check no badge-only: items with null/missing amazon_url must have in_stock_alternate
+BADGE_ONLY_COUNT="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select((.flashlight.amazon_url == null or .flashlight.amazon_url == "") and .in_stock_alternate == null)] | length')"
+[[ "${BADGE_ONLY_COUNT}" == "0" ]] || fail "tactical top-10 has ${BADGE_ONLY_COUNT} badge-only items (no amazon_url and no in_stock_alternate)"
 echo "OK  tactical top-10: no badge-only items"
 
 # Check no specialty alternates: in_stock_alternate must not have penlight|keychain|toy in use_case_tags
@@ -80,9 +80,9 @@ echo "OK  tactical top-10: no specialty alternates"
 # Document catapult-v6 expectation: either same-family/non-specialty in_stock_alternate with buyable URL, or demoted
 CATAPULT_IN_TOP10="$(echo "${TACTICAL_BODY}" | jq '[.items[] | select(.flashlight.slug == "catapult-v6")] | length')"
 if [[ "${CATAPULT_IN_TOP10}" != "0" ]]; then
-  # If catapult-v6 is in top-10, validate it has either a buyable primary affiliate_url or a valid non-specialty alternate
+  # If catapult-v6 is in top-10, validate it has either a buyable primary amazon_url or a valid non-specialty alternate
   CATAPULT_ALT_TAGS="$(echo "${TACTICAL_BODY}" | jq -r '.items[] | select(.flashlight.slug == "catapult-v6") | .in_stock_alternate.use_case_tags // [] | @json')"
-  CATAPULT_PRIMARY_URL="$(echo "${TACTICAL_BODY}" | jq -r '.items[] | select(.flashlight.slug == "catapult-v6") | .flashlight.affiliate_url // "null"')"
+  CATAPULT_PRIMARY_URL="$(echo "${TACTICAL_BODY}" | jq -r '.items[] | select(.flashlight.slug == "catapult-v6") | .flashlight.amazon_url // "null"')"
   
   if [[ "${CATAPULT_PRIMARY_URL}" == "null" ]] && echo "${CATAPULT_ALT_TAGS}" | jq -e 'any(. == "penlight" or . == "keychain" or . == "toy")' >/dev/null 2>&1; then
     fail "catapult-v6 in tactical top-10 with null primary URL and specialty alternate tags (${CATAPULT_ALT_TAGS})"
