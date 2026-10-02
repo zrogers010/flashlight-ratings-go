@@ -654,21 +654,32 @@ WHERE f.id = $1
 	hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
 	needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 	if needsAlternate {
-		// Use confidence-based primary non-specialty use_case for alt lookup
-		// If highest-confidence tag is specialty-like (diving/camping/search-rescue/penlight/keychain/toy),
-		// try next tag in confidence order, then fall back to overall
-		useCase := "overall"
-		primaryUseCase, err := s.getFlashlightPrimaryNonSpecialtyUseCase(ctx, item.ID)
-		if err == nil && primaryUseCase != "" {
-			useCase = primaryUseCase
-		}
+		// Try confidence-ordered non-specialty use_cases until one yields an alternate
+		// If highest-confidence tag (e.g. law-enforcement) has no in-stock candidate,
+		// try next tag (e.g. tactical), then fall back to overall
 		overallScore := 0.0
 		if item.OverallScore != nil {
 			overallScore = *item.OverallScore
 		}
-		alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, overallScore)
-		if err == nil && alternate != nil {
-			item.InStockAlternate = alternate
+		
+		// Try each non-specialty use_case in confidence order
+		useCases, err := s.getNonSpecialtyUseCases(ctx, item.ID)
+		if err == nil && len(useCases) > 0 {
+			for _, useCase := range useCases {
+				alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, overallScore)
+				if err == nil && alternate != nil {
+					item.InStockAlternate = alternate
+					break
+				}
+			}
+		}
+		
+		// Fallback to overall if no alternate found from specific use_cases
+		if item.InStockAlternate == nil {
+			alternate, err := s.findInStockAlternate(ctx, "overall", item.ID, overallScore)
+			if err == nil && alternate != nil {
+				item.InStockAlternate = alternate
+			}
 		}
 	}
 	
@@ -875,20 +886,29 @@ ORDER BY f.id ASC
 		needsAlternate := items[i].AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 		
 		if needsAlternate {
-			// Use confidence-based primary non-specialty use_case for each product
-			useCase := "overall"
-			primaryUseCase, err := s.getFlashlightPrimaryNonSpecialtyUseCase(ctx, items[i].ID)
-			if err == nil && primaryUseCase != "" {
-				useCase = primaryUseCase
-			}
-			
 			overallScore := 0.0
 			if items[i].OverallScore != nil {
 				overallScore = *items[i].OverallScore
 			}
-			alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID, overallScore)
-			if err == nil && alternate != nil {
-				items[i].InStockAlternate = alternate
+			
+			// Try each non-specialty use_case in confidence order
+			useCases, err := s.getNonSpecialtyUseCases(ctx, items[i].ID)
+			if err == nil && len(useCases) > 0 {
+				for _, useCase := range useCases {
+					alternate, err := s.findInStockAlternate(ctx, useCase, items[i].ID, overallScore)
+					if err == nil && alternate != nil {
+						items[i].InStockAlternate = alternate
+						break
+					}
+				}
+			}
+			
+			// Fallback to overall if no alternate found from specific use_cases
+			if items[i].InStockAlternate == nil {
+				alternate, err := s.findInStockAlternate(ctx, "overall", items[i].ID, overallScore)
+				if err == nil && alternate != nil {
+					items[i].InStockAlternate = alternate
+				}
 			}
 		}
 	}
@@ -1226,6 +1246,36 @@ ORDER BY fuc.confidence DESC, u.slug ASC
 	}
 	
 	return "", rows.Err()
+}
+
+// getNonSpecialtyUseCases returns all non-specialty-like use_case tags in confidence order
+// Used to try multiple tags when finding alternates for detail/compare endpoints
+func (s *Server) getNonSpecialtyUseCases(ctx context.Context, flashlightID int64) ([]string, error) {
+	query := `
+SELECT u.slug
+FROM flashlight_use_cases fuc
+JOIN use_cases u ON u.id = fuc.use_case_id
+WHERE fuc.flashlight_id = $1
+ORDER BY fuc.confidence DESC, u.slug ASC
+`
+	rows, err := s.db.QueryContext(ctx, query, flashlightID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var useCases []string
+	for rows.Next() {
+		var slug string
+		if err := rows.Scan(&slug); err != nil {
+			return nil, err
+		}
+		if !isSpecialtyLikeUseCase(slug) {
+			useCases = append(useCases, slug)
+		}
+	}
+	
+	return useCases, rows.Err()
 }
 
 // isSpecialtyUseCase returns true if the use_case is a specialty category (penlight, keychain, toy)
