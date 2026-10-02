@@ -650,15 +650,39 @@ WHERE f.id = $1
 	item.Modes = decodeModesJSON(modesJSON)
 	item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 	
-	// FLR-QA-01 retest #4: Attach in_stock_alternate for detail endpoint consistency with FE CTA
+	// FLR-QA-01 retest #5: Attach in_stock_alternate for detail endpoint consistency with FE CTA
 	hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
 	needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
 	if needsAlternate {
-		// Use primary use_case for detail (highest confidence), fallback to overall
-		useCase := "overall"
+		// FLR-QA-01 retest #5: Select best use_case for alt lookup
+		// Prefer non-specialty tags (tactical/edc/throw/flood/weapon-mount) over specialty (diving/camping/search-rescue/penlight/keychain/toy)
+		useCase := ""
 		if len(item.UseCaseTags) > 0 {
-			// Primary use case is first in sorted order from query
-			useCase = item.UseCaseTags[0]
+			// Find first non-specialty use_case
+			for _, tag := range item.UseCaseTags {
+				if !isSpecialtyLikeUseCase(tag) {
+					useCase = tag
+					break
+				}
+			}
+			// If all tags are specialty-like, try family mapping
+			if useCase == "" {
+				for _, tag := range item.UseCaseTags {
+					family := mapUseCaseToFamily(tag)
+					if family != "" {
+						useCase = family
+						break
+					}
+				}
+			}
+			// Last resort: use first tag
+			if useCase == "" {
+				useCase = item.UseCaseTags[0]
+			}
+		}
+		// Fallback to overall if no use_case tags
+		if useCase == "" {
+			useCase = "overall"
 		}
 		overallScore := 0.0
 		if item.OverallScore != nil {
@@ -1195,6 +1219,12 @@ func isSpecialtyUseCase(useCase string) bool {
 	return useCase == "penlight" || useCase == "keychain" || useCase == "toy"
 }
 
+// isSpecialtyLikeUseCase returns true if the use_case is specialty or other niche/off-family tags
+// that should not be preferred as primary use_case for alternates
+func isSpecialtyLikeUseCase(useCase string) bool {
+	return isSpecialtyUseCase(useCase) || useCase == "diving" || useCase == "camping" || useCase == "search-rescue"
+}
+
 func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase string, excludeID int64, sourceOverallScore float64, matchClosestScore bool) (*inStockAlternate, error) {
 	// FLR-QA-01 nit #2: For family fallback, match by closest overall_score
 	// For same use_case, match by highest rank
@@ -1202,6 +1232,17 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 	if matchClosestScore {
 		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
 	}
+
+	// FLR-QA-01 retest #5: Require candidate to have the requested use_case tag
+	// This prevents diving lights with high tactical scores from being recommended as tactical alts
+	useCaseFilter := `
+	  AND EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases uc ON uc.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND uc.slug = $3
+	  )`
 
 	// FLR-QA-01 retest #3/#4: Exclude specialty use cases when finding alternates for non-specialty categories
 	// Specialty: penlight, keychain, toy
@@ -1312,7 +1353,7 @@ ranked_data AS (
 	  AND f.id != $2
 	  AND lp.in_stock = TRUE
 	  AND la.affiliate_url IS NOT NULL
-	  AND la.affiliate_url != ''%s%s
+	  AND la.affiliate_url != ''%s%s%s
 )
 SELECT
 	id,
@@ -1327,7 +1368,7 @@ SELECT
 FROM ranked_data
 ORDER BY %s
 LIMIT 1
-`, specialtyExclusion, lumenFilter, orderClause)
+`, useCaseFilter, specialtyExclusion, lumenFilter, orderClause)
 
 	var (
 		alternate           inStockAlternate
@@ -1338,7 +1379,7 @@ LIMIT 1
 		useCaseTagsJSON     []byte
 	)
 
-	err := s.db.QueryRowContext(ctx, query, useCase, excludeID).Scan(
+	err := s.db.QueryRowContext(ctx, query, useCase, excludeID, useCase).Scan(
 		&alternate.ID,
 		&alternate.Slug,
 		&alternate.Name,
