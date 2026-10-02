@@ -1068,114 +1068,116 @@ products:
       use_cases:
         - throw
         - value
-    - brand: Nitecore
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: MH12 Pro
-      slug: nitecore-mh12-pro
-      code: MH12-Pro
-      description: A tactical EDC flashlight that balances throw, brightness, and runtime in a package purpose-built for law enforcement and daily carry. The MH12 Pro delivers 3,300 lumens with a precision deep reflector that produces a tight hotspot and reaches 505 meters. The tail switch provides instant momentary-on for tactical use, while the side switch handles daily mode selection. USB-C fast charging and the included 21700 battery keep you powered through extended shifts. Nitecore's build quality is among the best in the industry.
-      release_year: 2023
-      msrp_usd: 89.95
-      asin: B0CJB1PLW9
-      price_usd: 79.95
-      rating_count: 1200
-      average_rating: 4.6
-      manufacturer_url: https://flashlight.nitecore.com/product/mh12pro
-      images:
-        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-800x800.jpg
-          alt: Nitecore MH12 Pro rechargeable flashlight
-        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-2-500x500.jpg
-          alt: Nitecore MH12 Pro side view
-        - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-3-500x500.jpg
-          alt: Nitecore MH12 Pro detail
-      specs:
-        max_lumens: 3300
-        sustained_lumens: 0
-        max_candela: 63800
-        beam_distance_m: 505
-        runtime_high_min: 140
-        runtime_500_min: 0
-        turbo_stepdown_sec: 120
-        beam_pattern: throw
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 168
-        length_mm: 142
-        head_diameter_mm: 34
-        body_diameter_mm: 25.4
-        switch_type: dual
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Luminus SFT70
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - tactical
-        - throw
-        - edc
-    - brand: Nitecore
-      brand_slug: nitecore
-      brand_country: CN
-      brand_website: https://www.nitecore.com
-      name: E4K
-      slug: nitecore-e4k
-      code: E4K
-      description: A compact powerhouse that fits 4,400 lumens into a package small enough for everyday pocket carry. The E4K uses four CREE XP-L2 V6 LEDs behind a quad-reflector to produce a massive flood of light with a 211-meter throw. The single side switch handles all operations including lockout, and USB-C charging means you can top off from any cable. The aggressive knurling and HA-III hard-anodized finish give it a tactical feel without the tactical size. If you want maximum brightness in minimum space, this is the one.
-      release_year: 2023
-      msrp_usd: 69.95
-      asin: B0CGGPY1SX
-      price_usd: 59.95
-      rating_count: 1800
-      average_rating: 4.5
-      manufacturer_url: https://flashlight.nitecore.com/product/e4k
-      images:
-        - url: https://www.nitecore.co.nz/assets/full/E4k.jpg
-          alt: Nitecore E4K compact EDC flashlight
-        - url: https://www.nitecore.co.nz/assets/alt_1/E4k.jpg
-          alt: Nitecore E4K side view
-        - url: https://www.nitecore.co.nz/assets/alt_2/E4k.jpg
-          alt: Nitecore E4K detail
-      specs:
-        max_lumens: 4400
-        sustained_lumens: 0
-        max_candela: 11100
-        beam_distance_m: 211
-        runtime_high_min: 150
-        runtime_500_min: 0
-        turbo_stepdown_sec: 45
-        beam_pattern: flood
-        battery_type: "21700"
-        recharge_type: usb-c
-        battery_replaceable: true
-        weight_g: 138
-        length_mm: 118.7
-        head_diameter_mm: 26
-        body_diameter_mm: 25.4
-        switch_type: side
-        waterproof_rating: IP68
-        impact_resistance_m: 1
-        body_material: Aluminum
-        led_model: Cree XP-L2 V6
-        cri: 0
-        has_strobe: true
-        has_memory_mode: true
-        has_lockout: true
-        has_moonlight_mode: true
-        has_magnetic_tailcap: false
-        has_pocket_clip: true
-      use_cases:
-        - edc
-        - flood
-        - value
+    # Dead ASIN B0CJB1PLW9 - removed per FLR-QA-01
+    # - brand: Nitecore
+    #   brand_slug: nitecore
+    #   brand_country: CN
+    #   brand_website: https://www.nitecore.com
+    #   name: MH12 Pro
+    #   slug: nitecore-mh12-pro
+    #   code: MH12-Pro
+    #   description: A tactical EDC flashlight that balances throw, brightness, and runtime in a package purpose-built for law enforcement and daily carry. The MH12 Pro delivers 3,300 lumens with a precision deep reflector that produces a tight hotspot and reaches 505 meters. The tail switch provides instant momentary-on for tactical use, while the side switch handles daily mode selection. USB-C fast charging and the included 21700 battery keep you powered through extended shifts. Nitecore's build quality is among the best in the industry.
+    #   release_year: 2023
+    #   msrp_usd: 89.95
+    #   asin: B0CJB1PLW9
+    #   price_usd: 79.95
+    #   rating_count: 1200
+    #   average_rating: 4.6
+    #   manufacturer_url: https://flashlight.nitecore.com/product/mh12pro
+    #   images:
+    #     - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-800x800.jpg
+    #       alt: Nitecore MH12 Pro rechargeable flashlight
+    #     - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-2-500x500.jpg
+    #       alt: Nitecore MH12 Pro side view
+    #     - url: https://www.nitecore.co.uk/image/cache/data/flashlights/MH12Pro-3-500x500.jpg
+    #       alt: Nitecore MH12 Pro detail
+    #   specs:
+    #     max_lumens: 3300
+    #     sustained_lumens: 0
+    #     max_candela: 63800
+    #     beam_distance_m: 505
+    #     runtime_high_min: 140
+    #     runtime_500_min: 0
+    #     turbo_stepdown_sec: 120
+    #     beam_pattern: throw
+    #     battery_type: "21700"
+    #     recharge_type: usb-c
+    #     battery_replaceable: true
+    #     weight_g: 168
+    #     length_mm: 142
+    #     head_diameter_mm: 34
+    #     body_diameter_mm: 25.4
+    #     switch_type: dual
+    #     waterproof_rating: IP68
+    #     impact_resistance_m: 1
+    #     body_material: Aluminum
+    #     led_model: Luminus SFT70
+    #     cri: 0
+    #     has_strobe: true
+    #     has_memory_mode: true
+    #     has_lockout: true
+    #     has_moonlight_mode: true
+    #     has_magnetic_tailcap: false
+    #     has_pocket_clip: true
+    #   use_cases:
+    #     - tactical
+    #     - throw
+    #     - edc
+    # Dead ASIN B0CGGPY1SX - removed per FLR-QA-01
+    # - brand: Nitecore
+    #   brand_slug: nitecore
+    #   brand_country: CN
+    #   brand_website: https://www.nitecore.com
+    #   name: E4K
+    #   slug: nitecore-e4k
+    #   code: E4K
+    #   description: A compact powerhouse that fits 4,400 lumens into a package small enough for everyday pocket carry. The E4K uses four CREE XP-L2 V6 LEDs behind a quad-reflector to produce a massive flood of light with a 211-meter throw. The single side switch handles all operations including lockout, and USB-C charging means you can top off from any cable. The aggressive knurling and HA-III hard-anodized finish give it a tactical feel without the tactical size. If you want maximum brightness in minimum space, this is the one.
+    #   release_year: 2023
+    #   msrp_usd: 69.95
+    #   asin: B0CGGPY1SX
+    #   price_usd: 59.95
+    #   rating_count: 1800
+    #   average_rating: 4.5
+    #   manufacturer_url: https://flashlight.nitecore.com/product/e4k
+    #   images:
+    #     - url: https://www.nitecore.co.nz/assets/full/E4k.jpg
+    #       alt: Nitecore E4K compact EDC flashlight
+    #     - url: https://www.nitecore.co.nz/assets/alt_1/E4k.jpg
+    #       alt: Nitecore E4K side view
+    #     - url: https://www.nitecore.co.nz/assets/alt_2/E4k.jpg
+    #       alt: Nitecore E4K detail
+    #   specs:
+    #     max_lumens: 4400
+    #     sustained_lumens: 0
+    #     max_candela: 11100
+    #     beam_distance_m: 211
+    #     runtime_high_min: 150
+    #     runtime_500_min: 0
+    #     turbo_stepdown_sec: 45
+    #     beam_pattern: flood
+    #     battery_type: "21700"
+    #     recharge_type: usb-c
+    #     battery_replaceable: true
+    #     weight_g: 138
+    #     length_mm: 118.7
+    #     head_diameter_mm: 26
+    #     body_diameter_mm: 25.4
+    #     switch_type: side
+    #     waterproof_rating: IP68
+    #     impact_resistance_m: 1
+    #     body_material: Aluminum
+    #     led_model: Cree XP-L2 V6
+    #     cri: 0
+    #     has_strobe: true
+    #     has_memory_mode: true
+    #     has_lockout: true
+    #     has_moonlight_mode: true
+    #     has_magnetic_tailcap: false
+    #     has_pocket_clip: true
+    #   use_cases:
+    #     - edc
+    #     - flood
+    #     - value
     - brand: SureFire
       brand_slug: surefire
       brand_country: US
