@@ -265,6 +265,9 @@ export default async function BreakdownArticlePage({
   const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
   const priceFresh = getPriceFreshness(data.price_last_updated_at);
 
+  const inStock = data.in_stock !== undefined && data.in_stock !== null ? data.in_stock : data.amazon_in_stock;
+  const primaryUnavailable = !data.amazon_url || inStock === false;
+
   return (
     <article className="grid review-article">
       <ArticleStructuredData
@@ -327,7 +330,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="lg"
               priceUpdatedAt={data.price_last_updated_at}
-              inStock={data.amazon_in_stock}
+              inStock={inStock}
             />
             <Link
               href={`/flashlights/${data.id}`}
@@ -336,7 +339,7 @@ export default async function BreakdownArticlePage({
               View Full Specs →
             </Link>
           </div>
-          {(!data.amazon_url || data.amazon_in_stock === false) && data.in_stock_alternate && (
+          {primaryUnavailable && data.in_stock_alternate && (
             <div style={{ marginTop: 12 }}>
               <strong style={{ fontSize: "0.85rem", color: "var(--teal)", display: "block", marginBottom: 8 }}>
                 Best available alternative:
@@ -690,7 +693,7 @@ export default async function BreakdownArticlePage({
             price_usd={data.price_usd}
             size="lg"
             priceUpdatedAt={data.price_last_updated_at}
-            inStock={data.amazon_in_stock}
+            inStock={inStock}
           />
           <Link
             href={`/flashlights/${data.id}`}
@@ -707,7 +710,7 @@ export default async function BreakdownArticlePage({
             Compare Models
           </Link>
         </div>
-        {(!data.amazon_url || data.amazon_in_stock === false) && data.in_stock_alternate && (
+        {primaryUnavailable && data.in_stock_alternate && (
           <div style={{ marginTop: 16 }}>
             <strong style={{ fontSize: "0.85rem", color: "var(--teal)", display: "block", marginBottom: 8 }}>
               Best available alternative:
@@ -793,7 +796,7 @@ export default async function BreakdownArticlePage({
               price_usd={data.price_usd}
               size="sm"
               priceUpdatedAt={data.price_last_updated_at}
-              inStock={data.amazon_in_stock}
+              inStock={inStock}
             />
           </div>
         </div>
