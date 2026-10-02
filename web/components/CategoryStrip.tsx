@@ -65,9 +65,11 @@ export function CategoryStrip({
   // Infer profile from the first item (all items in a strip share a profile).
   const profile = items[0].profile;
 
-  // For hero/top-pick surfaces: if #1 is OOS and has an alternate, add a notice
+  // For hero/top-pick surfaces: if #1 primary is unavailable and has an alternate, add a notice
   const firstItem = items[0];
+  const inStock = firstItem.flashlight.in_stock;
   const isFirstOOS = firstItem.flashlight.availability_status === 'out_of_stock';
+  const primaryUnavailable = !firstItem.flashlight.amazon_url || inStock === false;
   const hasAlternate = firstItem.in_stock_alternate != null;
 
   return (
@@ -84,9 +86,9 @@ export function CategoryStrip({
       {description ? (
         <p className="muted dashboard-section-lead">{description}</p>
       ) : null}
-      {isFirstOOS && hasAlternate && firstItem.in_stock_alternate && (
+      {primaryUnavailable && hasAlternate && firstItem.in_stock_alternate && (
         <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 6, fontSize: "0.88rem" }}>
-          <strong>Top pick currently out of stock.</strong> Best available alternative:{" "}
+          <strong>Top pick currently unavailable.</strong> Best available alternative:{" "}
           {firstItem.in_stock_alternate.affiliate_url ? (
             <>
               <a

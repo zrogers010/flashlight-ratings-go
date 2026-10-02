@@ -57,9 +57,10 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
   const primaryBattery = item.battery_types?.[0];
   const tags = (item.use_case_tags || []).slice(0, 2);
   const priceFresh = getPriceFreshness(item.price_last_updated_at);
-  const isOutOfStock = item.availability_status === 'out_of_stock';
-  const hasAlternate = item.in_stock_alternate != null;
   const inStock = item.in_stock !== undefined && item.in_stock !== null ? item.in_stock : item.amazon_in_stock;
+  const isOutOfStock = item.availability_status === 'out_of_stock';
+  const primaryUnavailable = !item.amazon_url || inStock === false;
+  const hasAlternate = item.in_stock_alternate != null;
 
   return (
     <article
@@ -127,7 +128,7 @@ export function FlashlightCard({ item, rank }: { item: FlashlightItem; rank?: nu
         </div>
       </div>
 
-      {isOutOfStock && hasAlternate && item.in_stock_alternate && (
+      {primaryUnavailable && hasAlternate && item.in_stock_alternate && (
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
           <strong style={{ fontSize: "0.78rem", color: "var(--teal)" }}>Best available alternative:</strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
