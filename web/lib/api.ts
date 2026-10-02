@@ -285,15 +285,25 @@ export async function fetchBrandBySlug(slug: string) {
 }
 
 export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDetail> {
-  const listing = await fetchFlashlights({ pageSize: 500 });
+  const listing = await fetchFlashlights({ q: slug, pageSize: 1 });
   const match = listing.items.find((item) => item.slug === slug);
   if (!match) throw new Error(`Flashlight not found: ${slug}`);
   return fetchFlashlightByID(String(match.id));
 }
 
 export async function fetchAllSlugs(): Promise<{ slug: string; id: number }[]> {
-  const listing = await fetchFlashlights({ pageSize: 500 });
-  return listing.items.map((item) => ({ slug: item.slug, id: item.id }));
+  const allSlugs: { slug: string; id: number }[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const listing = await fetchFlashlights({ page, pageSize: 100 });
+    allSlugs.push(...listing.items.map((item) => ({ slug: item.slug, id: item.id })));
+    hasMore = page < listing.total_pages;
+    page++;
+  }
+
+  return allSlugs;
 }
 
 export async function createIntelligenceRun(input: IntelligenceRunInput) {
