@@ -74,4 +74,19 @@ check_json "/flashlights?q=zzzz-no-such-model&page=1&page_size=5" \
   '.total == 0 and (.items | length == 0)' \
   "search empty results"
 
+# FLR-QA-01 follow-up: weapon-mount list should not have OOS without alternates
+check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
+  '.items | map(select(.availability_status == "out_of_stock" and .in_stock_alternate == null)) | length == 0' \
+  "weapon-mount: no OOS without alternates"
+
+# FLR-QA-01 follow-up: weapon-mount list should not have low-lumen items
+check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
+  '.items | map(select(.max_lumens != null and .max_lumens < 100)) | length == 0' \
+  "weapon-mount: no low-lumen items"
+
+# FLR-QA-01 follow-up: in_stock_alternate field structure
+check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
+  'if (.items | map(select(.in_stock_alternate != null)) | length) > 0 then (.items[] | select(.in_stock_alternate != null) | .in_stock_alternate | type == "object" and has("id") and has("slug") and has("name") and has("brand_name")) else true end' \
+  "weapon-mount: alternate structure valid"
+
 echo "→ All smoke checks passed"
