@@ -1233,9 +1233,13 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
 	}
 
-	// FLR-QA-01 retest #5: Require candidate to have the requested use_case tag
+	// FLR-QA-01 retest #5 fix: Require candidate to have the requested use_case tag
 	// This prevents diving lights with high tactical scores from being recommended as tactical alts
-	useCaseFilter := `
+	// EXCEPT when useCase == "overall" (no "overall" tag exists in DB)
+	useCaseFilter := ""
+	useCaseParam := -1 // Track which parameter position for the use_case value
+	if useCase != "overall" {
+		useCaseFilter = `
 	  AND EXISTS (
 		SELECT 1
 		FROM flashlight_use_cases fuc
@@ -1243,6 +1247,8 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 		WHERE fuc.flashlight_id = f.id
 		  AND uc.slug = $3
 	  )`
+		useCaseParam = 3
+	}
 
 	// FLR-QA-01 retest #3/#4: Exclude specialty use cases when finding alternates for non-specialty categories
 	// Specialty: penlight, keychain, toy
@@ -1379,17 +1385,33 @@ LIMIT 1
 		useCaseTagsJSON     []byte
 	)
 
-	err := s.db.QueryRowContext(ctx, query, useCase, excludeID, useCase).Scan(
-		&alternate.ID,
-		&alternate.Slug,
-		&alternate.Name,
-		&alternate.BrandName,
-		&score,
-		&rankPosition,
-		&affiliateURL,
-		&imageURL,
-		&useCaseTagsJSON,
-	)
+	// Conditionally pass useCase as $3 only when useCaseFilter is active
+	var err error
+	if useCaseParam > 0 {
+		err = s.db.QueryRowContext(ctx, query, useCase, excludeID, useCase).Scan(
+			&alternate.ID,
+			&alternate.Slug,
+			&alternate.Name,
+			&alternate.BrandName,
+			&score,
+			&rankPosition,
+			&affiliateURL,
+			&imageURL,
+			&useCaseTagsJSON,
+		)
+	} else {
+		err = s.db.QueryRowContext(ctx, query, useCase, excludeID).Scan(
+			&alternate.ID,
+			&alternate.Slug,
+			&alternate.Name,
+			&alternate.BrandName,
+			&score,
+			&rankPosition,
+			&affiliateURL,
+			&imageURL,
+			&useCaseTagsJSON,
+		)
+	}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
