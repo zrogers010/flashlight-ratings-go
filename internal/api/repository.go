@@ -1182,6 +1182,21 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
 	}
 
+	// FLR-QA-01 retest #3: Exclude specialty use cases when finding alternates for non-specialty categories
+	// Specialty: penlight, keychain, toy
+	// Non-specialty: tactical, edc, throw, flood, weapon-mount, camping, search-rescue, etc.
+	specialtyExclusion := ""
+	if useCase != "penlight" && useCase != "keychain" && useCase != "toy" {
+		specialtyExclusion = `
+	  AND NOT EXISTS (
+		SELECT 1
+		FROM flashlight_use_cases fuc
+		JOIN use_cases uc ON uc.id = fuc.use_case_id
+		WHERE fuc.flashlight_id = f.id
+		  AND uc.slug IN ('penlight', 'keychain', 'toy')
+	  )`
+	}
+
 	query := fmt.Sprintf(`
 WITH latest_run AS (
 	SELECT id
@@ -1214,6 +1229,14 @@ latest_scores AS (
 	JOIN latest_run lr ON lr.id = fs.run_id
 	GROUP BY fs.flashlight_id
 ),
+use_case_agg AS (
+	SELECT
+		fuc.flashlight_id,
+		json_agg(u.slug ORDER BY u.slug) AS use_case_tags
+	FROM flashlight_use_cases fuc
+	JOIN use_cases u ON u.id = fuc.use_case_id
+	GROUP BY fuc.flashlight_id
+),
 ranked_data AS (
 	SELECT
 		f.id,
@@ -1224,6 +1247,7 @@ ranked_data AS (
 		COALESCE(los.overall_score, 0) AS overall_score,
 		lm.url AS image_url,
 		la.affiliate_url,
+		COALESCE(uca.use_case_tags, '[]'::json) AS use_case_tags,
 		ROW_NUMBER() OVER (
 			ORDER BY
 				CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
@@ -1234,6 +1258,7 @@ ranked_data AS (
 	JOIN brands b ON b.id = f.brand_id
 	LEFT JOIN latest_price lp ON lp.flashlight_id = f.id
 	LEFT JOIN latest_scores los ON los.flashlight_id = f.id
+	LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
 	JOIN selected_profile sp ON TRUE
 	LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
 		AND fs.profile_id = sp.id
@@ -1260,7 +1285,7 @@ ranked_data AS (
 	  AND f.id != $2
 	  AND lp.in_stock = TRUE
 	  AND la.affiliate_url IS NOT NULL
-	  AND la.affiliate_url != ''
+	  AND la.affiliate_url != ''%s
 )
 SELECT
 	id,
@@ -1270,11 +1295,12 @@ SELECT
 	score,
 	rank_position,
 	affiliate_url,
-	image_url
+	image_url,
+	use_case_tags
 FROM ranked_data
 ORDER BY %s
 LIMIT 1
-`, orderClause)
+`, specialtyExclusion, orderClause)
 
 	var (
 		alternate           inStockAlternate
@@ -1282,6 +1308,7 @@ LIMIT 1
 		affiliateURL        sql.NullString
 		score               float64
 		rankPosition        int
+		useCaseTagsJSON     []byte
 	)
 
 	err := s.db.QueryRowContext(ctx, query, useCase, excludeID).Scan(
@@ -1293,6 +1320,7 @@ LIMIT 1
 		&rankPosition,
 		&affiliateURL,
 		&imageURL,
+		&useCaseTagsJSON,
 	)
 
 	if err != nil {
@@ -1307,6 +1335,7 @@ LIMIT 1
 	alternate.RankPosition = &rankPosition
 	alternate.AffiliateURL = nullString(affiliateURL)
 	alternate.ImageURL = nullString(imageURL)
+	alternate.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 
 	return &alternate, nil
 }
