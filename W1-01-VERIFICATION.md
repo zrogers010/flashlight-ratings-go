@@ -300,7 +300,7 @@ The API now exposes these fields for frontend use:
 
 ## Known Limitations
 
-1. **Stock Data Freshness**: Stock status is based on the most recent price snapshot in the database. If Amazon sync is delayed, stock status may be stale (typically refreshed within 5-7 days per the sync schedule).
+1. **Stock Data Freshness**: Stock status is based on the most recent price snapshot in the database. If Amazon sync is delayed, stock status may be stale (typically refreshed within a few hours on the ~3×/day sync schedule).
 
 2. **Unknown Stock Handling**: Products without any price snapshots will have `in_stock: null` and `availability_status: "unknown"`. These are **NOT demoted** - they rank with in-stock products (stable partition groups in-stock + unknown together). This prevents demoting products that may actually be available but haven't been synced recently.
 

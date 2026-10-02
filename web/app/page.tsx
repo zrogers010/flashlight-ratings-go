@@ -23,7 +23,7 @@ const faq = [
   },
   {
     q: "How often are rankings and prices updated?",
-    a: "Our sync worker pulls fresh price, rating, and availability data from Amazon on a rotating daily schedule and recalculates scores after each sync. Most listings are refreshed within a 5-7 day cycle. The 'Check Price on Amazon' button always sends you to the live listing — your displayed price is just a guide."
+    a: "Our sync worker pulls fresh price, rating, and availability data from Amazon approximately three times per day and recalculates scores after each sync. This keeps most listings current within a few hours. The 'Check Price on Amazon' button always sends you to the live listing — your displayed price is just a guide."
   },
   {
     q: "Are these affiliate links?",
