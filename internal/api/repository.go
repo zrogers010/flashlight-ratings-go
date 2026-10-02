@@ -826,6 +826,8 @@ func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize in
 	// BE-02: For overall/best featured lists, exclude non-primary lights:
 	// - use_case in {penlight, keychain, toy}
 	// - max_lumens < 100
+	// BE-01: For overall/best featured lists, exclude non-buyable lights:
+	// - NULL or empty affiliate_url (must have working Amazon/affiliate link)
 	featuredFilter := ""
 	if useCase == "overall" {
 		featuredFilter = `
@@ -836,7 +838,9 @@ func (s *Server) rankings(ctx context.Context, useCase string, page, pageSize in
 			WHERE fuc.flashlight_id = f.id
 			  AND uc.slug IN ('penlight', 'keychain', 'toy')
 		)
-		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
+		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
+		AND la.affiliate_url IS NOT NULL
+		AND la.affiliate_url != ''`
 	}
 
 	query := fmt.Sprintf(`
@@ -989,7 +993,19 @@ LIMIT $2 OFFSET $3
 	}
 
 	// Count matching the same filters as the main query
-	countQuery := `SELECT COUNT(*) FROM flashlights f LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id WHERE f.is_active = TRUE`
+	countQuery := `SELECT COUNT(*) FROM flashlights f 
+		LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id 
+		LEFT JOIN LATERAL (
+			SELECT al.affiliate_url
+			FROM affiliate_links al
+			WHERE al.flashlight_id = f.id
+			  AND al.provider = 'amazon'
+			  AND al.region_code = 'US'
+			  AND al.is_active = TRUE
+			ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
+			LIMIT 1
+		) la ON TRUE
+		WHERE f.is_active = TRUE`
 	if useCase == "overall" {
 		countQuery += `
 		AND NOT EXISTS (
@@ -999,7 +1015,9 @@ LIMIT $2 OFFSET $3
 			WHERE fuc.flashlight_id = f.id
 			  AND uc.slug IN ('penlight', 'keychain', 'toy')
 		)
-		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)`
+		AND (s.max_lumens IS NULL OR s.max_lumens >= 100)
+		AND la.affiliate_url IS NOT NULL
+		AND la.affiliate_url != ''`
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
