@@ -25,6 +25,16 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
 
   try {
     const slugs = await fetchAllSlugs();
+    
+    // If API is unreachable and we have no stale cache, this is a build-time error
+    if (!slugs || slugs.length === 0) {
+      if (cachedPairs) {
+        console.warn('curatedComparePairs: API returned no data, using stale cache');
+        return cachedPairs;
+      }
+      throw new Error('curatedComparePairs: Cannot fetch slugs and no cache available');
+    }
+    
     const top10 = slugs.filter((s) => s.slug).slice(0, 10);
     const pairs: ComparePair[] = [];
 
@@ -38,12 +48,14 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
     cachedPairs = pairs;
     cacheTimestamp = now;
     return pairs;
-  } catch {
-    // On error, return stale cache if available
+  } catch (err) {
+    // On error, return stale cache if available, otherwise throw
     if (cachedPairs) {
+      console.warn('curatedComparePairs: Error fetching data, using stale cache:', err);
       return cachedPairs;
     }
-    return [];
+    console.error('curatedComparePairs: Failed to fetch data and no cache available');
+    throw err;
   }
 }
 

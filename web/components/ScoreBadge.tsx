@@ -1,4 +1,9 @@
 export function ScoreBadge({ score, size = "md" }: { score: number; size?: "sm" | "md" | "lg" }) {
+  // Don't render anything for products without scores
+  if (score <= 0) {
+    return null;
+  }
+  
   const tier = score >= 80 ? "high" : score >= 60 ? "mid" : "low";
   const dims = size === "sm" ? 38 : size === "lg" ? 64 : 52;
 

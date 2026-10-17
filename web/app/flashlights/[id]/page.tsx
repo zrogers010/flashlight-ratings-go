@@ -89,7 +89,7 @@ function generateFAQ(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
   if (data.battery_types?.length)
     items.push({ q: `What battery does the ${name} use?`, a: `The ${name} uses ${data.battery_types.join(" or ")} batteries.${data.usb_c_rechargeable ? " It supports direct USB-C charging." : ""}` });
   if (data.beam_distance_m)
-    items.push({ q: `How far can the ${name} throw?`, a: `The ${name} has a maximum beam distance of ${data.beam_distance_m} meters (${Math.round(data.beam_distance_m * 3.28)} feet) with ${fmt(data.max_candela)} candela.` });
+    items.push({ q: `How far can the ${name} throw?`, a: `The ${name} has a maximum beam distance of ${fmt(data.beam_distance_m)} meters (${Math.round(data.beam_distance_m * 3.28)} feet)${data.max_candela ? ` with ${fmt(data.max_candela)} candela` : ""}.` });
   if (data.max_lumens)
     items.push({ q: `How bright is the ${name}?`, a: `The ${name} produces up to ${fmt(data.max_lumens)} lumens on its highest mode.${data.modes?.length ? ` It has ${data.modes.length} brightness modes.` : ""}` });
   if (data.weight_g)
@@ -104,15 +104,32 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const name = `${data.brand} ${data.name}`;
   const score = topScore(data);
 
-  const desc = `${name} review: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100.`;
+  const specsText = [
+    data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+    data.max_candela ? `${fmt(data.max_candela)} candela` : null,
+    data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
+  ].filter(Boolean).join(", ");
+  
+  const desc = `${name} review${specsText ? `: ${specsText}` : ""}. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. ${score > 0 ? `Score: ${score.toFixed(1)}/100` : "Not yet rated"}.`;
 
   // The slug-based /reviews/[slug] page is the canonical URL for SEO. This
   // numeric-ID page exists for backward compatibility (old bookmarks, internal
   // links) but is marked noindex so Google consolidates ranking signals on
   // the slug URL instead of treating the two as duplicate content.
   const canonicalSlug = data.slug;
+  const titleSpecs = [
+    data.max_lumens ? `${fmt(data.max_lumens)} Lumens` : null,
+    data.beam_distance_m ? `${fmt(data.beam_distance_m)}m Throw` : null,
+  ].filter(Boolean).join(", ");
+  
+  const ogSpecs = [
+    data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+    data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
+    `Best for ${bestForLabel(data)}`,
+  ].filter(Boolean).join(" · ");
+  
   return {
-    title: `${name} Review — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
+    title: `${name} Review${titleSpecs ? ` — ${titleSpecs}` : ""}${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
     description: desc,
     alternates: canonicalSlug
       ? { canonical: `/reviews/${canonicalSlug}` }
@@ -120,7 +137,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     robots: { index: false, follow: true },
     openGraph: {
       title: `${name} — Flashlight Review & Score`,
-      description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)}`,
+      description: ogSpecs,
       images: data.image_urls?.length ? [data.image_urls[0]] : data.image_url ? [data.image_url] : undefined
     }
   };
@@ -204,10 +221,10 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
           )}
           <div className="spec-row" style={{ marginBottom: 8 }}>
             <Link href={`/best-flashlights/${BEST_FOR_SLUG[bestFor] || "tactical"}`} className="badge badge-teal" style={{ textDecoration: "none" }}>Best for {bestFor}</Link>
-            <span>{fmt(data.max_lumens)} lm</span>
-            <span>{fmt(data.beam_distance_m)} m throw</span>
+            {data.max_lumens ? <span>{fmt(data.max_lumens)} lm</span> : null}
+            {data.beam_distance_m ? <span>{fmt(data.beam_distance_m)} m throw</span> : null}
             <span>{data.waterproof_rating || "—"}</span>
-            <span>{fmt(data.weight_g)}g</span>
+            {data.weight_g ? <span>{fmt(data.weight_g)}g</span> : null}
           </div>
           {data.amazon_average_rating !== undefined && (
             <p className="muted" style={{ fontSize: "0.88rem" }}>
@@ -362,7 +379,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             <div><span className="muted">Max Lumens</span><strong>{fmt(data.max_lumens)}</strong></div>
             <div><span className="muted">Sustained Lumens</span><strong>{fmt(data.sustained_lumens)}</strong></div>
             <div><span className="muted">Candela</span><strong>{fmt(data.max_candela)}</strong></div>
-            <div><span className="muted">Beam Distance</span><strong>{fmt(data.beam_distance_m)} m</strong></div>
+            <div><span className="muted">Beam Distance</span><strong>{data.beam_distance_m ? `${fmt(data.beam_distance_m)} m` : "—"}</strong></div>
             <div><span className="muted">Beam Pattern</span><strong>{data.beam_pattern || "—"}</strong></div>
             <div><span className="muted">CRI</span><strong>{fmt(data.cri)}</strong></div>
             <div><span className="muted">Turbo Stepdown</span><strong>{fmt(data.turbo_stepdown_sec)}s</strong></div>
@@ -483,7 +500,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
                     <td style={{ fontFamily: "var(--font-mono)" }}>{fmt(mode.output_lumens)}</td>
                     <td style={{ fontFamily: "var(--font-mono)" }}>{fmt(mode.runtime_min)}</td>
                     <td style={{ fontFamily: "var(--font-mono)" }}>{fmt(mode.candela)}</td>
-                    <td style={{ fontFamily: "var(--font-mono)" }}>{fmt(mode.beam_distance_m)}</td>
+                    <td style={{ fontFamily: "var(--font-mono)" }}>{mode.beam_distance_m ? fmt(mode.beam_distance_m) : "—"}</td>
                   </tr>
                 ))}
               </tbody>

@@ -107,16 +107,18 @@ function generateUseCaseParagraphs(data: FlashlightDetail): { heading: string; t
   const bestFor = bestForLabel(data);
 
   if (tags.includes("tactical") || bestFor === "Tactical") {
+    const tacticalScore = data.tactical_score || 0;
     sections.push({
       heading: "Tactical & Law Enforcement",
-      text: `The ${name} earns a ${fmt(data.tactical_score, 1)}/100 tactical score. ${(data.max_lumens || 0) >= 1000 ? `Its ${fmt(data.max_lumens)}-lumen output can temporarily disorient a subject and illuminate threats at distance.` : `While not the brightest, it offers reliability and ergonomics suited for duty.`} ${data.has_strobe ? `The strobe mode adds a disorienting tactical option.` : ``} ${data.has_tail_switch ? `A tail switch enables instinctive cigar-grip activation preferred by most tactical users.` : ``}`.trim(),
+      text: `The ${name} ${tacticalScore > 0 ? `earns a ${fmt(tacticalScore, 1)}/100 tactical score` : `is designed for tactical use, though we lack sufficient spec data to score it`}. ${(data.max_lumens || 0) >= 1000 ? `Its ${fmt(data.max_lumens)}-lumen output can temporarily disorient a subject and illuminate threats at distance.` : `While not the brightest, it offers reliability and ergonomics suited for duty.`} ${data.has_strobe ? `The strobe mode adds a disorienting tactical option.` : ``} ${data.has_tail_switch ? `A tail switch enables instinctive cigar-grip activation preferred by most tactical users.` : ``}`.trim(),
     });
   }
 
   if (tags.includes("edc") || bestFor === "EDC") {
+    const edcScore = data.edc_score || 0;
     sections.push({
       heading: "Everyday Carry",
-      text: `Scoring ${fmt(data.edc_score, 1)}/100 in our EDC category, the ${name} ${(data.weight_g || 0) <= 100 ? `weighs just ${fmt(data.weight_g)}g — barely noticeable in a pocket.` : `weighs ${fmt(data.weight_g)}g, which is reasonable for daily carry.`} ${data.has_pocket_clip ? `The included pocket clip allows deep-carry positioning.` : ``} ${data.has_moonlight_mode ? `A moonlight mode provides just enough light for close-range tasks without disturbing others.` : ``}`.trim(),
+      text: `${edcScore > 0 ? `Scoring ${fmt(edcScore, 1)}/100 in our EDC category` : `Designed for everyday carry, though we lack sufficient spec data to score it`}, the ${name} ${(data.weight_g || 0) <= 100 ? `weighs just ${fmt(data.weight_g)}g — barely noticeable in a pocket.` : `weighs ${fmt(data.weight_g)}g, which is reasonable for daily carry.`} ${data.has_pocket_clip ? `The included pocket clip allows deep-carry positioning.` : ``} ${data.has_moonlight_mode ? `A moonlight mode provides just enough light for close-range tasks without disturbing others.` : ``}`.trim(),
     });
   }
 
@@ -128,16 +130,23 @@ function generateUseCaseParagraphs(data: FlashlightDetail): { heading: string; t
   }
 
   if (tags.includes("throw") || bestFor === "Throw") {
+    const throwScore = data.throw_score || 0;
+    const specsText = [
+      data.max_candela ? `${fmt(data.max_candela)} candela` : null,
+      data.beam_distance_m ? `${fmt(data.beam_distance_m)}m rated throw` : null,
+    ].filter(Boolean).join(" and ");
+    
     sections.push({
       heading: "Long-Range & Search",
-      text: `With ${fmt(data.max_candela)} candela and a ${fmt(data.beam_distance_m)}m rated throw, the ${name} is built for reaching out into the distance. ${(data.throw_score || 0) >= 80 ? `Our algorithm rates its throw capability at ${fmt(data.throw_score, 1)}/100 — placing it among the best throwers in our database.` : `It scores ${fmt(data.throw_score, 1)}/100 for throw performance.`}`.trim(),
+      text: `${specsText ? `With ${specsText}, the` : `The`} ${name} is built for reaching out into the distance. ${throwScore > 0 ? (throwScore >= 80 ? `Our algorithm rates its throw capability at ${fmt(throwScore, 1)}/100 — placing it among the best throwers in our database.` : `It scores ${fmt(throwScore, 1)}/100 for throw performance.`) : `We lack sufficient spec data to score its throw performance.`}`.trim(),
     });
   }
 
   if (tags.includes("value") || bestFor === "Value") {
+    const valueScore = data.value_score || 0;
     sections.push({
       heading: "Budget & Value",
-      text: `At ${data.price_usd ? `$${fmt(data.price_usd, 2)}` : `its price point`}, the ${name} scores ${fmt(data.value_score, 1)}/100 on our value index, meaning you're getting more lumens, throw, and features per dollar than most competitors. ${data.usb_c_rechargeable ? `USB-C charging eliminates the expense of a separate charger.` : ``} ${data.battery_included ? `A battery is included in the box, so there's no additional purchase needed.` : ``}`.trim(),
+      text: `At ${data.price_usd ? `$${fmt(data.price_usd, 2)}` : `its price point`}, the ${name} ${valueScore > 0 ? `scores ${fmt(valueScore, 1)}/100 on our value index, meaning you're getting more lumens, throw, and features per dollar than most competitors` : `offers solid features, though we lack sufficient spec data to score its value`}. ${data.usb_c_rechargeable ? `USB-C charging eliminates the expense of a separate charger.` : ``} ${data.battery_included ? `A battery is included in the box, so there's no additional purchase needed.` : ``}`.trim(),
     });
   }
 
@@ -355,7 +364,7 @@ export default async function BreakdownArticlePage({
             <div>
               <p className="review-score-label">
                 FlashlightRatings Score:{" "}
-                <strong>{score > 0 ? score.toFixed(1) : "N/A"}</strong>/100
+                <strong>{score > 0 ? `${score.toFixed(1)}/100` : "Not rated"}</strong>
               </p>
               <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
                 Best for {bestFor}
@@ -712,10 +721,10 @@ export default async function BreakdownArticlePage({
             ? "an outstanding flashlight that earns high marks across the board"
             : score >= 65
               ? "a solid performer that delivers good value in its category"
-              : "a capable light with specific strengths for the right buyer"}
-          . Its best fit is <strong>{bestFor.toLowerCase()}</strong> use, where
-          it scores{" "}
-          {fmt(
+              : score > 0
+                ? "a capable light with specific strengths for the right buyer"
+                : "a flashlight we haven't yet scored due to insufficient spec data"}
+          . Its best fit is <strong>{bestFor.toLowerCase()}</strong> use{score > 0 ? `, where it scores ${fmt(
             bestFor === "Tactical"
               ? data.tactical_score
               : bestFor === "EDC"
@@ -726,8 +735,7 @@ export default async function BreakdownArticlePage({
                     ? data.throw_score
                     : data.flood_score,
             1
-          )}
-          /100.
+          )}/100` : ""}.
           {data.price_usd
             ? ` At $${fmt(data.price_usd, 2)}, ${(data.value_score || 0) >= 75 ? "it represents strong value for money." : "pricing is in line with competitors in this segment."}`
             : ""}
