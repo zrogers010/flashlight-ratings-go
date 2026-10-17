@@ -41,11 +41,15 @@ export function buildAffiliateLink(
 
   switch (merchant) {
     case 'amazon':
-      if (!config.amazon?.tag) return undefined;
-      // Amazon affiliate links: append ?tag=xxx
-      const amazonUrl = new URL(productUrl.startsWith('http') ? productUrl : `https://${productUrl}`);
-      amazonUrl.searchParams.set('tag', config.amazon.tag);
-      return amazonUrl.toString();
+      // Amazon: use stored URL as-is (already contains tag=flashlightrat-20)
+      // Only override the tag if NEXT_PUBLIC_AMAZON_TAG is explicitly set at build time
+      if (config.amazon?.tag) {
+        const amazonUrl = new URL(productUrl.startsWith('http') ? productUrl : `https://${productUrl}`);
+        amazonUrl.searchParams.set('tag', config.amazon.tag);
+        return amazonUrl.toString();
+      }
+      // No tag configured: return stored URL unchanged
+      return productUrl.startsWith('http') ? productUrl : `https://${productUrl}`;
 
     case 'olight':
       if (!config.awin?.publisherId || !config.awin?.olightMerchantId) return undefined;
@@ -56,11 +60,10 @@ export function buildAffiliateLink(
 
     case 'fenix':
       if (!config.avantlink?.websiteId || !config.avantlink?.fenixMerchantId) return undefined;
-      // AvantLink deep link format per https://www.avantlink.com/docs/deep-linking
-      // Format: https://www.avantlink.com/click.php?tt=cl&mi=MERCHANT_ID&pw=WEBSITE_ID&ctc=TRACKING_CODE&url=PRODUCT_URL
-      // Note: mi (merchant ID), pw (website ID), not merchant_id/website_id
+      // AvantLink deep link format per https://www.avantlink.com/support/article/anatomy-of-an-affiliate-tracking-link
+      // Format: https://www.avantlink.com/click.php?tt=cl&merchant_id=UUID&website_id=UUID&url=PRODUCT_URL
       const fenixEncoded = encodeURIComponent(productUrl);
-      return `https://www.avantlink.com/click.php?tt=cl&mi=${config.avantlink.fenixMerchantId}&pw=${config.avantlink.websiteId}&url=${fenixEncoded}`;
+      return `https://www.avantlink.com/click.php?tt=cl&merchant_id=${config.avantlink.fenixMerchantId}&website_id=${config.avantlink.websiteId}&url=${fenixEncoded}`;
 
     default:
       return undefined;

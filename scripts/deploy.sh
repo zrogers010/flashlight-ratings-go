@@ -303,6 +303,11 @@ do_deploy() {
     'until docker inspect --format="{{.State.Health.Status}}" flashlight-db 2>/dev/null | grep -q healthy; do sleep 2; done' \
     || echo "WARNING: DB health check timed out"
 
+  # ── Apply migrations (idempotent) ───────────────────────────────
+  echo "→ Applying database migrations..."
+  ${COMPOSE} exec -T db psql -U flashlightratings flashlightratings -f /docker-entrypoint-initdb.d/0011_multi_merchant_offers.sql \
+    || echo "WARNING: Migration 0011 failed (may already be applied)"
+
   # ── Import catalog ─────────────────────────────────────────────
   echo "→ Building YAML catalog into database..."
   ${COMPOSE} run --rm catalog-build

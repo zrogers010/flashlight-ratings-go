@@ -19,8 +19,9 @@ services:
       - ./db/migrations/0002_market_intelligence.sql:/docker-entrypoint-initdb.d/002_market_intelligence.sql:ro
       - ./db/migrations/0003_flashlight_detail_fields.sql:/docker-entrypoint-initdb.d/003_flashlight_detail_fields.sql:ro
       - ./db/migrations/0004_intelligence_runs.sql:/docker-entrypoint-initdb.d/004_intelligence_runs.sql:ro
-      - ./db/seeds/0001_scoring_profiles.sql:/docker-entrypoint-initdb.d/005_scoring_profiles.sql:ro
-      - ./db/seeds/0002_demo_flashlights.sql:/docker-entrypoint-initdb.d/006_demo_flashlights.sql:ro
+      - ./db/migrations/0011_multi_merchant_offers.sql:/docker-entrypoint-initdb.d/007_multi_merchant_offers.sql:ro
+      - ./db/seeds/0001_scoring_profiles.sql:/docker-entrypoint-initdb.d/008_scoring_profiles.sql:ro
+      - ./db/seeds/0002_demo_flashlights.sql:/docker-entrypoint-initdb.d/009_demo_flashlights.sql:ro
     restart: unless-stopped
 
   api:

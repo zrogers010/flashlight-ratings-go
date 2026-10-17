@@ -13,31 +13,31 @@ ALTER TABLE flashlights
 
 ## Deployment Order
 
-⚠️ **IMPORTANT:** The migration must run **before** `catalog-build` and before the API serves requests.
+⚠️ **IMPORTANT:** The migration runs **automatically** before `catalog-build`.
 
-### Manual Deployment Steps
+### Automated Deployment
 
-1. **Apply migration:**
-   ```bash
-   psql $DATABASE_URL -f db/migrations/0011_multi_merchant_offers.sql
-   ```
+The migration is applied idempotently in two places:
 
-2. **Rebuild catalog** (to populate manufacturer_url):
-   ```bash
-   ./catalog-build
-   ```
+1. **Fresh database** (docker-compose up):
+   - `docker-compose.yml` mounts `0011_multi_merchant_offers.sql` as `007_multi_merchant_offers.sql` in `/docker-entrypoint-initdb.d/`
+   - Runs automatically on first container boot
 
-3. **Deploy API and web:**
-   ```bash
-   # Build and deploy as normal
-   ```
+2. **Existing deployment** (scripts/deploy.sh):
+   - `deploy.sh` applies the migration before running `catalog-build`
+   - Uses `IF NOT EXISTS`, safe to re-run
+
+### Manual Migration (if needed)
+
+```bash
+psql $DATABASE_URL -f db/migrations/0011_multi_merchant_offers.sql
+```
 
 ### Code Tolerance
 
-The Go code **tolerates** the missing column gracefully:
-- `internal/catalog/builder.go`: Uses `IF NOT EXISTS` in migration
-- `internal/api/repository.go`: Returns `manufacturer_url` as nullable `*string`
-- Frontend: Treats missing `manufacturer_url` as `null`, falls back to Amazon-only
+The frontend handles missing manufacturer URLs gracefully:
+- Returns `null` when column is absent or value is NULL
+- Falls back to Amazon-only affiliate links
 
 ### Verification
 
