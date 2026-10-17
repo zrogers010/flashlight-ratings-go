@@ -60,7 +60,8 @@ export function buildAffiliateLink(
 
     case 'fenix':
       if (!config.avantlink?.websiteId || !config.avantlink?.fenixMerchantId) return undefined;
-      // AvantLink deep link format per https://www.avantlink.com/support/article/anatomy-of-an-affiliate-tracking-link
+      // AvantLink deep link format
+      // See: "Anatomy of an Affiliate Tracking Link" in AvantLink support docs
       // Format: https://www.avantlink.com/click.php?tt=cl&merchant_id=UUID&website_id=UUID&url=PRODUCT_URL
       const fenixEncoded = encodeURIComponent(productUrl);
       return `https://www.avantlink.com/click.php?tt=cl&merchant_id=${config.avantlink.fenixMerchantId}&website_id=${config.avantlink.websiteId}&url=${fenixEncoded}`;

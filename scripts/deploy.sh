@@ -305,8 +305,8 @@ do_deploy() {
 
   # ── Apply migrations (idempotent) ───────────────────────────────
   echo "→ Applying database migrations..."
-  ${COMPOSE} exec -T db psql -U flashlightratings flashlightratings -f /docker-entrypoint-initdb.d/0011_multi_merchant_offers.sql \
-    || echo "WARNING: Migration 0011 failed (may already be applied)"
+  ${COMPOSE} exec -T db psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-flashlight_app}" -d "${POSTGRES_DB:-flashlight}" \
+    < db/migrations/0011_multi_merchant_offers.sql
 
   # ── Import catalog ─────────────────────────────────────────────
   echo "→ Building YAML catalog into database..."
