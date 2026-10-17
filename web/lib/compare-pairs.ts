@@ -42,13 +42,19 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
   try {
     const slugs = await fetchAllSlugs();
     
-    // If API is unreachable and we have no stale cache, this is a build-time error
+    // If API is unreachable and we have no stale cache
     if (!slugs || slugs.length === 0) {
       if (cachedPairs) {
         console.warn('curatedComparePairs: API returned no data, using stale cache');
         return cachedPairs;
       }
-      throw new Error('curatedComparePairs: Cannot fetch slugs and no cache available');
+      // Only throw when REQUIRE_COMPARE_PAIRS=1 (in-container rebuild)
+      if (process.env.REQUIRE_COMPARE_PAIRS === '1') {
+        throw new Error('curatedComparePairs: Cannot fetch slugs and no cache available');
+      }
+      // Otherwise, return empty array for graceful fallback during image build
+      console.warn('curatedComparePairs: Cannot fetch slugs, returning empty array');
+      return [];
     }
     
     // Filter out unscored/incomplete products (score <= 0) before taking top 10
@@ -67,13 +73,19 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
     cacheTimestamp = now;
     return pairs;
   } catch (err) {
-    // On error, return stale cache if available, otherwise throw
+    // On error, return stale cache if available
     if (cachedPairs) {
       console.warn('curatedComparePairs: Error fetching data, using stale cache:', err);
       return cachedPairs;
     }
-    console.error('curatedComparePairs: Failed to fetch data and no cache available');
-    throw err;
+    // Only throw when REQUIRE_COMPARE_PAIRS=1 (in-container rebuild)
+    if (process.env.REQUIRE_COMPARE_PAIRS === '1') {
+      console.error('curatedComparePairs: Failed to fetch data and no cache available');
+      throw err;
+    }
+    // Otherwise, return empty array for graceful fallback during image build
+    console.warn('curatedComparePairs: Error fetching data, returning empty array');
+    return [];
   }
 }
 

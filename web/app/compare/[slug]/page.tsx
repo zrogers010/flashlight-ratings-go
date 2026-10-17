@@ -19,7 +19,10 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   const pairs = await curatedComparePairs();
   if (pairs.length === 0) {
-    throw new Error("generateStaticParams: no compare pairs generated from curatedComparePairs");
+    if (process.env.REQUIRE_COMPARE_PAIRS === '1') {
+      throw new Error("generateStaticParams: no compare pairs generated from curatedComparePairs");
+    }
+    return [];
   }
   return pairs.map((p) => ({ slug: p.slug }));
 }

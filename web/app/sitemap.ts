@@ -75,9 +75,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // This ensures sitemap and page metadata are consistent.
       // Top 10 × top 10 = 45 pairs
       const pairs = await curatedComparePairs();
-      if (pairs.length === 0) {
-        throw new Error("sitemap: curatedComparePairs returned no pairs - build must fail");
-      }
       vsPages = pairs.map((pair) => ({
         url: `${BASE_URL}/compare/${pair.slug}`,
         lastModified: now,
@@ -139,6 +136,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // API unavailable — static pages still generated; products added on next revalidation
+  }
+
+  // When REQUIRE_COMPARE_PAIRS=1 (in-container rebuild), enforce that we have compare pairs
+  if (process.env.REQUIRE_COMPARE_PAIRS === '1' && vsPages.length === 0) {
+    throw new Error("sitemap: REQUIRE_COMPARE_PAIRS=1 but no compare pairs were generated - API may be down or data incomplete");
   }
 
   const guidePages: MetadataRoute.Sitemap = guideSlugs.map((slug) => ({

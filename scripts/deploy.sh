@@ -335,12 +335,17 @@ do_deploy() {
   # Without this, ISR-cached pages (/reviews, /brands, the homepage
   # CategoryStrips, etc.) stay empty until their 1-hour revalidate
   # window finally fires. Costs ~30-60s of extra deploy time.
-  echo "→ Waiting for api to respond..."
-  timeout 60 bash -c \
-    'until curl -sf -o /dev/null http://localhost:8080/rankings; do sleep 2; done' \
-    || echo "WARNING: api did not respond in time; web rebuild may produce empty pages"
-  echo "→ Re-prerendering web with live api data..."
-  ${COMPOSE} exec -T web npm run build
+  echo "→ Waiting for api to return scored products..."
+  timeout 60 bash -c '
+    until scored=$(curl -sf "http://localhost:8080/flashlights?page_size=2" | grep -o "\"overall_score\":[0-9.]*" | grep -v "\"overall_score\":0" | wc -l); do
+      if [ "$scored" -ge 2 ]; then
+        break
+      fi
+      sleep 2
+    done
+  ' || echo "WARNING: api did not return scored products in time; web rebuild may fail"
+  echo "→ Re-prerendering web with live api data (strict compare pairs check enabled)..."
+  ${COMPOSE} exec -T -e REQUIRE_COMPARE_PAIRS=1 web npm run build
   echo "→ Restarting web to pick up fresh prerenders..."
   ${COMPOSE} restart web
   sleep 5

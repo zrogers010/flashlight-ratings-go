@@ -4,11 +4,15 @@ import { SITE_AUTHOR, type Author } from "@/lib/author";
 const SITE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
 export function ProductStructuredData({ data }: { data: FlashlightDetail }) {
+  const descriptionFallback = data.max_lumens 
+    ? `${data.brand} ${data.name} flashlight with ${data.max_lumens} lumens.`
+    : `${data.brand} ${data.name} flashlight.`;
+  
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: `${data.brand} ${data.name}`,
-    description: data.description || `${data.brand} ${data.name} flashlight with ${data.max_lumens || "N/A"} lumens.`,
+    description: data.description || descriptionFallback,
     brand: { "@type": "Brand", name: data.brand },
     category: "Flashlights"
   };
