@@ -245,6 +245,8 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             size="lg"
             priceUpdatedAt={data.price_last_updated_at}
             inStock={data.amazon_in_stock}
+            brand={data.brand}
+            manufacturer_url={data.manufacturer_url}
           />
           {primaryUnavailable && hasAlternate && data.in_stock_alternate && (
             <div style={{ marginTop: 12 }}>
@@ -409,6 +411,8 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
           price_usd={data.price_usd}
           size="lg"
           inStock={data.amazon_in_stock}
+          brand={data.brand}
+          manufacturer_url={data.manufacturer_url}
         />
         {primaryUnavailable && hasAlternate && data.in_stock_alternate && (
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
