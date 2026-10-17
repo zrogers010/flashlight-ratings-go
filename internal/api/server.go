@@ -84,6 +84,7 @@ type flashlightDetail struct {
 	BrandSlug           *string          `json:"brand_slug,omitempty"`
 	BrandWebsiteURL     *string          `json:"brand_website_url,omitempty"`
 	BrandCountryCode    *string          `json:"brand_country_code,omitempty"`
+	ManufacturerURL     *string          `json:"manufacturer_url,omitempty"`
 	ReleaseYear         *int64           `json:"release_year,omitempty"`
 	MSRPUSD             *float64         `json:"msrp_usd,omitempty"`
 	ASIN                *string          `json:"asin,omitempty"`

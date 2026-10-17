@@ -1,9 +1,9 @@
 export function AmazonDisclosure() {
   return (
     <p className="disclosure">
-      As an Amazon Associate we earn from qualifying purchases. Pricing and
-      availability can change quickly. Always use{" "}
-      <strong>Check Price on Amazon</strong> for current details.
+      We earn commissions from Amazon Associates, Awin (Olight), and AvantLink (Fenix). 
+      We show the best-paying merchant first, with alternatives when available. 
+      Pricing and availability can change quickly — always check current details before purchase.
     </p>
   );
 }

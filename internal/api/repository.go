@@ -394,6 +394,7 @@ SELECT
 	b.country_code,
 	EXTRACT(YEAR FROM f.launch_date)::INTEGER,
 	f.msrp_usd,
+	f.manufacturer_url,
 	f.description,
 	(
 		SELECT m.url
@@ -504,7 +505,7 @@ WHERE f.id = $1
 
 	var (
 		item                                                                                                                                                        flashlightDetail
-		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode sql.NullString
+		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode, manufacturerURL sql.NullString
 		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri               sql.NullInt64
 		cctMinK, cctMaxK                                                                                                                                            sql.NullInt64
 		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, overall, tactical, edc, value, throw, flood                                      sql.NullFloat64
@@ -526,6 +527,7 @@ WHERE f.id = $1
 		&brandCountryCode,
 		&releaseYear,
 		&msrpUSD,
+		&manufacturerURL,
 		&desc,
 		&imageURL,
 		&amazonURL,
@@ -589,6 +591,7 @@ WHERE f.id = $1
 	item.BrandSlug = nullString(brandSlug)
 	item.BrandWebsiteURL = nullString(brandWebsiteURL)
 	item.BrandCountryCode = nullString(brandCountryCode)
+	item.ManufacturerURL = nullString(manufacturerURL)
 	item.ReleaseYear = nullInt(releaseYear)
 	item.MSRPUSD = nullFloat(msrpUSD)
 	item.Description = nullString(desc)
