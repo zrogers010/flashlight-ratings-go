@@ -110,7 +110,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
   ].filter(Boolean).join(", ");
   
-  const desc = `${name} review${specsText ? `: ${specsText}` : ""}. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. ${score > 0 ? `Score: ${score.toFixed(1)}/100` : "Not yet rated"}.`;
+  const descParts = [`${name} review${specsText ? `: ${specsText}` : ""}.`];
+  if (data.battery_types?.length) {
+    descParts.push(`${data.battery_types.join("/")} battery.`);
+  }
+  if (data.waterproof_rating) {
+    descParts.push(`${data.waterproof_rating} rated.`);
+  }
+  descParts.push(score > 0 ? `Score: ${score.toFixed(1)}/100.` : "Not yet rated.");
+  const desc = descParts.join(" ");
 
   // The slug-based /reviews/[slug] page is the canonical URL for SEO. This
   // numeric-ID page exists for backward compatibility (old bookmarks, internal
@@ -382,7 +390,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             <div><span className="muted">Beam Distance</span><strong>{data.beam_distance_m ? `${fmt(data.beam_distance_m)} m` : "—"}</strong></div>
             <div><span className="muted">Beam Pattern</span><strong>{data.beam_pattern || "—"}</strong></div>
             <div><span className="muted">CRI</span><strong>{fmt(data.cri)}</strong></div>
-            <div><span className="muted">Turbo Stepdown</span><strong>{fmt(data.turbo_stepdown_sec)}s</strong></div>
+            <div><span className="muted">Turbo Stepdown</span><strong>{data.turbo_stepdown_sec ? `${fmt(data.turbo_stepdown_sec)}s` : '—'}</strong></div>
           </div>
         </div>
 
@@ -393,9 +401,9 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
             <div><span className="muted">Recharge</span><strong>{data.recharge_type || (data.usb_c_rechargeable ? "USB-C" : "—")}</strong></div>
             <div><span className="muted">Replaceable</span><strong>{yesNo(data.battery_replaceable)}</strong></div>
             <div><span className="muted">LED</span><strong>{data.led_model || "—"}</strong></div>
-            <div><span className="muted">Weight</span><strong>{fmt(data.weight_g, 1)}g</strong></div>
-            <div><span className="muted">Length</span><strong>{fmt(data.length_mm, 1)}mm</strong></div>
-            <div><span className="muted">Head</span><strong>{fmt(data.head_diameter_mm, 1)}mm</strong></div>
+            <div><span className="muted">Weight</span><strong>{data.weight_g ? `${fmt(data.weight_g, 1)}g` : '—'}</strong></div>
+            <div><span className="muted">Length</span><strong>{data.length_mm ? `${fmt(data.length_mm, 1)}mm` : '—'}</strong></div>
+            <div><span className="muted">Head</span><strong>{data.head_diameter_mm ? `${fmt(data.head_diameter_mm, 1)}mm` : '—'}</strong></div>
           </div>
         </div>
 
@@ -403,7 +411,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
           <h3 style={{ marginBottom: 12 }}>Features</h3>
           <div className="score-stack">
             <div><span className="muted">IP Rating</span><strong>{data.waterproof_rating || "—"}</strong></div>
-            <div><span className="muted">Impact Resist.</span><strong>{fmt(data.impact_resistance_m, 1)}m</strong></div>
+            <div><span className="muted">Impact Resist.</span><strong>{data.impact_resistance_m ? `${fmt(data.impact_resistance_m, 1)}m` : '—'}</strong></div>
             <div><span className="muted">Material</span><strong>{data.body_material || "—"}</strong></div>
             <div><span className="muted">Strobe</span><strong>{yesNo(data.has_strobe)}</strong></div>
             <div><span className="muted">Lockout</span><strong>{yesNo(data.has_lockout)}</strong></div>

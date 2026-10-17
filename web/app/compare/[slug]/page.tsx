@@ -17,12 +17,11 @@ import { curatedComparePairs, isInCuratedSet } from "@/lib/compare-pairs";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  try {
-    const pairs = await curatedComparePairs();
-    return pairs.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
+  const pairs = await curatedComparePairs();
+  if (pairs.length === 0) {
+    throw new Error("generateStaticParams: no compare pairs generated from curatedComparePairs");
   }
+  return pairs.map((p) => ({ slug: p.slug }));
 }
 
 function fmt(v?: number, digits = 0) {

@@ -75,6 +75,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // This ensures sitemap and page metadata are consistent.
       // Top 10 × top 10 = 45 pairs
       const pairs = await curatedComparePairs();
+      if (pairs.length === 0) {
+        throw new Error("sitemap: curatedComparePairs returned no pairs - build must fail");
+      }
       vsPages = pairs.map((pair) => ({
         url: `${BASE_URL}/compare/${pair.slug}`,
         lastModified: now,

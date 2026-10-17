@@ -6,6 +6,22 @@ export type ComparePair = {
   slug: string;
 };
 
+function topScore(item: { 
+  tactical_score?: number;
+  edc_score?: number;
+  value_score?: number;
+  throw_score?: number;
+  flood_score?: number;
+}) {
+  return Math.max(
+    item.tactical_score || 0,
+    item.edc_score || 0,
+    item.value_score || 0,
+    item.throw_score || 0,
+    item.flood_score || 0
+  );
+}
+
 let cachedPairs: ComparePair[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 3600 * 1000; // 1 hour
@@ -35,7 +51,9 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
       throw new Error('curatedComparePairs: Cannot fetch slugs and no cache available');
     }
     
-    const top10 = slugs.filter((s) => s.slug).slice(0, 10);
+    // Filter out unscored/incomplete products (score <= 0) before taking top 10
+    const scored = slugs.filter((s) => s.slug && topScore(s) > 0);
+    const top10 = scored.slice(0, 10);
     const pairs: ComparePair[] = [];
 
     for (let i = 0; i < top10.length; i++) {
