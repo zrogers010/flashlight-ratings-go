@@ -141,7 +141,7 @@ export function getMerchantConfig(): MerchantConfig {
   const config: MerchantConfig = {};
 
   // Amazon tag (optional - stored URLs already contain tag=flashlightrat-20)
-  const amazonTag = process.env.NEXT_PUBLIC_AMAZON_TAG;
+  const amazonTag = process.env.NEXT_PUBLIC_AMAZON_TAG?.trim();
   if (amazonTag) {
     config.amazon = { tag: amazonTag };
   }
