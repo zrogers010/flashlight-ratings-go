@@ -142,9 +142,14 @@ function generateUseCaseParagraphs(data: FlashlightDetail): { heading: string; t
   }
 
   if (sections.length === 0) {
+    const specsText = [
+      data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+      data.beam_distance_m ? `${fmt(data.beam_distance_m)}m of throw` : null,
+    ].filter(Boolean).join(" and ");
+    
     sections.push({
       heading: "General Use",
-      text: `The ${name} is a well-rounded flashlight suitable for a variety of situations. With ${fmt(data.max_lumens)} lumens and ${fmt(data.beam_distance_m)}m of throw, it handles everyday tasks, outdoor activities, and emergency preparedness with competence.`,
+      text: `The ${name} is a well-rounded flashlight suitable for a variety of situations.${specsText ? ` With ${specsText}, it` : ` It`} handles everyday tasks, outdoor activities, and emergency preparedness with competence.`,
     });
   }
 
@@ -239,7 +244,12 @@ export async function generateMetadata({
       alternates: { canonical: `/reviews/${slug}` },
       openGraph: {
         title: `${name} — In-Depth Breakdown & Analysis`,
-        description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)} · Score ${score.toFixed(0)}/100`,
+        description: [
+          data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+          data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
+          `Best for ${bestForLabel(data)}`,
+          score > 0 ? `Score ${score.toFixed(0)}/100` : null,
+        ].filter(Boolean).join(" · "),
         // OG image is rendered by `opengraph-image.tsx` in this route folder
         // (per-product custom image with score, photo, and key specs).
       },
@@ -297,7 +307,7 @@ export default async function BreakdownArticlePage({
       <ArticleStructuredData
         url={`${SITE_URL}/reviews/${slug}`}
         headline={`${name} Breakdown: Performance, Specs & Value Analysis`}
-        description={`Data-driven analysis of the ${name} — ${fmt(data.max_lumens)} lumens, ${fmt(data.beam_distance_m)}m throw. Scores, specs, and comparisons.`}
+        description={`Data-driven analysis of the ${name}${data.max_lumens || data.beam_distance_m ? ` — ${[data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null, data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null].filter(Boolean).join(", ")}` : ""}. Scores, specs, and comparisons.`}
         imageUrls={data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : undefined}
         publishedAt={publishedAt}
         updatedAt={updatedAt}

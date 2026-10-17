@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { parseCompositeFilter, composeCompositeSlug } from "./best-flashlights/[category]/composite";
 import { compareUrl } from "@/lib/compare-url";
+import { curatedComparePairs } from "@/lib/compare-pairs";
 
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
@@ -70,51 +71,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.85
         }));
 
-      // Generate vs-pages for a curated subset to avoid thin/scaled-content signals.
-      // Criteria: top-10 most popular × top-10, or same-category pairs among top-20.
-      // This produces ~50-60 defensible comparisons instead of all 435 combinations.
-      const top10 = items.slice(0, 10).filter((i) => i.slug);
-      const top20 = items.slice(0, 20).filter((i) => i.slug);
-      
-      // Top 10 × top 10 (45 pairs)
-      for (let i = 0; i < top10.length; i++) {
-        for (let j = i + 1; j < top10.length; j++) {
-          vsPages.push({
-            url: `${BASE_URL}${compareUrl([top10[i], top10[j]])}`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.70
-          });
-        }
-      }
-      
-      // Same-category pairs from top 20 (not already in top 10×10)
-      // This catches category-specific comparisons like "best tactical" contenders
-      const categoryPairs = new Set<string>();
-      for (let i = 0; i < top20.length; i++) {
-        for (let j = i + 1; j < top20.length; j++) {
-          const a = top20[i];
-          const b = top20[j];
-          // Skip if both are in top 10 (already added above)
-          const bothInTop10 = top10.some(x => x.id === a.id) && top10.some(x => x.id === b.id);
-          if (bothInTop10) continue;
-          
-          // Only add if they share a use_case tag or category
-          // (This is a simple heuristic; refine as needed)
-          categoryPairs.add(compareUrl([a, b]));
-        }
-      }
-      
-      // Add category pairs (limit to ~10-15 more to keep total around 55-60)
-      const categoryPairsList = Array.from(categoryPairs).slice(0, 15);
-      for (const url of categoryPairsList) {
-        vsPages.push({
-          url: `${BASE_URL}${url}`,
-          lastModified: now,
-          changeFrequency: "weekly" as const,
-          priority: 0.60
-        });
-      }
+      // Generate vs-pages using the same curated pairs as the page's noindex check.
+      // This ensures sitemap and page metadata are consistent.
+      // Top 10 × top 10 = 45 pairs
+      const pairs = await curatedComparePairs();
+      vsPages = pairs.map((pair) => ({
+        url: `${BASE_URL}/compare/${pair.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.70
+      }));
     }
 
     if (brandsRes.ok) {

@@ -217,42 +217,54 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	ratingCount := nullFloat(row.AmazonRatingCount)
 	durability := durabilityScore(row.WaterproofRating.String, impact)
 
-	// Normalize individual metrics
-	// Missing core specs get a penalty score (10) instead of being skipped
-	// to prevent incomplete products from scoring unrealistically high
-	if lumens > 0 {
-		raw["max_lumens"] = lumens
-		norm["max_lumens"] = normalizeHigherLog(lumens, 100, 5000)
-	} else {
-		norm["max_lumens"] = 10 // penalty for missing critical spec
+	// Core specs: lumens + (candela OR beam). Derive whichever is missing.
+	// Formula: throw ≈ 2 × √candela → candela = (throw/2)²
+	hasLumens := lumens > 0
+	hasCandela := candela > 0
+	hasBeam := beam > 0
+	
+	if !hasCandela && hasBeam {
+		candela = (beam * beam) / 4.0
+		hasCandela = true
+	} else if !hasBeam && hasCandela {
+		beam = 2.0 * math.Sqrt(candela)
+		hasBeam = true
 	}
-	if candela > 0 {
-		raw["max_candela"] = candela
-		norm["max_candela"] = normalizeHigherLog(candela, 1000, 100000)
-	} else {
-		norm["max_candela"] = 10
+	
+	// Insufficient data: need lumens + at least one of (candela/beam)
+	if !hasLumens || (!hasCandela && !hasBeam) {
+		// Return zero scores for insufficient data
+		return ScoreOutput{}, []byte("{}")
 	}
-	if beam > 0 {
-		raw["beam_distance_m"] = beam
-		norm["beam_distance_m"] = normalizeHigherLog(beam, 50, 700)
-	} else {
-		norm["beam_distance_m"] = 10
-	}
+	
+	// Normalize core specs
+	raw["max_lumens"] = lumens
+	norm["max_lumens"] = normalizeHigherLog(lumens, 100, 5000)
+	
+	raw["max_candela"] = candela
+	norm["max_candela"] = normalizeHigherLog(candela, 1000, 100000)
+	
+	raw["beam_distance_m"] = beam
+	norm["beam_distance_m"] = normalizeHigherLog(beam, 50, 700)
+	
+	// Runtime: penalize if missing high runtime
 	if runtimeHigh > 0 {
 		raw["runtime_high_min"] = runtimeHigh
 		norm["runtime_high_min"] = normalizeHigherLog(runtimeHigh, 20, 300)
 	} else {
-		norm["runtime_high_min"] = 10
+		norm["runtime_high_min"] = 10 // penalty for missing
 	}
+	
+	// Medium runtime: skip entirely (CSV import doesn't populate it)
 	if runtimeMedium > 0 {
 		raw["runtime_medium_min"] = runtimeMedium
 		norm["runtime_medium_min"] = normalizeHigherLog(runtimeMedium, 60, 900)
-	} else {
-		norm["runtime_medium_min"] = 10
 	}
+	
 	raw["durability"] = durability
 	norm["durability"] = durability
 
+	// Price, Amazon ratings: skip if missing (no penalty)
 	if price > 0 {
 		raw["price_usd"] = price
 		norm["price"] = normalizeLowerLinear(price, 15, 250)
@@ -354,20 +366,18 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 }
 
 // boostScore rescales a raw 0-100 weighted mean into a more intuitive range.
-// More conservative than the original formula to prevent score inflation.
-// Products with missing specs now get penalized (via the 10-point floor),
-// so we use a gentler boost that keeps mediocre products below 70.
+// Targets: mid-range products 65-75, high-end 80-85.
 func boostScore(raw float64) float64 {
 	if raw <= 0 {
 		return 0
 	}
-	// New formula: 20 + (raw * 0.75)
-	// - Raw 10 (penalized) → 27.5
-	// - Raw 40 (poor) → 50
-	// - Raw 60 (average) → 65
-	// - Raw 80 (good) → 80
-	// - Raw 95 (excellent) → 91.25
-	boosted := 20 + (raw * 0.75)
+	// Formula: 35 + (raw * 0.60)
+	// - Raw 45 → 62 (budget)
+	// - Raw 60 → 71 (mid-range)
+	// - Raw 75 → 80 (good)
+	// - Raw 85 → 86 (excellent)
+	// - Raw 92 → 90.2 (top-tier)
+	boosted := 35 + (raw * 0.60)
 	if boosted > 100 {
 		return 100
 	}
@@ -387,9 +397,9 @@ func weightedMean(group string, items []namedPair, weighted map[string]map[strin
 	)
 	groupMap := map[string]float64{}
 	for _, it := range items {
-		// Changed: no longer skip items with value <= 0
-		// Missing values are now penalized with 10 instead of being skipped
-		if it.weight <= 0 {
+		// Skip items with value <= 0 or weight <= 0
+		// This lets non-core metrics (price, Amazon, etc.) be omitted without penalty
+		if it.value <= 0 || it.weight <= 0 {
 			continue
 		}
 		totalWeight += it.weight

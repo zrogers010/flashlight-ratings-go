@@ -96,8 +96,8 @@ export default async function ReviewsIndexPage() {
                 <p className="review-index-brand">{item.brand}</p>
                 <h3 className="review-index-name">{item.name}</h3>
                 <div className="review-index-specs">
-                  <span>{fmt(item.max_lumens)} lm</span>
-                  <span>{fmt(item.beam_distance_m)}m</span>
+                  {item.max_lumens ? <span>{fmt(item.max_lumens)} lm</span> : null}
+                  {item.beam_distance_m ? <span>{fmt(item.beam_distance_m)}m</span> : null}
                   {item.price_usd ? (
                     <span>${fmt(item.price_usd, 2)}</span>
                   ) : null}
