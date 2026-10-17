@@ -56,10 +56,11 @@ export function buildAffiliateLink(
 
     case 'fenix':
       if (!config.avantlink?.websiteId || !config.avantlink?.fenixMerchantId) return undefined;
-      // AvantLink deep link format
-      // https://www.avantlink.com/click.php?tt=cl&merchant_id=MERCHANT_ID&website_id=WEBSITE_ID&url=PRODUCT_URL
+      // AvantLink deep link format per https://www.avantlink.com/docs/deep-linking
+      // Format: https://www.avantlink.com/click.php?tt=cl&mi=MERCHANT_ID&pw=WEBSITE_ID&ctc=TRACKING_CODE&url=PRODUCT_URL
+      // Note: mi (merchant ID), pw (website ID), not merchant_id/website_id
       const fenixEncoded = encodeURIComponent(productUrl);
-      return `https://www.avantlink.com/click.php?tt=cl&merchant_id=${config.avantlink.fenixMerchantId}&website_id=${config.avantlink.websiteId}&url=${fenixEncoded}`;
+      return `https://www.avantlink.com/click.php?tt=cl&mi=${config.avantlink.fenixMerchantId}&pw=${config.avantlink.websiteId}&url=${fenixEncoded}`;
 
     default:
       return undefined;
@@ -68,7 +69,7 @@ export function buildAffiliateLink(
 
 /**
  * Get merchant offers for a flashlight.
- * Orders by commission rate descending (best-paying first).
+ * Amazon is primary by default; brand-direct stores shown as secondary links.
  */
 export function getProductOffers(
   brand: string,
@@ -79,7 +80,7 @@ export function getProductOffers(
   const offers: MerchantOffer[] = [];
   const brandLower = brand.toLowerCase();
 
-  // Amazon (always available)
+  // Amazon (primary by default when available)
   const amazonLink = buildAffiliateLink('amazon', amazonUrl, config);
   if (amazonLink) {
     offers.push({
@@ -88,17 +89,17 @@ export function getProductOffers(
       url: amazonLink,
       commissionRate: 3,
       cookieDays: 1,
-      isPrimary: false, // will be overridden if it's the best
+      isPrimary: true, // Amazon is primary
     });
   }
 
-  // Olight via Awin
+  // Olight via Awin (secondary)
   if (brandLower === 'olight' && manufacturerUrl) {
     const olightLink = buildAffiliateLink('olight', manufacturerUrl, config);
     if (olightLink) {
       offers.push({
         merchant: 'olight',
-        label: 'Olight Direct',
+        label: 'Olight Store',
         url: olightLink,
         commissionRate: 10,
         cookieDays: 30,
@@ -107,13 +108,13 @@ export function getProductOffers(
     }
   }
 
-  // Fenix via AvantLink
+  // Fenix via AvantLink (secondary)
   if (brandLower === 'fenix' && manufacturerUrl) {
     const fenixLink = buildAffiliateLink('fenix', manufacturerUrl, config);
     if (fenixLink) {
       offers.push({
         merchant: 'fenix',
-        label: 'Fenix Direct',
+        label: 'Fenix Store',
         url: fenixLink,
         commissionRate: 7,
         cookieDays: 60,
@@ -122,26 +123,21 @@ export function getProductOffers(
     }
   }
 
-  // Sort by commission rate descending
-  offers.sort((a, b) => b.commissionRate - a.commissionRate);
-
-  // Mark the highest-paying as primary
-  if (offers.length > 0) {
-    offers[0].isPrimary = true;
-  }
-
   return offers;
 }
 
 /**
  * Load merchant config from environment variables.
  * Returns a config object with only the configured merchants.
+ * 
+ * IMPORTANT: NEXT_PUBLIC_* values are baked in at build time.
+ * Changes to these env vars require rebuilding the Next.js app.
  */
 export function getMerchantConfig(): MerchantConfig {
   const config: MerchantConfig = {};
 
-  // Amazon
-  const amazonTag = process.env.NEXT_PUBLIC_AMAZON_TAG || process.env.AMAZON_PARTNER_TAG;
+  // Amazon tag (optional - stored URLs already contain tag=flashlightrat-20)
+  const amazonTag = process.env.NEXT_PUBLIC_AMAZON_TAG;
   if (amazonTag) {
     config.amazon = { tag: amazonTag };
   }

@@ -45,7 +45,7 @@ export function BuyOnAmazonButton({
           target="_blank"
           rel="sponsored nofollow noopener noreferrer"
         >
-          {price_usd !== undefined && price_usd > 0 && primaryOffer.merchant === 'amazon' && (
+          {price_usd !== undefined && price_usd > 0 && (
             <span className="buy-amazon-price">
               $
               {price_usd.toLocaleString(undefined, {

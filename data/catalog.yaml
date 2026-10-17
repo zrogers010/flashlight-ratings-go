@@ -401,7 +401,7 @@ products:
       price_usd: 89.99
       rating_count: 430
       average_rating: 4.8
-      manufacturer_url: https://www.olight.com/warrior-mini-3-portable-flashlight
+      manufacturer_url: https://www.olightstore.com/olight-warrior-mini-3.html
       images:
         - url: https://cdn.olightstore.com/image/4-ap99lf.jpg
           alt: Olight Warrior Mini 3 portable tactical flashlight
@@ -507,7 +507,7 @@ products:
       price_usd: 29.99
       rating_count: 5500
       average_rating: 4.6
-      manufacturer_url: https://www.olightstore.com/i5t-eos-edc-flashlight
+      manufacturer_url: https://www.olightstore.com/olight-i5t-plus-eos.html
       images:
         - url: https://cdn.olightstore.com/image/arkprohj-1920x960-3-03djwc.jpg
           alt: Olight i5T EOS photo 1
