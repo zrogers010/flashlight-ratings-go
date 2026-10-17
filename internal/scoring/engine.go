@@ -218,25 +218,37 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	durability := durabilityScore(row.WaterproofRating.String, impact)
 
 	// Normalize individual metrics
+	// Missing core specs get a penalty score (10) instead of being skipped
+	// to prevent incomplete products from scoring unrealistically high
 	if lumens > 0 {
 		raw["max_lumens"] = lumens
 		norm["max_lumens"] = normalizeHigherLog(lumens, 100, 5000)
+	} else {
+		norm["max_lumens"] = 10 // penalty for missing critical spec
 	}
 	if candela > 0 {
 		raw["max_candela"] = candela
 		norm["max_candela"] = normalizeHigherLog(candela, 1000, 100000)
+	} else {
+		norm["max_candela"] = 10
 	}
 	if beam > 0 {
 		raw["beam_distance_m"] = beam
 		norm["beam_distance_m"] = normalizeHigherLog(beam, 50, 700)
+	} else {
+		norm["beam_distance_m"] = 10
 	}
 	if runtimeHigh > 0 {
 		raw["runtime_high_min"] = runtimeHigh
 		norm["runtime_high_min"] = normalizeHigherLog(runtimeHigh, 20, 300)
+	} else {
+		norm["runtime_high_min"] = 10
 	}
 	if runtimeMedium > 0 {
 		raw["runtime_medium_min"] = runtimeMedium
 		norm["runtime_medium_min"] = normalizeHigherLog(runtimeMedium, 60, 900)
+	} else {
+		norm["runtime_medium_min"] = 10
 	}
 	raw["durability"] = durability
 	norm["durability"] = durability
@@ -342,13 +354,20 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 }
 
 // boostScore rescales a raw 0-100 weighted mean into a more intuitive range.
-// Raw scores cluster around 50-80 for curated products; this lifts them so
-// average products score ~70-80 and top products reach 90+.
+// More conservative than the original formula to prevent score inflation.
+// Products with missing specs now get penalized (via the 10-point floor),
+// so we use a gentler boost that keeps mediocre products below 70.
 func boostScore(raw float64) float64 {
 	if raw <= 0 {
 		return 0
 	}
-	boosted := 35 + (raw * 0.65)
+	// New formula: 20 + (raw * 0.75)
+	// - Raw 10 (penalized) → 27.5
+	// - Raw 40 (poor) → 50
+	// - Raw 60 (average) → 65
+	// - Raw 80 (good) → 80
+	// - Raw 95 (excellent) → 91.25
+	boosted := 20 + (raw * 0.75)
 	if boosted > 100 {
 		return 100
 	}
@@ -368,7 +387,9 @@ func weightedMean(group string, items []namedPair, weighted map[string]map[strin
 	)
 	groupMap := map[string]float64{}
 	for _, it := range items {
-		if it.value <= 0 || it.weight <= 0 {
+		// Changed: no longer skip items with value <= 0
+		// Missing values are now penalized with 10 instead of being skipped
+		if it.weight <= 0 {
 			continue
 		}
 		totalWeight += it.weight

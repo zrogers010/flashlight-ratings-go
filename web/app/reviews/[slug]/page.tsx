@@ -209,9 +209,33 @@ export async function generateMetadata({
     const data = await fetchFlashlightBySlug(slug);
     const name = `${data.brand} ${data.name}`;
     const score = topScore(data);
+    
+    // Build title with only available specs (omit "—" placeholders)
+    const titleParts = [`${name} Breakdown`];
+    if (data.max_lumens && data.max_lumens > 0) {
+      titleParts.push(`${fmt(data.max_lumens)} Lumens`);
+    }
+    if (data.beam_distance_m && data.beam_distance_m > 0) {
+      titleParts.push(`${fmt(data.beam_distance_m)}m Throw`);
+    }
+    if (score > 0) {
+      titleParts.push(`(${score.toFixed(0)}/100)`);
+    }
+    const title = titleParts.join(" — ");
+    
+    // Build description with only available specs
+    const descParts = [`${name}: spec-based analysis`];
+    if (data.max_lumens && data.max_lumens > 0) descParts.push(`${fmt(data.max_lumens)} lumens`);
+    if (data.max_candela && data.max_candela > 0) descParts.push(`${fmt(data.max_candela)} candela`);
+    if (data.beam_distance_m && data.beam_distance_m > 0) descParts.push(`${fmt(data.beam_distance_m)}m throw`);
+    const batteryInfo = data.battery_types?.join("/");
+    if (batteryInfo) descParts.push(`${batteryInfo} battery`);
+    if (data.waterproof_rating) descParts.push(`${data.waterproof_rating} rated`);
+    if (score > 0) descParts.push(`Score: ${score.toFixed(1)}/100`);
+    
     return {
-      title: `${name} Breakdown — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
-      description: `In-depth analysis of the ${name}: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100. See how it compares.`,
+      title,
+      description: descParts.join(". ") + ". Algorithmic rating based on manufacturer specs.",
       alternates: { canonical: `/reviews/${slug}` },
       openGraph: {
         title: `${name} — In-Depth Breakdown & Analysis`,
@@ -309,8 +333,12 @@ export default async function BreakdownArticlePage({
           </p>
           <h1>{name}</h1>
           <p className="review-subtitle">
-            {fmt(data.max_lumens)} lumens · {fmt(data.beam_distance_m)}m throw ·{" "}
-            {batteryLabel} · {data.waterproof_rating || "N/A"} rated
+            {[
+              data.max_lumens && data.max_lumens > 0 ? `${fmt(data.max_lumens)} lumens` : null,
+              data.beam_distance_m && data.beam_distance_m > 0 ? `${fmt(data.beam_distance_m)}m throw` : null,
+              batteryLabel !== "Unknown" ? batteryLabel : null,
+              data.waterproof_rating ? `${data.waterproof_rating} rated` : null,
+            ].filter(Boolean).join(" · ")}
           </p>
           <div className="review-hero-badges">
             {score > 0 && <ScoreBadge score={score} size="lg" />}
@@ -397,49 +425,61 @@ export default async function BreakdownArticlePage({
 
       {/* ── Disclaimer ───────────────────────── */}
       <aside className="review-disclaimer">
-        Analysis based on manufacturer specs, algorithmic scoring, and
-        aggregated customer data. Not a hands-on review.
+        Algorithmic analysis based on manufacturer specifications and aggregated customer ratings. 
+        Scores are computed from verified spec data — not measured testing.
       </aside>
 
       {/* ── Quick Specs ──────────────────────── */}
       <div className="panel">
         <h2 style={{ marginBottom: 16 }}>At a Glance</h2>
         <div className="review-spec-grid">
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.max_lumens)}</span>
-            <span className="review-spec-label">Max Lumens</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.max_candela)}</span>
-            <span className="review-spec-label">Peak Candela</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.beam_distance_m)}m</span>
-            <span className="review-spec-label">Throw Distance</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{data.waterproof_rating || "—"}</span>
-            <span className="review-spec-label">IP Rating</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.weight_g)}g</span>
-            <span className="review-spec-label">Weight</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">
-              {data.price_usd ? `$${fmt(data.price_usd, 2)}` : "—"}
-            </span>
-            <span className="review-spec-label">Price</span>
-            {priceFresh && (
-              <span
-                className={`review-spec-freshness review-spec-freshness--${priceFresh.tone}`}
-              >
-                {priceFresh.tone === "stale"
-                  ? priceFresh.label
-                  : priceFresh.label.replace(/^Last checked /, "")}
+          {data.max_lumens && data.max_lumens > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.max_lumens)}</span>
+              <span className="review-spec-label">Max Lumens</span>
+            </div>
+          )}
+          {data.max_candela && data.max_candela > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.max_candela)}</span>
+              <span className="review-spec-label">Peak Candela</span>
+            </div>
+          )}
+          {data.beam_distance_m && data.beam_distance_m > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.beam_distance_m)}m</span>
+              <span className="review-spec-label">Throw Distance</span>
+            </div>
+          )}
+          {data.waterproof_rating && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{data.waterproof_rating}</span>
+              <span className="review-spec-label">IP Rating</span>
+            </div>
+          )}
+          {data.weight_g && data.weight_g > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.weight_g)}g</span>
+              <span className="review-spec-label">Weight</span>
+            </div>
+          )}
+          {data.price_usd && data.price_usd > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">
+                ${fmt(data.price_usd, 2)}
               </span>
-            )}
-          </div>
+              <span className="review-spec-label">Price</span>
+              {priceFresh && (
+                <span
+                  className={`review-spec-freshness review-spec-freshness--${priceFresh.tone}`}
+                >
+                  {priceFresh.tone === "stale"
+                    ? priceFresh.label
+                    : priceFresh.label.replace(/^Last checked /, "")}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -19,11 +19,13 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   try {
     const slugs = await fetchAllSlugs();
-    const top = slugs.filter((s) => s.slug).slice(0, 30);
+    // Match the sitemap: generate static params for curated subset only
+    // Top 10 × top 10 = 45 pairs
+    const top10 = slugs.filter((s) => s.slug).slice(0, 10);
     const params: { slug: string }[] = [];
-    for (let i = 0; i < top.length; i++) {
-      for (let j = i + 1; j < top.length; j++) {
-        const [a, b] = [top[i].slug, top[j].slug].sort();
+    for (let i = 0; i < top10.length; i++) {
+      for (let j = i + 1; j < top10.length; j++) {
+        const [a, b] = [top10[i].slug, top10[j].slug].sort();
         params.push({ slug: `${a}-vs-${b}` });
       }
     }
@@ -96,6 +98,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { a, b } = pair;
   const nameA = `${a.brand} ${a.name}`;
   const nameB = `${b.brand} ${b.name}`;
+  
+  // Check if this comparison is in the curated set (top 10 products)
+  // If not, add noindex to avoid thin/scaled-content penalties
+  const allSlugs = await fetchAllSlugs();
+  const top10Ids = allSlugs.slice(0, 10).map(s => s.id);
+  const isInCuratedSet = top10Ids.includes(a.id) && top10Ids.includes(b.id);
+  
   return {
     title: `${nameA} vs ${nameB} — Side by Side Comparison 2026`,
     description: `Compare the ${nameA} (${fmt(a.max_lumens)} lm, ${fmt(a.beam_distance_m)}m throw) against the ${nameB} (${fmt(b.max_lumens)} lm, ${fmt(b.beam_distance_m)}m throw). Specs, scores, and pricing compared.`,
@@ -103,6 +112,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title: `${nameA} vs ${nameB} — Which Is Better?`,
       description: `Head-to-head comparison of specs, scores, and value.`,
+    },
+    robots: isInCuratedSet ? undefined : {
+      index: false,
+      follow: true,
     },
   };
 }

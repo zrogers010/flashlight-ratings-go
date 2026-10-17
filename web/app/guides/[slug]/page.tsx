@@ -32,7 +32,7 @@ const guides: Record<string, GuideContent> = {
         </p>
         <p>
           Scores are computed from manufacturer specs, current Amazon pricing, and
-          Amazon customer ratings. Analysis is algorithmic — not hands-on testing.
+          Amazon customer ratings. Ratings are algorithmic and spec-based — not measured testing.
           On each product page, <strong>How It Scores</strong> shows the live
           breakdown for that model.
         </p>
