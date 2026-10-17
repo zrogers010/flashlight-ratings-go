@@ -326,7 +326,9 @@ export default async function BreakdownArticlePage({
           </div>
           <div className="review-hero-actions">
             <BuyOnAmazonButton
+              brand={data.brand}
               amazon_url={data.amazon_url}
+              manufacturer_url={data.manufacturer_url}
               price_usd={data.price_usd}
               size="lg"
               priceUpdatedAt={data.price_last_updated_at}
@@ -689,7 +691,9 @@ export default async function BreakdownArticlePage({
           }}
         >
           <BuyOnAmazonButton
+            brand={data.brand}
             amazon_url={data.amazon_url}
+            manufacturer_url={data.manufacturer_url}
             price_usd={data.price_usd}
             size="lg"
             priceUpdatedAt={data.price_last_updated_at}
@@ -792,7 +796,9 @@ export default async function BreakdownArticlePage({
           <div className="sticky-buy-bar-item">
             <span className="sticky-buy-bar-label">{name}</span>
             <BuyOnAmazonButton
+              brand={data.brand}
               amazon_url={data.amazon_url}
+              manufacturer_url={data.manufacturer_url}
               price_usd={data.price_usd}
               size="sm"
               priceUpdatedAt={data.price_last_updated_at}

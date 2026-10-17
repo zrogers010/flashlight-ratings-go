@@ -289,6 +289,11 @@ do_deploy() {
   echo "→ Building images..."
   NEXT_PUBLIC_API_BASE_URL="${API_PUBLIC_URL}" \
   API_BASE_URL="${API_INTERNAL_URL}" \
+  NEXT_PUBLIC_AMAZON_TAG="${NEXT_PUBLIC_AMAZON_TAG:-}" \
+  NEXT_PUBLIC_AWIN_PUBLISHER_ID="${NEXT_PUBLIC_AWIN_PUBLISHER_ID:-}" \
+  NEXT_PUBLIC_AWIN_OLIGHT_MERCHANT_ID="${NEXT_PUBLIC_AWIN_OLIGHT_MERCHANT_ID:-}" \
+  NEXT_PUBLIC_AVANTLINK_WEBSITE_ID="${NEXT_PUBLIC_AVANTLINK_WEBSITE_ID:-}" \
+  NEXT_PUBLIC_AVANTLINK_FENIX_MERCHANT_ID="${NEXT_PUBLIC_AVANTLINK_FENIX_MERCHANT_ID:-}" \
   ${COMPOSE} build
 
   # ── Deploy ───────────────────────────────────────────────────────
@@ -302,6 +307,11 @@ do_deploy() {
   timeout 60 bash -c \
     'until docker inspect --format="{{.State.Health.Status}}" flashlight-db 2>/dev/null | grep -q healthy; do sleep 2; done' \
     || echo "WARNING: DB health check timed out"
+
+  # ── Apply migrations (idempotent) ───────────────────────────────
+  echo "→ Applying database migrations..."
+  ${COMPOSE} exec -T db psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-flashlight_app}" -d "${POSTGRES_DB:-flashlight}" \
+    < db/migrations/0011_multi_merchant_offers.sql
 
   # ── Import catalog ─────────────────────────────────────────────
   echo "→ Building YAML catalog into database..."

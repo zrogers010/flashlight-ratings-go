@@ -77,6 +77,7 @@ export type FlashlightDetail = FlashlightItem & {
   brand_slug?: string;
   brand_website_url?: string;
   brand_country_code?: string;
+  manufacturer_url?: string;
   release_year?: number;
   msrp_usd?: number;
   asin?: string;

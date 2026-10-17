@@ -213,8 +213,8 @@ func (b *Builder) upsertFlashlight(ctx context.Context, tx *sql.Tx, p Product, b
 
 	var id int64
 	err := tx.QueryRowContext(ctx, `
-		INSERT INTO flashlights (brand_id, name, slug, model_code, description, launch_date, msrp_usd, is_active, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, NOW())
+		INSERT INTO flashlights (brand_id, name, slug, model_code, description, launch_date, msrp_usd, manufacturer_url, is_active, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW())
 		ON CONFLICT (slug) DO UPDATE
 		SET brand_id = EXCLUDED.brand_id,
 			name = EXCLUDED.name,
@@ -222,11 +222,12 @@ func (b *Builder) upsertFlashlight(ctx context.Context, tx *sql.Tx, p Product, b
 			description = COALESCE(EXCLUDED.description, flashlights.description),
 			launch_date = COALESCE(EXCLUDED.launch_date, flashlights.launch_date),
 			msrp_usd = COALESCE(EXCLUDED.msrp_usd, flashlights.msrp_usd),
+			manufacturer_url = COALESCE(EXCLUDED.manufacturer_url, flashlights.manufacturer_url),
 			is_active = TRUE,
 			updated_at = NOW()
 		RETURNING id
 	`, brandID, p.Name, p.Slug, nullStr(p.Code), nullStr(p.Description),
-		launchDate, nullFloat(p.MSRP)).Scan(&id)
+		launchDate, nullFloat(p.MSRP), nullStr(p.ManufacturerURL)).Scan(&id)
 	return id, err
 }
 

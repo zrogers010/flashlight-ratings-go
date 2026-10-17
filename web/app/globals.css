@@ -5014,3 +5014,47 @@ select:focus, input:focus {
 .product-card--oos .image-card {
   filter: grayscale(0.4);
 }
+
+/* ── Multi-Merchant Affiliate Links ─────────────────────────────────── */
+
+.buy-offers-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buy-offers-wrap-lg {
+  gap: 10px;
+}
+
+.alternate-merchants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.alternate-merchant-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.alternate-merchant-link:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+@media (max-width: 540px) {
+  .alternate-merchant-link {
+    font-size: 0.76rem;
+    padding: 3px 8px;
+  }
+}
