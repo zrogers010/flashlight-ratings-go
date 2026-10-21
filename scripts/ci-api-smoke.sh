@@ -200,7 +200,7 @@ WITH full_spec_products AS (
 SELECT score 
 FROM flashlight_scores fs
 WHERE fs.run_id = ${LATEST_RUN}
-  AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE profile_key = 'overall' LIMIT 1)
+  AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE slug = 'overall' LIMIT 1)
   AND fs.flashlight_id IN (SELECT id FROM full_spec_products)
 ORDER BY score DESC
 OFFSET 9 LIMIT 1;
@@ -230,7 +230,7 @@ if [[ ${PSQL_EXIT} -eq 0 ]] && [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}
   SELECT COUNT(*)
   FROM flashlight_scores fs
   WHERE fs.run_id = ${LATEST_RUN}
-    AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE profile_key = 'overall' LIMIT 1)
+    AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE slug = 'overall' LIMIT 1)
     AND fs.flashlight_id IN (SELECT id FROM partial_spec_products)
     AND fs.score > ${CAP_VALUE};
   "
