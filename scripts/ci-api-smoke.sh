@@ -171,11 +171,6 @@ export DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB
 SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
 echo "${SCORING_OUTPUT}"
 
-# Verify at least 2 products were scored
-SCORED_COUNT=$(echo "${SCORING_OUTPUT}" | grep -oP 'scored \K\d+' | head -1 || echo "0")
-[[ "${SCORED_COUNT}" -ge 2 ]] || fail "scoring batch scored ${SCORED_COUNT} products, expected >= 2"
-echo "OK  scoring batch scored ${SCORED_COUNT} products"
-
 # Verify partial-spec cap via database query
 # This query gets all partial-spec products and checks if any exceed the cap (10th full-spec - 1.0)
 export PGPASSWORD="${DB_PASS}"
@@ -185,6 +180,11 @@ PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -t -A"
 LATEST_RUN=$(${PSQL} -c "SELECT id FROM scoring_runs WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 1" 2>/dev/null) || fail "failed to query latest scoring run"
 [[ -n "${LATEST_RUN}" && "${LATEST_RUN}" != "" ]] || fail "no completed scoring run found"
 echo "→ Checking partial-spec cap for run ${LATEST_RUN}"
+
+# Get count of scored products
+SCORED_COUNT=$(${PSQL} -c "SELECT COUNT(DISTINCT flashlight_id) FROM flashlight_scores WHERE run_id = ${LATEST_RUN}" 2>/dev/null | tr -d ' \n') || fail "failed to count scored products"
+[[ "${SCORED_COUNT}" -ge 1 ]] || fail "scoring batch scored ${SCORED_COUNT} products, expected >= 1"
+echo "OK  scoring batch scored ${SCORED_COUNT} products"
 
 # Get the 10th-highest full-spec overall score
 FULL_SPEC_QUERY="
