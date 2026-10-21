@@ -112,6 +112,13 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 		}
 	}
 
+	// Apply partial-spec cap: no partial-spec product can rank in the top 10 overall.
+	// Find the 10th-highest full-spec overall score, then cap all partial-spec products at that minus 1.0.
+	if err := applyPartialSpecCap(ctx, tx, runID, profileIDs["overall"], rows); err != nil {
+		_ = failRun(ctx, e.db, runID, err)
+		return runID, err
+	}
+
 	if err := rankRun(ctx, tx, runID); err != nil {
 		_ = failRun(ctx, e.db, runID, err)
 		return runID, err
@@ -201,6 +208,87 @@ WHERE f.is_active = TRUE
 	return out, nil
 }
 
+// applyPartialSpecCap ensures no partial-spec product ranks in the top 10 overall.
+// After all products are scored, it finds the 10th-highest full-spec overall score,
+// then caps all partial-spec products at that score minus 1.0.
+func applyPartialSpecCap(ctx context.Context, tx *sql.Tx, runID, overallProfileID int64, rows []SpecRow) error {
+	// Determine which products are full-spec
+	fullSpecIDs := make(map[int64]bool)
+	for _, row := range rows {
+		hasLumens := row.MaxLumens.Valid && row.MaxLumens.Float64 > 0
+		hasCandela := row.MaxCandela.Valid && row.MaxCandela.Float64 > 0
+		hasBeam := row.BeamDistanceM.Valid && row.BeamDistanceM.Float64 > 0
+		hasRuntime := row.RuntimeHighMin.Valid && row.RuntimeHighMin.Float64 > 0
+		
+		if hasLumens && (hasCandela || hasBeam) && hasRuntime {
+			fullSpecIDs[row.FlashlightID] = true
+		}
+	}
+
+	// Get all overall scores for this run
+	const q = `
+		SELECT flashlight_id, display_score
+		FROM flashlight_scores
+		WHERE run_id = $1 AND profile_id = $2
+		ORDER BY display_score DESC
+	`
+	r, err := tx.QueryContext(ctx, q, runID, overallProfileID)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	type scoreRow struct {
+		flashlightID int64
+		score        float64
+		isFullSpec   bool
+	}
+	var allScores []scoreRow
+	for r.Next() {
+		var s scoreRow
+		if err := r.Scan(&s.flashlightID, &s.score); err != nil {
+			return err
+		}
+		s.isFullSpec = fullSpecIDs[s.flashlightID]
+		allScores = append(allScores, s)
+	}
+	if err := r.Err(); err != nil {
+		return err
+	}
+
+	// Find the 10th highest full-spec score
+	fullSpecScores := make([]float64, 0)
+	for _, s := range allScores {
+		if s.isFullSpec {
+			fullSpecScores = append(fullSpecScores, s.score)
+		}
+	}
+
+	if len(fullSpecScores) < 10 {
+		// Not enough full-spec products to establish a cap
+		return nil
+	}
+
+	tenthFullSpecScore := fullSpecScores[9] // 0-indexed, so [9] is the 10th
+	capValue := tenthFullSpecScore - 1.0
+
+	// Cap all partial-spec products at this value
+	const updateQ = `
+		UPDATE flashlight_scores
+		SET display_score = $1
+		WHERE run_id = $2 AND profile_id = $3 AND flashlight_id = $4 AND display_score > $1
+	`
+	for _, s := range allScores {
+		if !s.isFullSpec && s.score > capValue {
+			if _, err := tx.ExecContext(ctx, updateQ, capValue, runID, overallProfileID, s.flashlightID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // ComputeScores computes all profile scores for a given product spec row.
 // Exported for testing and analysis tools.
 func ComputeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
@@ -246,12 +334,12 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	}
 	
 	// Partial-spec confidence penalty: products missing any core metric (lumens, candela/throw, or runtime)
-	// receive a significant penalty to ensure fully-specced lights always rank higher.
-	// This prevents low-output partial-spec lights from outranking high-performance flagships.
+	// receive a 12% penalty to gently discourage incomplete specs.
+	// A separate cap (applied during batch scoring) ensures no partial-spec product ranks in the top 10.
 	hasAllCoreMetrics := hasLumens && (hasCandela || hasBeam) && hasRuntime
 	confidenceFactor := 1.0
 	if !hasAllCoreMetrics {
-		confidenceFactor = 0.50 // 50% penalty - no partial-spec product should rank in top 10 overall
+		confidenceFactor = 0.88 // 12% penalty for missing any core metric
 	}
 	
 	// Low-output cap: Flashlights under 200 lumens have their scores capped to prevent
