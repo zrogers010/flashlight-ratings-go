@@ -153,12 +153,12 @@ check_json "/rankings?use_case=edc&page=1&page_size=50" \
 # PR#75 QA: Run scoring batch and verify partial-spec cap
 echo "→ Running scoring batch (PR#75 QA requirement)"
 
-# Get database credentials from environment or use defaults
+# Get database credentials from environment or use defaults (match docker-compose.yml)
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-flashlight_ratings}"
-DB_USER="${DB_USER:-flashlight_user}"
-DB_PASS="${DB_PASS:-flashlight_pass}"
+DB_NAME="${DB_NAME:-flashlight}"
+DB_USER="${DB_USER:-flashlight_app}"
+DB_PASS="${DB_PASS:-flashlight_dev}"
 DB_SSLMODE="${DB_SSLMODE:-disable}"
 
 # Build and run scoring job
