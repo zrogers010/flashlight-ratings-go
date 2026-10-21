@@ -258,26 +258,15 @@ func TestCandelaThrowDerivation(t *testing.T) {
 }
 
 func TestInsufficientDataReturnsZero(t *testing.T) {
-	// Only one core metric (lumens)
-	onlyLumens := SpecRow{
-		FlashlightID: 50,
-		MaxLumens:    nf(1000),
-	}
-
-	scores1, _ := computeScores(onlyLumens, "v2")
-	if scores1.Overall != 0 {
-		t.Errorf("product with only lumens should score 0, got %.1f", scores1.Overall)
-	}
-
-	// Only runtime (no lumens, candela, or throw)
+	// Only runtime (no brightness specs)
 	onlyRuntime := SpecRow{
 		FlashlightID:   51,
 		RuntimeHighMin: nf(60),
 	}
 
-	scores2, _ := computeScores(onlyRuntime, "v2")
-	if scores2.Overall != 0 {
-		t.Errorf("product with only runtime should score 0, got %.1f", scores2.Overall)
+	scores1, _ := computeScores(onlyRuntime, "v2")
+	if scores1.Overall != 0 {
+		t.Errorf("product with only runtime should score 0, got %.1f", scores1.Overall)
 	}
 
 	// Completely empty
@@ -285,9 +274,33 @@ func TestInsufficientDataReturnsZero(t *testing.T) {
 		FlashlightID: 52,
 	}
 
-	scores3, _ := computeScores(empty, "v2")
+	scores2, _ := computeScores(empty, "v2")
+	if scores2.Overall != 0 {
+		t.Errorf("empty product should score 0, got %.1f", scores2.Overall)
+	}
+	
+	// Only price and ratings (no core specs)
+	onlyExtras := SpecRow{
+		FlashlightID:      53,
+		PriceUSD:          nf(50),
+		AmazonAvgRating:   nf(4.5),
+		AmazonRatingCount: nf(1000),
+	}
+
+	scores3, _ := computeScores(onlyExtras, "v2")
 	if scores3.Overall != 0 {
-		t.Errorf("empty product should score 0, got %.1f", scores3.Overall)
+		t.Errorf("product with only price/ratings should score 0, got %.1f", scores3.Overall)
+	}
+	
+	// Only lumens should now get a score (was returning 0 before)
+	onlyLumens := SpecRow{
+		FlashlightID: 50,
+		MaxLumens:    nf(1000),
+	}
+
+	scores4, _ := computeScores(onlyLumens, "v2")
+	if scores4.Overall <= 0 {
+		t.Errorf("product with only lumens should score > 0, got %.1f", scores4.Overall)
 	}
 }
 

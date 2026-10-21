@@ -201,6 +201,12 @@ WHERE f.is_active = TRUE
 	return out, nil
 }
 
+// ComputeScores computes all profile scores for a given product spec row.
+// Exported for testing and analysis tools.
+func ComputeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
+	return computeScores(row, formulaVersion)
+}
+
 func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	raw := map[string]float64{}
 	norm := map[string]float64{}
@@ -232,28 +238,24 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 		hasBeam = true
 	}
 	
-	// Count core metrics: lumens, candela/beam, runtime
-	coreMetricCount := 0
-	if hasLumens {
-		coreMetricCount++
-	}
-	if hasCandela || hasBeam {
-		coreMetricCount++
-	}
-	if hasRuntime {
-		coreMetricCount++
-	}
-	
-	// Insufficient data: need at least 2 core metrics, and at least one must be lumens or candela/throw
-	if coreMetricCount < 2 || (!hasLumens && !hasCandela && !hasBeam) {
+	// Insufficient data check: we can score from any brightness metric (lumens, candela, or throw).
+	// Return 0 only when we have no brightness specs at all - lumens is the most fundamental
+	// flashlight metric and alone can produce a meaningful ranking.
+	if !hasLumens && !hasCandela && !hasBeam {
 		return ScoreOutput{}, []byte("{}")
 	}
 	
-	// Apply confidence haircut for partial specs: products with only 2 core metrics
-	// get a 5% reduction so fully-specced lights rank slightly higher
+	// Apply confidence haircut for partial specs:
+	// - Products with full brightness specs (lumens + candela/throw) and runtime: no haircut
+	// - Products with only brightness (no runtime): 5% haircut
+	// - Products with only lumens (no throw/candela): additional 3% haircut
 	confidenceFactor := 1.0
-	if coreMetricCount == 2 {
-		confidenceFactor = 0.95
+	
+	if !hasRuntime {
+		confidenceFactor *= 0.95 // Missing runtime
+	}
+	if hasLumens && !hasCandela && !hasBeam {
+		confidenceFactor *= 0.97 // Only lumens, no throw data
 	}
 	
 	// Normalize core specs
