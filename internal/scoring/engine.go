@@ -251,8 +251,26 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	hasAllCoreMetrics := hasLumens && (hasCandela || hasBeam) && hasRuntime
 	confidenceFactor := 1.0
 	if !hasAllCoreMetrics {
-		confidenceFactor = 0.80 // 20% penalty for missing any core metric
+		confidenceFactor = 0.50 // 50% penalty - no partial-spec product should rank in top 10 overall
 	}
+	
+	// Low-output cap: Flashlights under 200 lumens have their scores capped to prevent
+	// low-output specialty lights (medical penlights, keychain lights) from outranking
+	// high-performance tactical/EDC lights due to runtime or ratings alone.
+	// Output is the primary flashlight metric; runtime and ratings are secondary.
+	lowOutputCap := 1.0
+	if hasLumens && lumens < 200 {
+		// Progressive cap: 100+ lm = 90% max, 50+ lm = 80% max, <50 lm = 70% max
+		if lumens >= 100 {
+			lowOutputCap = 0.90
+		} else if lumens >= 50 {
+			lowOutputCap = 0.80
+		} else {
+			lowOutputCap = 0.70
+		}
+	}
+	
+	confidenceFactor *= lowOutputCap
 	
 	// Normalize core specs
 	raw["max_lumens"] = lumens

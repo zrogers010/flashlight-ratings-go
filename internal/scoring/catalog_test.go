@@ -189,8 +189,9 @@ func TestScoringFormula_RealCatalog(t *testing.T) {
 
 	// Assertions
 	t.Run("Average scores reasonable", func(t *testing.T) {
-		if avgOverall < 60 || avgOverall > 75 {
-			t.Errorf("Average overall score %.1f out of reasonable range (expected 60-75)", avgOverall)
+		// With 50% partial-spec penalty and low-output caps, average will be lower
+		if avgOverall < 50 || avgOverall > 65 {
+			t.Errorf("Average overall score %.1f out of reasonable range (expected 50-65)", avgOverall)
 		}
 	})
 

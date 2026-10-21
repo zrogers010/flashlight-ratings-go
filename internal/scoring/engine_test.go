@@ -328,6 +328,49 @@ func TestPartialSpecPenalty(t *testing.T) {
 			partialScores.Overall, fullScores.Overall)
 	}
 
+	// Partial-spec should be penalized by 50%
+	if partialScores.Overall > fullScores.Overall*0.6 {
+		t.Errorf("partial-spec penalty seems too weak: partial=%.1f (expected < %.1f)",
+			partialScores.Overall, fullScores.Overall*0.6)
+	}
+
 	t.Logf("Full-spec: overall=%.1f, Partial-spec: overall=%.1f", fullScores.Overall, partialScores.Overall)
+}
+
+func TestLowOutputCap(t *testing.T) {
+	// High-output light
+	highOutput := SpecRow{
+		FlashlightID:      70,
+		MaxLumens:         nf(2000),
+		MaxCandela:        nf(20000),
+		RuntimeHighMin:    nf(90),
+		AmazonAvgRating:   nf(4.5),
+		AmazonRatingCount: nf(1000),
+	}
+
+	// Low-output light with excellent runtime and ratings (like medical penlight)
+	lowOutput := SpecRow{
+		FlashlightID:      71,
+		MaxLumens:         nf(5),
+		MaxCandela:        nf(5),
+		RuntimeHighMin:    nf(600),
+		AmazonAvgRating:   nf(4.7),
+		AmazonRatingCount: nf(3000),
+	}
+
+	highScores, _ := computeScores(highOutput, "v2")
+	lowScores, _ := computeScores(lowOutput, "v2")
+
+	if lowScores.Overall >= highScores.Overall {
+		t.Errorf("low-output light should not outrank high-output light: low=%.1f, high=%.1f",
+			lowScores.Overall, highScores.Overall)
+	}
+
+	// Low-output lights (<50 lm) should be capped at 70% of their raw score
+	if lowScores.Overall > 70 {
+		t.Errorf("low-output light score too high (expected < 70): %.1f", lowScores.Overall)
+	}
+
+	t.Logf("High-output (2000lm): %.1f, Low-output (5lm): %.1f", highScores.Overall, lowScores.Overall)
 }
 
