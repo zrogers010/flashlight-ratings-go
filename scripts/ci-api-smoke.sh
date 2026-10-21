@@ -206,10 +206,11 @@ ORDER BY score DESC
 OFFSET 9 LIMIT 1;
 "
 
-TENTH_FULL_SPEC=$(${PSQL} -c "${FULL_SPEC_QUERY}" 2>/dev/null | tr -d ' \n')
+TENTH_FULL_SPEC=$(${PSQL} -c "${FULL_SPEC_QUERY}" 2>&1 | tr -d ' \n')
+PSQL_EXIT=$?
 
 # Only validate cap if we have at least 10 full-spec products
-if [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}" != "" ]]; then
+if [[ ${PSQL_EXIT} -eq 0 ]] && [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}" != "" ]]; then
   CAP_VALUE=$(echo "${TENTH_FULL_SPEC} - 1.0" | bc)
   echo "→ 10th full-spec score: ${TENTH_FULL_SPEC}, cap value: ${CAP_VALUE}"
   
@@ -234,7 +235,8 @@ if [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}" != "" ]]; then
     AND fs.score > ${CAP_VALUE};
   "
   
-  VIOLATIONS=$(${PSQL} -c "${PARTIAL_SPEC_QUERY}" 2>/dev/null | tr -d ' \n') || fail "failed to check partial-spec cap violations"
+  VIOLATIONS=$(${PSQL} -c "${PARTIAL_SPEC_QUERY}" 2>&1 | tr -d ' \n')
+  [[ $? -eq 0 ]] || fail "failed to check partial-spec cap violations: ${VIOLATIONS}"
   [[ "${VIOLATIONS}" == "0" ]] || fail "${VIOLATIONS} partial-spec products exceed cap of ${CAP_VALUE}"
   echo "OK  all partial-spec products are at or below cap (${CAP_VALUE})"
 else
