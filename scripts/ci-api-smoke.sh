@@ -211,7 +211,7 @@ PSQL_EXIT=$?
 
 # Only validate cap if we have at least 10 full-spec products
 if [[ ${PSQL_EXIT} -eq 0 ]] && [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}" != "" ]]; then
-  CAP_VALUE=$(echo "${TENTH_FULL_SPEC} - 1.0" | bc)
+  CAP_VALUE=$(awk "BEGIN {print ${TENTH_FULL_SPEC} - 1.0}")
   echo "→ 10th full-spec score: ${TENTH_FULL_SPEC}, cap value: ${CAP_VALUE}"
   
   # Check if any partial-spec product exceeds the cap
