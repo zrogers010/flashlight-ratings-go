@@ -158,15 +158,17 @@ DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:-flashlight_ratings}"
 DB_USER="${DB_USER:-flashlight_user}"
+DB_PASS="${DB_PASS:-flashlight_pass}"
 DB_SSLMODE="${DB_SSLMODE:-disable}"
 
 # Build and run scoring job
 cd "$(dirname "$0")/.."
 go build -o /tmp/scorejob ./cmd/scorejob || fail "failed to build scorejob"
 
-# Run scoring batch
+# Run scoring batch with DATABASE_URL
 echo "→ Running scoring batch..."
-SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
+DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}" \
+  SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
 echo "${SCORING_OUTPUT}"
 
 # Verify at least 2 products were scored
@@ -176,7 +178,8 @@ echo "OK  scoring batch scored ${SCORED_COUNT} products"
 
 # Verify partial-spec cap via database query
 # This query gets all partial-spec products and checks if any exceed the cap (10th full-spec - 1.0)
-PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} --no-password -t -A"
+export PGPASSWORD="${DB_PASS}"
+PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -t -A"
 
 # Get the latest completed run
 LATEST_RUN=$(${PSQL} -c "SELECT id FROM scoring_runs WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 1" 2>/dev/null) || fail "failed to query latest scoring run"
