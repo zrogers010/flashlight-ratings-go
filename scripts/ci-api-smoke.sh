@@ -167,8 +167,8 @@ go build -o /tmp/scorejob ./cmd/scorejob || fail "failed to build scorejob"
 
 # Run scoring batch with DATABASE_URL
 echo "→ Running scoring batch..."
-DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}" \
-  SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
+export DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
 echo "${SCORING_OUTPUT}"
 
 # Verify at least 2 products were scored
