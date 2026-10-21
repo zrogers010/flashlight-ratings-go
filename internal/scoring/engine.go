@@ -245,17 +245,13 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 		return ScoreOutput{}, []byte("{}")
 	}
 	
-	// Apply confidence haircut for partial specs:
-	// - Products with full brightness specs (lumens + candela/throw) and runtime: no haircut
-	// - Products with only brightness (no runtime): 5% haircut
-	// - Products with only lumens (no throw/candela): additional 3% haircut
+	// Partial-spec confidence penalty: products missing any core metric (lumens, candela/throw, or runtime)
+	// receive a significant penalty to ensure fully-specced lights always rank higher.
+	// This prevents low-output partial-spec lights from outranking high-performance flagships.
+	hasAllCoreMetrics := hasLumens && (hasCandela || hasBeam) && hasRuntime
 	confidenceFactor := 1.0
-	
-	if !hasRuntime {
-		confidenceFactor *= 0.95 // Missing runtime
-	}
-	if hasLumens && !hasCandela && !hasBeam {
-		confidenceFactor *= 0.97 // Only lumens, no throw data
+	if !hasAllCoreMetrics {
+		confidenceFactor = 0.80 // 20% penalty for missing any core metric
 	}
 	
 	// Normalize core specs

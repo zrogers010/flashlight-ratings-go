@@ -304,3 +304,30 @@ func TestInsufficientDataReturnsZero(t *testing.T) {
 	}
 }
 
+func TestPartialSpecPenalty(t *testing.T) {
+	// Full-spec product: lumens, candela, runtime
+	fullSpec := SpecRow{
+		FlashlightID:   60,
+		MaxLumens:      nf(2000),
+		MaxCandela:     nf(20000),
+		RuntimeHighMin: nf(90),
+	}
+
+	// Partial-spec product with same lumens but no candela/throw
+	partialSpec := SpecRow{
+		FlashlightID:   61,
+		MaxLumens:      nf(2000),
+		RuntimeHighMin: nf(90),
+	}
+
+	fullScores, _ := computeScores(fullSpec, "v2")
+	partialScores, _ := computeScores(partialSpec, "v2")
+
+	if partialScores.Overall >= fullScores.Overall {
+		t.Errorf("partial-spec product should score below full-spec: partial=%.1f, full=%.1f",
+			partialScores.Overall, fullScores.Overall)
+	}
+
+	t.Logf("Full-spec: overall=%.1f, Partial-spec: overall=%.1f", fullScores.Overall, partialScores.Overall)
+}
+
