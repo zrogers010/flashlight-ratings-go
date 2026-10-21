@@ -455,19 +455,19 @@ export default async function BreakdownArticlePage({
       <div className="panel">
         <h2 style={{ marginBottom: 16 }}>At a Glance</h2>
         <div className="review-spec-grid">
-          {data.max_lumens && data.max_lumens > 0 && (
+          {(data.max_lumens ?? 0) > 0 && (
             <div className="review-spec-item">
               <span className="review-spec-value">{fmt(data.max_lumens)}</span>
               <span className="review-spec-label">Max Lumens</span>
             </div>
           )}
-          {data.max_candela && data.max_candela > 0 && (
+          {(data.max_candela ?? 0) > 0 && (
             <div className="review-spec-item">
               <span className="review-spec-value">{fmt(data.max_candela)}</span>
               <span className="review-spec-label">Peak Candela</span>
             </div>
           )}
-          {data.beam_distance_m && data.beam_distance_m > 0 && (
+          {(data.beam_distance_m ?? 0) > 0 && (
             <div className="review-spec-item">
               <span className="review-spec-value">{fmt(data.beam_distance_m)}m</span>
               <span className="review-spec-label">Throw Distance</span>

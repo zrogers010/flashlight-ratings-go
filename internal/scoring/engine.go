@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"strings"
 	"time"
 )
@@ -52,7 +53,15 @@ type scoreBreakdown struct {
 	Raw        map[string]float64            `json:"raw"`
 	Normalized map[string]float64            `json:"normalized"`
 	Weighted   map[string]map[string]float64 `json:"weighted"`
+	Derived    map[string]bool               `json:"derived"` // Marks which raw values were derived via ANSI FL1
 	Formula    string                        `json:"formula_version"`
+}
+
+type productScore struct {
+	row        SpecRow
+	scores     ScoreOutput
+	breakdown  []byte
+	isFullSpec bool
 }
 
 func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
@@ -102,21 +111,45 @@ func (e *Engine) RunBatch(ctx context.Context, opts RunOptions) (int64, error) {
 		{"flood", func(s ScoreOutput) float64 { return s.Flood }},
 	}
 
+	// Score all products and collect overall scores for cap calculation
+	var productScores []productScore
+
 	for _, row := range rows {
 		scores, breakdown := computeScores(row, opts.FormulaVersion)
+		
+		// Determine if full-spec
+		hasLumens := row.MaxLumens.Valid && row.MaxLumens.Float64 > 0
+		hasCandela := row.MaxCandela.Valid && row.MaxCandela.Float64 > 0
+		hasBeam := row.BeamDistanceM.Valid && row.BeamDistanceM.Float64 > 0
+		hasRuntime := row.RuntimeHighMin.Valid && row.RuntimeHighMin.Float64 > 0
+		isFullSpec := hasLumens && (hasCandela || hasBeam) && hasRuntime
+
+		productScores = append(productScores, productScore{
+			row:        row,
+			scores:     scores,
+			breakdown:  breakdown,
+			isFullSpec: isFullSpec,
+		})
+	}
+
+	// Apply partial-spec cap: find 10th-highest full-spec overall score
+	capValue := applyPartialSpecCapInMemory(productScores)
+
+	// Write scores to database
+	for _, ps := range productScores {
+		scores := ps.scores
+		
+		// Apply cap to partial-spec products' overall score only
+		if !ps.isFullSpec && scores.Overall > capValue {
+			scores.Overall = capValue
+		}
+		
 		for _, p := range profiles {
-			if err := upsertScore(ctx, tx, runID, row.FlashlightID, profileIDs[p.key], p.score(scores), breakdown); err != nil {
+			if err := upsertScore(ctx, tx, runID, ps.row.FlashlightID, profileIDs[p.key], p.score(scores), ps.breakdown); err != nil {
 				_ = failRun(ctx, e.db, runID, err)
 				return runID, err
 			}
 		}
-	}
-
-	// Apply partial-spec cap: no partial-spec product can rank in the top 10 overall.
-	// Find the 10th-highest full-spec overall score, then cap all partial-spec products at that minus 1.0.
-	if err := applyPartialSpecCap(ctx, tx, runID, profileIDs["overall"], rows); err != nil {
-		_ = failRun(ctx, e.db, runID, err)
-		return runID, err
 	}
 
 	if err := rankRun(ctx, tx, runID); err != nil {
@@ -208,85 +241,34 @@ WHERE f.is_active = TRUE
 	return out, nil
 }
 
-// applyPartialSpecCap ensures no partial-spec product ranks in the top 10 overall.
-// After all products are scored, it finds the 10th-highest full-spec overall score,
-// then caps all partial-spec products at that score minus 1.0.
-func applyPartialSpecCap(ctx context.Context, tx *sql.Tx, runID, overallProfileID int64, rows []SpecRow) error {
-	// Determine which products are full-spec
-	fullSpecIDs := make(map[int64]bool)
-	for _, row := range rows {
-		hasLumens := row.MaxLumens.Valid && row.MaxLumens.Float64 > 0
-		hasCandela := row.MaxCandela.Valid && row.MaxCandela.Float64 > 0
-		hasBeam := row.BeamDistanceM.Valid && row.BeamDistanceM.Float64 > 0
-		hasRuntime := row.RuntimeHighMin.Valid && row.RuntimeHighMin.Float64 > 0
-		
-		if hasLumens && (hasCandela || hasBeam) && hasRuntime {
-			fullSpecIDs[row.FlashlightID] = true
+// applyPartialSpecCapInMemory computes the partial-spec cap value.
+// It finds the 10th-highest full-spec overall score and returns that minus 1.0.
+// Partial-spec products' overall scores should be capped at this value.
+// Returns a very high value (999.0) if fewer than 10 full-spec products exist.
+func applyPartialSpecCapInMemory(productScores []productScore) float64 {
+	// Collect full-spec overall scores
+	var fullSpecScores []float64
+	for _, ps := range productScores {
+		if ps.isFullSpec {
+			fullSpecScores = append(fullSpecScores, ps.scores.Overall)
 		}
 	}
 
-	// Get all overall scores for this run
-	const q = `
-		SELECT flashlight_id, display_score
-		FROM flashlight_scores
-		WHERE run_id = $1 AND profile_id = $2
-		ORDER BY display_score DESC
-	`
-	r, err := tx.QueryContext(ctx, q, runID, overallProfileID)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	type scoreRow struct {
-		flashlightID int64
-		score        float64
-		isFullSpec   bool
-	}
-	var allScores []scoreRow
-	for r.Next() {
-		var s scoreRow
-		if err := r.Scan(&s.flashlightID, &s.score); err != nil {
-			return err
-		}
-		s.isFullSpec = fullSpecIDs[s.flashlightID]
-		allScores = append(allScores, s)
-	}
-	if err := r.Err(); err != nil {
-		return err
-	}
-
-	// Find the 10th highest full-spec score
-	fullSpecScores := make([]float64, 0)
-	for _, s := range allScores {
-		if s.isFullSpec {
-			fullSpecScores = append(fullSpecScores, s.score)
-		}
-	}
-
+	// Need at least 10 full-spec products to establish a meaningful cap
 	if len(fullSpecScores) < 10 {
-		// Not enough full-spec products to establish a cap
-		return nil
+		return 999.0 // No cap
 	}
 
-	tenthFullSpecScore := fullSpecScores[9] // 0-indexed, so [9] is the 10th
-	capValue := tenthFullSpecScore - 1.0
-
-	// Cap all partial-spec products at this value
-	const updateQ = `
-		UPDATE flashlight_scores
-		SET display_score = $1
-		WHERE run_id = $2 AND profile_id = $3 AND flashlight_id = $4 AND display_score > $1
-	`
-	for _, s := range allScores {
-		if !s.isFullSpec && s.score > capValue {
-			if _, err := tx.ExecContext(ctx, updateQ, capValue, runID, overallProfileID, s.flashlightID); err != nil {
-				return err
-			}
-		}
+	// Sort descending to find the 10th highest
+	sort.Float64s(fullSpecScores)
+	// Reverse to get descending order
+	for i := 0; i < len(fullSpecScores)/2; i++ {
+		j := len(fullSpecScores) - 1 - i
+		fullSpecScores[i], fullSpecScores[j] = fullSpecScores[j], fullSpecScores[i]
 	}
 
-	return nil
+	tenthFullSpecScore := fullSpecScores[9] // 0-indexed
+	return tenthFullSpecScore - 1.0
 }
 
 // ComputeScores computes all profile scores for a given product spec row.
@@ -318,12 +300,17 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	hasBeam := beam > 0
 	hasRuntime := runtimeHigh > 0
 	
+	// Track which values were derived (not from manufacturer specs)
+	derived := map[string]bool{}
+	
 	if !hasCandela && hasBeam {
 		candela = (beam * beam) / 4.0
 		hasCandela = true
+		derived["max_candela"] = true
 	} else if !hasBeam && hasCandela {
 		beam = 2.0 * math.Sqrt(candela)
 		hasBeam = true
+		derived["beam_distance_m"] = true
 	}
 	
 	// Insufficient data check: we can score from any brightness metric (lumens, candela, or throw).
@@ -473,6 +460,7 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 		Raw:        raw,
 		Normalized: norm,
 		Weighted:   weighted,
+		Derived:    derived,
 		Formula:    formulaVersion,
 	})
 

@@ -150,4 +150,91 @@ check_json "/rankings?use_case=edc&page=1&page_size=50" \
   '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
   "edc rankings: no OOS/unknown without alternates"
 
+# PR#75 QA: Run scoring batch and verify partial-spec cap
+echo "→ Running scoring batch (PR#75 QA requirement)"
+
+# Get database credentials from environment or use defaults
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-flashlight_ratings}"
+DB_USER="${DB_USER:-flashlight_user}"
+DB_SSLMODE="${DB_SSLMODE:-disable}"
+
+# Build and run scoring job
+cd "$(dirname "$0")/.."
+go build -o /tmp/scorejob ./cmd/scorejob || fail "failed to build scorejob"
+
+# Run scoring batch
+echo "→ Running scoring batch..."
+SCORING_OUTPUT=$(/tmp/scorejob -once 2>&1) || fail "scorejob failed: ${SCORING_OUTPUT}"
+echo "${SCORING_OUTPUT}"
+
+# Verify at least 2 products were scored
+SCORED_COUNT=$(echo "${SCORING_OUTPUT}" | grep -oP 'scored \K\d+' | head -1 || echo "0")
+[[ "${SCORED_COUNT}" -ge 2 ]] || fail "scoring batch scored ${SCORED_COUNT} products, expected >= 2"
+echo "OK  scoring batch scored ${SCORED_COUNT} products"
+
+# Verify partial-spec cap via database query
+# This query gets all partial-spec products and checks if any exceed the cap (10th full-spec - 1.0)
+PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} --no-password -t -A"
+
+# Get the latest completed run
+LATEST_RUN=$(${PSQL} -c "SELECT id FROM scoring_runs WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 1" 2>/dev/null) || fail "failed to query latest scoring run"
+[[ -n "${LATEST_RUN}" && "${LATEST_RUN}" != "" ]] || fail "no completed scoring run found"
+echo "→ Checking partial-spec cap for run ${LATEST_RUN}"
+
+# Get the 10th-highest full-spec overall score
+FULL_SPEC_QUERY="
+WITH full_spec_products AS (
+  SELECT f.id
+  FROM flashlights f
+  JOIN flashlight_specs s ON s.flashlight_id = f.id
+  WHERE f.is_active = TRUE
+    AND s.max_lumens IS NOT NULL AND s.max_lumens > 0
+    AND (s.max_candela IS NOT NULL AND s.max_candela > 0 OR s.beam_distance_m IS NOT NULL AND s.beam_distance_m > 0)
+    AND (s.runtime_high_min IS NOT NULL AND s.runtime_high_min > 0)
+)
+SELECT score 
+FROM flashlight_scores fs
+WHERE fs.run_id = ${LATEST_RUN}
+  AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE profile_key = 'overall' LIMIT 1)
+  AND fs.flashlight_id IN (SELECT id FROM full_spec_products)
+ORDER BY score DESC
+OFFSET 9 LIMIT 1;
+"
+
+TENTH_FULL_SPEC=$(${PSQL} -c "${FULL_SPEC_QUERY}" 2>/dev/null | tr -d ' \n') || fail "failed to query 10th full-spec score"
+
+if [[ -n "${TENTH_FULL_SPEC}" && "${TENTH_FULL_SPEC}" != "" ]]; then
+  CAP_VALUE=$(echo "${TENTH_FULL_SPEC} - 1.0" | bc)
+  echo "→ 10th full-spec score: ${TENTH_FULL_SPEC}, cap value: ${CAP_VALUE}"
+  
+  # Check if any partial-spec product exceeds the cap
+  PARTIAL_SPEC_QUERY="
+  WITH partial_spec_products AS (
+    SELECT f.id
+    FROM flashlights f
+    JOIN flashlight_specs s ON s.flashlight_id = f.id
+    WHERE f.is_active = TRUE
+      AND NOT (
+        s.max_lumens IS NOT NULL AND s.max_lumens > 0
+        AND (s.max_candela IS NOT NULL AND s.max_candela > 0 OR s.beam_distance_m IS NOT NULL AND s.beam_distance_m > 0)
+        AND (s.runtime_high_min IS NOT NULL AND s.runtime_high_min > 0)
+      )
+  )
+  SELECT COUNT(*)
+  FROM flashlight_scores fs
+  WHERE fs.run_id = ${LATEST_RUN}
+    AND fs.profile_id = (SELECT id FROM scoring_profiles WHERE profile_key = 'overall' LIMIT 1)
+    AND fs.flashlight_id IN (SELECT id FROM partial_spec_products)
+    AND fs.score > ${CAP_VALUE};
+  "
+  
+  VIOLATIONS=$(${PSQL} -c "${PARTIAL_SPEC_QUERY}" 2>/dev/null | tr -d ' \n') || fail "failed to check partial-spec cap violations"
+  [[ "${VIOLATIONS}" == "0" ]] || fail "${VIOLATIONS} partial-spec products exceed cap of ${CAP_VALUE}"
+  echo "OK  all partial-spec products are at or below cap (${CAP_VALUE})"
+else
+  echo "OK  fewer than 10 full-spec products, no cap applied"
+fi
+
 echo "→ All smoke checks passed"

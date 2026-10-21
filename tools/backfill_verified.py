@@ -9,10 +9,10 @@ import sys
 # Verified backfill data from official manufacturer pages
 BACKFILLS = {
     'energizer-auto-on': {
-        'max_lumens': '1000',
-        'max_candela': '2500',  # (100m/2)^2
-        'beam_distance_m': '100',
-        'runtime_max_min': '1680',  # 28 hours * 60
+        'max_lumens': '40',
+        # Leave max_candela empty - will be derived from beam_distance_m via ANSI FL1
+        'beam_distance_m': '30',
+        'runtime_max_min': '180',  # 3 hours * 60
     },
     'energizer-vision-hd-pro': {
         # Product doesn't exist in official catalog - leave empty
@@ -21,7 +21,8 @@ BACKFILLS = {
         'max_lumens': '100',
         'max_candela': '56',  # (15m/2)^2
         'beam_distance_m': '15',
-        'runtime_max_min': '1620',  # 27 hours * 60
+        # runtime_max_min: page shows "27 hours" but doesn't specify mode breakdown
+        # Leave empty since high/turbo runtime is not published
     },
     'lumintop-thor-mini': {
         'max_lumens': '250',
@@ -54,7 +55,7 @@ BACKFILLS = {
         'max_lumens': '2000',
         'max_candela': '18100',
         'beam_distance_m': '269',
-        'runtime_max_min': '130',
+        'runtime_max_min': '120',  # Turbo: 5 min + 1h55m = 120 min total
     },
     'weltool-m6-dr': {
         'max_lumens': '4.5',
@@ -71,7 +72,7 @@ BACKFILLS = {
         'max_lumens': '2000',
         'max_candela': '16075',
         'beam_distance_m': '254',
-        'runtime_max_min': '150',  # 2.5 hours * 60
+        'runtime_max_min': '120',  # Turbo: 2h = 120 min
     },
 }
 

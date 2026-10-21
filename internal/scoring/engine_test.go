@@ -379,59 +379,54 @@ func TestLowOutputCap(t *testing.T) {
 }
 
 func TestPartialSpecCapLogic(t *testing.T) {
-	// Simulate a partial-spec product with otherwise excellent metrics
-	// Even with high scores, it should be capped below the 10th full-spec product
+	// Create 10+ full-spec products with known scores to test cap calculation
+	var productScores []productScore
 	
-	// Full-spec products that would be in top 10
-	fullSpecHigh := SpecRow{
-		FlashlightID:      80,
-		MaxLumens:         nf(3000),
-		MaxCandela:        nf(50000),
-		RuntimeHighMin:    nf(120),
-		AmazonAvgRating:   nf(4.8),
-		AmazonRatingCount: nf(5000),
-		PriceUSD:          nf(50),
+	// Add 10 full-spec products with decreasing scores
+	for i := 0; i < 10; i++ {
+		score := 90.0 - float64(i)
+		productScores = append(productScores, productScore{
+			scores:     ScoreOutput{Overall: score},
+			isFullSpec: true,
+		})
 	}
-
-	// Full-spec product that might be around 10th place
-	fullSpec10th := SpecRow{
-		FlashlightID:      81,
-		MaxLumens:         nf(1500),
-		MaxCandela:        nf(10000),
-		RuntimeHighMin:    nf(90),
-		AmazonAvgRating:   nf(4.5),
-		AmazonRatingCount: nf(1000),
-		PriceUSD:          nf(80),
+	
+	// Add a partial-spec product with a high score (should be capped)
+	productScores = append(productScores, productScore{
+		scores:     ScoreOutput{Overall: 85.0},
+		isFullSpec: false,
+	})
+	
+	// Add a partial-spec product with a low score (should not be affected)
+	productScores = append(productScores, productScore{
+		scores:     ScoreOutput{Overall: 70.0},
+		isFullSpec: false,
+	})
+	
+	// Apply cap
+	capValue := applyPartialSpecCapInMemory(productScores)
+	
+	// Cap should be 10th full-spec score (81.0) minus 1.0 = 80.0
+	expectedCap := 80.0
+	if capValue != expectedCap {
+		t.Errorf("cap value = %.1f, expected %.1f", capValue, expectedCap)
 	}
-
-	// Partial-spec with high metrics that would normally score high
-	partialSpecHigh := SpecRow{
-		FlashlightID:      82,
-		MaxLumens:         nf(2500),
-		// Missing candela/throw
-		RuntimeHighMin:    nf(150),
-		AmazonAvgRating:   nf(4.9),
-		AmazonRatingCount: nf(8000),
-		PriceUSD:          nf(40),
+	
+	// Verify partial-spec with 85.0 would be capped (test manually applies cap)
+	highPartialSpec := productScores[10]
+	if highPartialSpec.scores.Overall > capValue {
+		t.Logf("✓ High partial-spec score %.1f > cap %.1f (would be capped)", highPartialSpec.scores.Overall, capValue)
+	} else {
+		t.Errorf("High partial-spec score %.1f <= cap %.1f (cap not needed)", highPartialSpec.scores.Overall, capValue)
 	}
-
-	fullHighScores, _ := computeScores(fullSpecHigh, "v2")
-	full10thScores, _ := computeScores(fullSpec10th, "v2")
-	partialHighScores, _ := computeScores(partialSpecHigh, "v2")
-
-	// Without cap, partial-spec might score higher than some full-spec products
-	// With 12% penalty, it still might be close
-	t.Logf("Full-spec high: %.1f, Full-spec 10th: %.1f, Partial-spec high (pre-cap): %.1f",
-		fullHighScores.Overall, full10thScores.Overall, partialHighScores.Overall)
-
-	// The partial-spec cap (applied at batch level) would cap this at (10th_full_spec - 1.0)
-	// We verify the logic: partial-spec gets 12% penalty, cap ensures it stays below 10th
-	if partialHighScores.Overall < fullHighScores.Overall {
-		t.Logf("✓ Partial-spec (with 12%% penalty) scores below full-spec high")
+	
+	// Verify partial-spec with 70.0 is below cap
+	lowPartialSpec := productScores[11]
+	if lowPartialSpec.scores.Overall <= capValue {
+		t.Logf("✓ Low partial-spec score %.1f <= cap %.1f (no capping needed)", lowPartialSpec.scores.Overall, capValue)
 	}
-
-	// The batch-level cap ensures no partial-spec can enter top 10
-	// (tested via integration test with actual database)
+	
+	t.Logf("Cap value: %.1f (10th full-spec @ %.1f minus 1.0)", capValue, expectedCap+1.0)
 }
 
 func TestCatalogIntegrity(t *testing.T) {
