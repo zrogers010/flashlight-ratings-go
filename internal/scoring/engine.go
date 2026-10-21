@@ -217,11 +217,12 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	ratingCount := nullFloat(row.AmazonRatingCount)
 	durability := durabilityScore(row.WaterproofRating.String, impact)
 
-	// Core specs: lumens + (candela OR beam). Derive whichever is missing.
-	// Formula: throw ≈ 2 × √candela → candela = (throw/2)²
+	// Core specs: lumens, candela, beam (throw), runtime.
+	// Derive candela from throw or vice versa using ANSI FL1: throw_m = 2 × √candela
 	hasLumens := lumens > 0
 	hasCandela := candela > 0
 	hasBeam := beam > 0
+	hasRuntime := runtimeHigh > 0
 	
 	if !hasCandela && hasBeam {
 		candela = (beam * beam) / 4.0
@@ -231,10 +232,28 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 		hasBeam = true
 	}
 	
-	// Insufficient data: need lumens + at least one of (candela/beam)
-	if !hasLumens || (!hasCandela && !hasBeam) {
-		// Return zero scores for insufficient data
+	// Count core metrics: lumens, candela/beam, runtime
+	coreMetricCount := 0
+	if hasLumens {
+		coreMetricCount++
+	}
+	if hasCandela || hasBeam {
+		coreMetricCount++
+	}
+	if hasRuntime {
+		coreMetricCount++
+	}
+	
+	// Insufficient data: need at least 2 core metrics, and at least one must be lumens or candela/throw
+	if coreMetricCount < 2 || (!hasLumens && !hasCandela && !hasBeam) {
 		return ScoreOutput{}, []byte("{}")
+	}
+	
+	// Apply confidence haircut for partial specs: products with only 2 core metrics
+	// get a 5% reduction so fully-specced lights rank slightly higher
+	confidenceFactor := 1.0
+	if coreMetricCount == 2 {
+		confidenceFactor = 0.95
 	}
 	
 	// Normalize core specs
@@ -247,12 +266,10 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	raw["beam_distance_m"] = beam
 	norm["beam_distance_m"] = normalizeHigherLog(beam, 50, 700)
 	
-	// Runtime: penalize if missing high runtime
+	// Runtime: don't penalize if missing, just skip it
 	if runtimeHigh > 0 {
 		raw["runtime_high_min"] = runtimeHigh
 		norm["runtime_high_min"] = normalizeHigherLog(runtimeHigh, 20, 300)
-	} else {
-		norm["runtime_high_min"] = 10 // penalty for missing
 	}
 	
 	// Medium runtime: skip entirely (CSV import doesn't populate it)
@@ -356,12 +373,12 @@ func computeScores(row SpecRow, formulaVersion string) (ScoreOutput, []byte) {
 	})
 
 	return ScoreOutput{
-		Overall:  round3(boostScore(overallScore)),
-		Tactical: round3(boostScore(tacticalScore)),
-		EDC:      round3(boostScore(edcScore)),
-		Value:    round3(boostScore(valueScore)),
-		Throw:    round3(boostScore(throwScore)),
-		Flood:    round3(boostScore(floodScore)),
+		Overall:  round3(boostScore(overallScore) * confidenceFactor),
+		Tactical: round3(boostScore(tacticalScore) * confidenceFactor),
+		EDC:      round3(boostScore(edcScore) * confidenceFactor),
+		Value:    round3(boostScore(valueScore) * confidenceFactor),
+		Throw:    round3(boostScore(throwScore) * confidenceFactor),
+		Flood:    round3(boostScore(floodScore) * confidenceFactor),
 	}, breakdown
 }
 

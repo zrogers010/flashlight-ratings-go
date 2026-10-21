@@ -172,3 +172,122 @@ func TestTopSellerScoresHigh(t *testing.T) {
 	t.Logf("Top seller (4.6*, 31k reviews, $15, 200lm): overall=%.1f edc=%.1f value=%.1f",
 		scores.Overall, scores.EDC, scores.Value)
 }
+
+func TestPartialSpecsScoreNonZero(t *testing.T) {
+	// Product with only lumens and runtime (no candela/throw)
+	partialLumens := SpecRow{
+		FlashlightID:   30,
+		MaxLumens:      nf(1500),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores, _ := computeScores(partialLumens, "v2")
+	if scores.Overall <= 0 {
+		t.Errorf("product with lumens + runtime should score > 0, got %.1f", scores.Overall)
+	}
+	t.Logf("Lumens+runtime only: overall=%.1f", scores.Overall)
+
+	// Product with only candela and runtime (no lumens, but should derive throw)
+	partialCandela := SpecRow{
+		FlashlightID:   31,
+		MaxCandela:     nf(20000),
+		RuntimeHighMin: nf(90),
+	}
+
+	scores2, _ := computeScores(partialCandela, "v2")
+	if scores2.Overall <= 0 {
+		t.Errorf("product with candela + runtime should score > 0, got %.1f", scores2.Overall)
+	}
+	t.Logf("Candela+runtime only: overall=%.1f", scores2.Overall)
+
+	// Product with only throw and runtime (no lumens, but should derive candela)
+	partialThrow := SpecRow{
+		FlashlightID:   32,
+		BeamDistanceM:  nf(300),
+		RuntimeHighMin: nf(75),
+	}
+
+	scores3, _ := computeScores(partialThrow, "v2")
+	if scores3.Overall <= 0 {
+		t.Errorf("product with throw + runtime should score > 0, got %.1f", scores3.Overall)
+	}
+	t.Logf("Throw+runtime only: overall=%.1f", scores3.Overall)
+}
+
+func TestCandelaThrowDerivation(t *testing.T) {
+	// Test deriving candela from throw
+	withThrowOnly := SpecRow{
+		FlashlightID:   40,
+		MaxLumens:      nf(1000),
+		BeamDistanceM:  nf(400),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores1, breakdown1 := computeScores(withThrowOnly, "v2")
+	var parsed1 map[string]any
+	json.Unmarshal(breakdown1, &parsed1)
+	raw1 := parsed1["raw"].(map[string]any)
+
+	// Should derive candela from throw: candela = (throw/2)^2 = (400/2)^2 = 40000
+	if candela, ok := raw1["max_candela"].(float64); !ok || candela != 40000 {
+		t.Errorf("expected derived candela=40000 from throw=400, got %v", raw1["max_candela"])
+	}
+
+	// Test deriving throw from candela
+	withCandelaOnly := SpecRow{
+		FlashlightID:   41,
+		MaxLumens:      nf(1000),
+		MaxCandela:     nf(40000),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores2, breakdown2 := computeScores(withCandelaOnly, "v2")
+	var parsed2 map[string]any
+	json.Unmarshal(breakdown2, &parsed2)
+	raw2 := parsed2["raw"].(map[string]any)
+
+	// Should derive throw from candela: throw = 2*sqrt(40000) = 400
+	if throw, ok := raw2["beam_distance_m"].(float64); !ok || throw != 400 {
+		t.Errorf("expected derived throw=400 from candela=40000, got %v", raw2["beam_distance_m"])
+	}
+
+	// Scores should be identical since specs are equivalent
+	if scores1.Overall != scores2.Overall {
+		t.Logf("Throw-only: overall=%.1f, Candela-only: overall=%.1f", scores1.Overall, scores2.Overall)
+	}
+}
+
+func TestInsufficientDataReturnsZero(t *testing.T) {
+	// Only one core metric (lumens)
+	onlyLumens := SpecRow{
+		FlashlightID: 50,
+		MaxLumens:    nf(1000),
+	}
+
+	scores1, _ := computeScores(onlyLumens, "v2")
+	if scores1.Overall != 0 {
+		t.Errorf("product with only lumens should score 0, got %.1f", scores1.Overall)
+	}
+
+	// Only runtime (no lumens, candela, or throw)
+	onlyRuntime := SpecRow{
+		FlashlightID:   51,
+		RuntimeHighMin: nf(60),
+	}
+
+	scores2, _ := computeScores(onlyRuntime, "v2")
+	if scores2.Overall != 0 {
+		t.Errorf("product with only runtime should score 0, got %.1f", scores2.Overall)
+	}
+
+	// Completely empty
+	empty := SpecRow{
+		FlashlightID: 52,
+	}
+
+	scores3, _ := computeScores(empty, "v2")
+	if scores3.Overall != 0 {
+		t.Errorf("empty product should score 0, got %.1f", scores3.Overall)
+	}
+}
+
