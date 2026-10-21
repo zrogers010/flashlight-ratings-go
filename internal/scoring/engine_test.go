@@ -2,7 +2,9 @@ package scoring
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
+	"os"
 	"testing"
 )
 
@@ -372,5 +374,56 @@ func TestLowOutputCap(t *testing.T) {
 	}
 
 	t.Logf("High-output (2000lm): %.1f, Low-output (5lm): %.1f", highScores.Overall, lowScores.Overall)
+}
+
+func TestCatalogIntegrity(t *testing.T) {
+	// Test that specific products in the catalog keep their correct specs
+	// These were accidentally corrupted by a positional backfill script
+	file, err := os.Open("../../data/manual_catalog.csv")
+	if err != nil {
+		t.Fatalf("Failed to open catalog: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		t.Fatalf("Failed to read catalog: %v", err)
+	}
+
+	header := records[0]
+	slugIdx := indexOf(header, "model_slug")
+	lumensIdx := indexOf(header, "max_lumens")
+
+	if slugIdx == -1 || lumensIdx == -1 {
+		t.Fatal("Could not find required columns")
+	}
+
+	expected := map[string]string{
+		"energizer-hc200":            "200",
+		"lumintop-tool-aa-2":         "650",
+		"olight-baldr-s":             "800",
+		"olight-seeker-4-pro":        "4600",
+		"sofirn-sp35t":               "3800",
+		"olight-pl-mini-2-valkyrie":  "600",
+	}
+
+	found := make(map[string]bool)
+	for _, record := range records[1:] {
+		slug := record[slugIdx]
+		if expectedLumens, ok := expected[slug]; ok {
+			actualLumens := record[lumensIdx]
+			if actualLumens != expectedLumens {
+				t.Errorf("%s: max_lumens=%s, expected %s", slug, actualLumens, expectedLumens)
+			}
+			found[slug] = true
+		}
+	}
+
+	for slug := range expected {
+		if !found[slug] {
+			t.Errorf("Product %s not found in catalog", slug)
+		}
+	}
 }
 
