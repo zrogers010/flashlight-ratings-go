@@ -225,7 +225,8 @@ export async function generateMetadata({
   try {
     const data = await fetchFlashlightBySlug(slug);
     const name = `${data.brand} ${data.name}`;
-    const score = topScore(data);
+    // Use overall_score (rounded) to match rankings display, not topScore
+    const score = Math.round(data.overall_score || 0);
     
     // Build title with only available specs (omit "—" placeholders)
     const titleParts = [`${name} Breakdown`];
@@ -236,7 +237,7 @@ export async function generateMetadata({
       titleParts.push(`${fmt(data.beam_distance_m)}m Throw`);
     }
     if (score > 0) {
-      titleParts.push(`(${score.toFixed(0)}/100)`);
+      titleParts.push(`(${score}/100)`);
     }
     const title = titleParts.join(" — ");
     
@@ -248,7 +249,7 @@ export async function generateMetadata({
     const batteryInfo = data.battery_types?.join("/");
     if (batteryInfo) descParts.push(`${batteryInfo} battery`);
     if (data.waterproof_rating) descParts.push(`${data.waterproof_rating} rated`);
-    if (score > 0) descParts.push(`Score: ${score.toFixed(1)}/100`);
+    if (score > 0) descParts.push(`Score: ${score}/100`);
     
     return {
       title,
@@ -260,7 +261,7 @@ export async function generateMetadata({
           data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
           data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
           `Best for ${bestForLabel(data)}`,
-          score > 0 ? `Score ${score.toFixed(0)}/100` : null,
+          score > 0 ? `Score ${score}/100` : null,
         ].filter(Boolean).join(" · "),
         // OG image is rendered by `opengraph-image.tsx` in this route folder
         // (per-product custom image with score, photo, and key specs).
@@ -286,7 +287,8 @@ export default async function BreakdownArticlePage({
 
   const catalog = await fetchFlashlights({ pageSize: 200 });
   const name = `${data.brand} ${data.name}`;
-  const score = topScore(data);
+  // Use overall_score (rounded) to match rankings display, not topScore
+  const score = Math.round(data.overall_score || 0);
   const bestFor = bestForLabel(data);
   const strengths = generateStrengths(data);
   const weaknesses = generateWeaknesses(data);
@@ -367,7 +369,7 @@ export default async function BreakdownArticlePage({
             <div>
               <p className="review-score-label">
                 FlashlightRatings Score:{" "}
-                <strong>{score > 0 ? `${score.toFixed(1)}/100` : "Not rated"}</strong>
+                <strong>{score > 0 ? `${score}/100` : "Not rated"}</strong>
               </p>
               <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
                 Best for {bestFor}

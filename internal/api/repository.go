@@ -1297,7 +1297,8 @@ func (s *Server) findInStockAlternateForUseCase(ctx context.Context, useCase str
 	// For same use_case, match by highest rank
 	orderClause := "rank_position ASC"
 	if matchClosestScore {
-		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, f.id ASC", sourceOverallScore)
+		// Note: use 'id' not 'f.id' — f is scoped to the CTE, not the outer SELECT
+		orderClause = fmt.Sprintf("ABS(overall_score - %f) ASC, score DESC, id ASC", sourceOverallScore)
 	}
 
 	// FLR-QA-01 retest #5 fix: Require candidate to have the requested use_case tag

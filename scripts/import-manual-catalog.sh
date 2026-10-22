@@ -189,6 +189,9 @@ ON CONFLICT (slug) DO UPDATE
     updated_at = NOW();
 
 -- Step 4: Upsert specs (can now see all flashlights)
+-- CSV ownership: for products in manual_catalog.csv, the CSV is the source of truth
+-- for spec columns. Blank cells become NULL (clearing old values).
+-- Products not in the CSV (imported via catalog-sync cron) are unaffected.
 INSERT INTO flashlight_specs (
   flashlight_id, max_lumens, sustained_lumens, max_candela, beam_distance_m,
   runtime_high_min, runtime_500_min, turbo_stepdown_sec, beam_pattern,
@@ -219,24 +222,24 @@ FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
 ON CONFLICT (flashlight_id) DO UPDATE
   SET
-    max_lumens = COALESCE(EXCLUDED.max_lumens, flashlight_specs.max_lumens),
-    sustained_lumens = COALESCE(EXCLUDED.sustained_lumens, flashlight_specs.sustained_lumens),
-    max_candela = COALESCE(EXCLUDED.max_candela, flashlight_specs.max_candela),
-    beam_distance_m = COALESCE(EXCLUDED.beam_distance_m, flashlight_specs.beam_distance_m),
-    runtime_high_min = COALESCE(EXCLUDED.runtime_high_min, flashlight_specs.runtime_high_min),
-    runtime_500_min = COALESCE(EXCLUDED.runtime_500_min, flashlight_specs.runtime_500_min),
-    turbo_stepdown_sec = COALESCE(EXCLUDED.turbo_stepdown_sec, flashlight_specs.turbo_stepdown_sec),
-    beam_pattern = COALESCE(EXCLUDED.beam_pattern, flashlight_specs.beam_pattern),
-    recharge_type = COALESCE(EXCLUDED.recharge_type, flashlight_specs.recharge_type),
-    battery_replaceable = COALESCE(EXCLUDED.battery_replaceable, flashlight_specs.battery_replaceable),
-    weight_g = COALESCE(EXCLUDED.weight_g, flashlight_specs.weight_g),
-    length_mm = COALESCE(EXCLUDED.length_mm, flashlight_specs.length_mm),
-    head_diameter_mm = COALESCE(EXCLUDED.head_diameter_mm, flashlight_specs.head_diameter_mm),
-    body_diameter_mm = COALESCE(EXCLUDED.body_diameter_mm, flashlight_specs.body_diameter_mm),
-    switch_type = COALESCE(EXCLUDED.switch_type, flashlight_specs.switch_type),
-    waterproof_rating = COALESCE(EXCLUDED.waterproof_rating, flashlight_specs.waterproof_rating),
-    impact_resistance_m = COALESCE(EXCLUDED.impact_resistance_m, flashlight_specs.impact_resistance_m),
-    body_material = COALESCE(EXCLUDED.body_material, flashlight_specs.body_material);
+    max_lumens = EXCLUDED.max_lumens,
+    sustained_lumens = EXCLUDED.sustained_lumens,
+    max_candela = EXCLUDED.max_candela,
+    beam_distance_m = EXCLUDED.beam_distance_m,
+    runtime_high_min = EXCLUDED.runtime_high_min,
+    runtime_500_min = EXCLUDED.runtime_500_min,
+    turbo_stepdown_sec = EXCLUDED.turbo_stepdown_sec,
+    beam_pattern = EXCLUDED.beam_pattern,
+    recharge_type = EXCLUDED.recharge_type,
+    battery_replaceable = EXCLUDED.battery_replaceable,
+    weight_g = EXCLUDED.weight_g,
+    length_mm = EXCLUDED.length_mm,
+    head_diameter_mm = EXCLUDED.head_diameter_mm,
+    body_diameter_mm = EXCLUDED.body_diameter_mm,
+    switch_type = EXCLUDED.switch_type,
+    waterproof_rating = EXCLUDED.waterproof_rating,
+    impact_resistance_m = EXCLUDED.impact_resistance_m,
+    body_material = EXCLUDED.body_material;
 
 -- Step 5: Battery compatibility
 INSERT INTO flashlight_battery_compatibility (flashlight_id, battery_type_id, quantity, is_primary, notes)
