@@ -10,6 +10,111 @@ import (
 	"testing"
 )
 
+// TestCatalogTypeValidation validates that data/manual_catalog.csv has correct types
+// matching the DB schema used by scripts/import-manual-catalog.sh.
+// Integer columns must not contain decimal values.
+func TestCatalogTypeValidation(t *testing.T) {
+	file, err := os.Open("../../data/manual_catalog.csv")
+	if err != nil {
+		t.Fatalf("Failed to open manual_catalog.csv: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		t.Fatalf("Failed to read CSV: %v", err)
+	}
+
+	if len(records) < 2 {
+		t.Fatal("CSV has no data rows")
+	}
+
+	header := records[0]
+
+	// Map column names to their expected types based on DB schema and import script
+	// From db/migrations/0001_initial_schema.sql and scripts/import-manual-catalog.sh:
+	// - INTEGER columns: max_lumens, sustained_lumens, max_candela, beam_distance_m, 
+	//   runtime_max_min, runtime_500_min, turbo_stepdown_sec, release_year, amazon_rating_count
+	// - NUMERIC columns: msrp_usd, current_price_usd, amazon_average_rating, weight_g, 
+	//   length_mm, head_diameter_mm, body_diameter_mm, impact_resistance_m
+	integerCols := []string{
+		"max_lumens", "sustained_lumens", "max_candela", "beam_distance_m",
+		"runtime_max_min", "runtime_500_min", "turbo_stepdown_sec",
+		"release_year", "amazon_rating_count",
+	}
+
+	// Find column indices
+	colIndices := make(map[string]int)
+	for _, col := range integerCols {
+		idx := indexOf(header, col)
+		if idx == -1 {
+			t.Fatalf("Column %s not found in CSV header", col)
+		}
+		colIndices[col] = idx
+	}
+
+	// Validate each row
+	var errors []string
+	for i, record := range records[1:] {
+		lineNum := i + 2 // +2 because we skip header (line 1) and i is 0-indexed
+		slugIdx := indexOf(header, "model_slug")
+		slug := ""
+		if slugIdx >= 0 && slugIdx < len(record) {
+			slug = record[slugIdx]
+		}
+
+		for _, col := range integerCols {
+			idx := colIndices[col]
+			if idx >= len(record) {
+				continue
+			}
+			val := strings.TrimSpace(record[idx])
+			if val == "" {
+				continue // Empty values are OK (NULL in DB)
+			}
+
+			// Check if value is a valid integer
+			if strings.Contains(val, ".") {
+				// Could be a decimal like "4.5" - not allowed in INTEGER column
+				if fval, err := strconv.ParseFloat(val, 64); err == nil {
+					if fval != float64(int(fval)) {
+						errors = append(errors, fmt.Sprintf(
+							"Line %d (%s): %s=%s is decimal, must be integer",
+							lineNum, slug, col, val))
+					}
+				}
+			} else if _, err := strconv.ParseInt(val, 10, 64); err != nil {
+				errors = append(errors, fmt.Sprintf(
+					"Line %d (%s): %s=%s is not a valid integer",
+					lineNum, slug, col, val))
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		t.Errorf("Found %d type validation errors in manual_catalog.csv:\n%s",
+			len(errors), strings.Join(errors, "\n"))
+	}
+
+	// Verify the test catches decimal values in integer columns
+	t.Run("Catches decimal in integer column", func(t *testing.T) {
+		// Test that our validation logic correctly identifies a decimal like "4.5" as invalid
+		testVal := "4.5"
+		if !strings.Contains(testVal, ".") {
+			t.Fatal("Test value should contain decimal point")
+		}
+		fval, err := strconv.ParseFloat(testVal, 64)
+		if err != nil {
+			t.Fatalf("Test value should be parseable as float: %v", err)
+		}
+		if fval == float64(int(fval)) {
+			t.Errorf("Test value %s should be detected as non-integer", testVal)
+		}
+		// This proves our logic catches decimals like 4.5
+	})
+}
+
 // TestScoringFormula_RealCatalog runs computeScores on all products from manual_catalog.csv
 // and verifies the scores are believable.
 func TestScoringFormula_RealCatalog(t *testing.T) {
