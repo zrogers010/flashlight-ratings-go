@@ -61,11 +61,12 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
   '.items | type == "array"' \
   "rankings tactical"
 
-# Test the f.id ORDER BY fix: hit a rankings endpoint that triggers alternate lookup with matchClosestScore=true
+# Test the f.id ORDER BY fix: hit flashlights endpoint with weapon-mount use_case
 # This exercises findInStockAlternateForUseCase with family fallback (weapon-mount -> tactical)
-check_json "/rankings?use_case=weapon-mount&page=1&page_size=50" \
+# which uses matchClosestScore=true and tests the ORDER BY ABS(overall_score - X) ... id ASC fix
+check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
   '.items | type == "array"' \
-  "rankings weapon-mount (tests f.id ORDER BY fix)"
+  "flashlights weapon-mount (tests f.id ORDER BY fix)"
 
 # FLR-QA-01 retest #3: Tactical top-10 validation
 # - No badge-only (items without buyable affiliate_url that also lack in_stock_alternate)
