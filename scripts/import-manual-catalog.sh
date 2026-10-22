@@ -238,6 +238,55 @@ ON CONFLICT (flashlight_id) DO UPDATE
     impact_resistance_m = COALESCE(EXCLUDED.impact_resistance_m, flashlight_specs.impact_resistance_m),
     body_material = COALESCE(EXCLUDED.body_material, flashlight_specs.body_material);
 
+-- Step 4b: Explicit clears for stale values
+-- Narrowly scoped: only clears listed (slug, column) pairs.
+-- Whitelist: only spec columns that exist in flashlight_specs.
+-- This clears stale max_lumens=1 on weltool-m6-dr and energizer-vision-hd-pro
+-- left over from old imports, without touching any other products or columns.
+DO $$
+DECLARE
+  clear_list TEXT[][] := ARRAY[
+    ['weltool-m6-dr', 'max_lumens'],
+    ['weltool-m6-dr', 'max_candela'],
+    ['energizer-vision-hd-pro', 'max_lumens'],
+    ['energizer-vision-hd-pro', 'max_candela']
+  ];
+  clear_entry TEXT[];
+  product_slug TEXT;
+  column_name TEXT;
+  cleared_count INT := 0;
+BEGIN
+  FOREACH clear_entry SLICE 1 IN ARRAY clear_list LOOP
+    product_slug := clear_entry[1];
+    column_name := clear_entry[2];
+    
+    -- Whitelist: only allow these spec columns to prevent SQL injection
+    IF column_name NOT IN (
+      'max_lumens', 'sustained_lumens', 'max_candela', 'beam_distance_m',
+      'runtime_high_min', 'runtime_low_min', 'runtime_medium_min', 'runtime_turbo_min',
+      'runtime_500_min', 'turbo_stepdown_sec', 'beam_pattern', 'recharge_type',
+      'battery_replaceable', 'weight_g', 'length_mm', 'head_diameter_mm',
+      'body_diameter_mm', 'switch_type', 'waterproof_rating', 'impact_resistance_m',
+      'body_material', 'usb_c_rechargeable', 'battery_included', 'battery_rechargeable',
+      'has_strobe', 'has_memory_mode', 'has_lockout', 'has_moonlight_mode',
+      'has_magnetic_tailcap', 'has_pocket_clip', 'led_model', 'cri', 'cct_min_k', 'cct_max_k'
+    ) THEN
+      RAISE EXCEPTION 'Invalid column name in clear list: %', column_name;
+    END IF;
+    
+    EXECUTE format(
+      'UPDATE flashlight_specs SET %I = NULL WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = $1) AND %I IS NOT NULL',
+      column_name, column_name
+    ) USING product_slug;
+    
+    IF FOUND THEN
+      cleared_count := cleared_count + 1;
+    END IF;
+  END LOOP;
+  
+  RAISE NOTICE 'Explicit clears: % column values set to NULL', cleared_count;
+END $$;
+
 -- Step 5: Battery compatibility
 INSERT INTO flashlight_battery_compatibility (flashlight_id, battery_type_id, quantity, is_primary, notes)
 SELECT

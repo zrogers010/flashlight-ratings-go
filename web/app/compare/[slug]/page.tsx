@@ -32,8 +32,9 @@ function fmt(v?: number, digits = 0) {
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
-function topScore(d: FlashlightDetail) {
-  return Math.max(d.tactical_score || 0, d.edc_score || 0, d.value_score || 0, d.throw_score || 0, d.flood_score || 0);
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(d: FlashlightDetail) {
+  return Math.round(d.overall_score || 0);
 }
 
 function bestFor(d: FlashlightDetail) {
@@ -123,8 +124,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 function verdictText(a: FlashlightDetail, b: FlashlightDetail): string {
   const nameA = `${a.brand} ${a.name}`;
   const nameB = `${b.brand} ${b.name}`;
-  const scoreA = topScore(a);
-  const scoreB = topScore(b);
+  const scoreA = overallScoreRounded(a);
+  const scoreB = overallScoreRounded(b);
   const bestA = bestFor(a);
   const bestB = bestFor(b);
 

@@ -17,14 +17,9 @@ function fmt(v?: number) {
   return v.toLocaleString();
 }
 
-function topScore(d: FlashlightDetail): number {
-  return Math.max(
-    d.tactical_score || 0,
-    d.edc_score || 0,
-    d.value_score || 0,
-    d.throw_score || 0,
-    d.flood_score || 0,
-  );
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(d: FlashlightDetail): number {
+  return Math.round(d.overall_score || 0);
 }
 
 function isNumericID(s: string): boolean {
@@ -62,8 +57,8 @@ export default async function OpengraphImage({
     return fallback();
   }
 
-  const scoreA = topScore(a);
-  const scoreB = topScore(b);
+  const scoreA = overallScoreRounded(a);
+  const scoreB = overallScoreRounded(b);
   const winner = scoreA > scoreB ? "A" : scoreB > scoreA ? "B" : "tie";
 
   return new ImageResponse(

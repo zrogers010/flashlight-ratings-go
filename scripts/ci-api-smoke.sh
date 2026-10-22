@@ -61,6 +61,13 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
   '.items | type == "array"' \
   "rankings tactical"
 
+# Test the f.id ORDER BY fix: hit flashlights endpoint with weapon-mount use_case
+# This exercises findInStockAlternateForUseCase with family fallback (weapon-mount -> tactical)
+# which uses matchClosestScore=true and tests the ORDER BY ABS(overall_score - X) ... id ASC fix
+check_json "/flashlights?use_case=weapon-mount&page=1&page_size=50" \
+  '.items | type == "array"' \
+  "flashlights weapon-mount (tests f.id ORDER BY fix)"
+
 # FLR-QA-01 retest #3: Tactical top-10 validation
 # - No badge-only (items without buyable affiliate_url that also lack in_stock_alternate)
 # - No specialty (penlight|keychain|toy) slugs in in_stock_alternate
@@ -149,6 +156,50 @@ check_json "/rankings?use_case=tactical&page=1&page_size=10" \
 check_json "/rankings?use_case=edc&page=1&page_size=50" \
   '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
   "edc rankings: no OOS/unknown without alternates"
+
+# Cleanup PR: Test explicit clear mechanism (issue #1)
+echo "→ Testing explicit clear mechanism for stale values"
+
+# Get database credentials
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-flashlight}"
+DB_USER="${DB_USER:-flashlight_app}"
+DB_PASS="${DB_PASS:-flashlight_dev}"
+export PGPASSWORD="${DB_PASS}"
+PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -t -A"
+
+# First, run the import to ensure weltool-m6-dr exists (from manual_catalog.csv)
+./scripts/import-manual-catalog.sh data/manual_catalog.csv >/dev/null 2>&1 || fail "CSV import (first run) failed"
+
+# Verify weltool-m6-dr now exists
+WELTOOL_EXISTS=$(${PSQL} -c "SELECT COUNT(*) FROM flashlights WHERE slug = 'weltool-m6-dr'" 2>&1 | tr -d ' \n')
+[[ "${WELTOOL_EXISTS}" == "1" ]] || fail "weltool-m6-dr should exist after first import, got count: ${WELTOOL_EXISTS}"
+
+# Seed weltool-m6-dr with max_lumens=1 (simulating the stale value in prod)
+${PSQL} -c "UPDATE flashlight_specs SET max_lumens = 1, max_candela = 1 WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr')" >/dev/null 2>&1
+
+# Verify the seed worked
+BEFORE_LUMENS=$(${PSQL} -c "SELECT max_lumens FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr')" 2>&1 | tr -d ' \n')
+[[ "${BEFORE_LUMENS}" == "1" ]] || fail "weltool-m6-dr max_lumens should be 1 before second import, got: ${BEFORE_LUMENS}"
+
+# Also check a non-listed product with a real value survives import
+# Use wurkkos-fc11c (from seed data) which has max_candela=12000, not in clear list
+BEFORE_FC11C_CANDELA=$(${PSQL} -c "SELECT max_candela FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'wurkkos-fc11c')" 2>&1 | tr -d ' \n')
+[[ -n "${BEFORE_FC11C_CANDELA}" ]] || fail "wurkkos-fc11c max_candela should exist before second import"
+
+# Run the import again (should trigger explicit clears for weltool-m6-dr)
+./scripts/import-manual-catalog.sh data/manual_catalog.csv >/dev/null 2>&1 || fail "CSV import (second run) failed"
+
+# Verify weltool-m6-dr max_lumens is now NULL
+AFTER_LUMENS=$(${PSQL} -c "SELECT max_lumens FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr')" 2>&1 | tr -d ' \n')
+[[ "${AFTER_LUMENS}" == "" ]] || fail "weltool-m6-dr max_lumens should be NULL after second import, got: ${AFTER_LUMENS}"
+echo "OK  explicit clear: weltool-m6-dr max_lumens (was 1, now NULL)"
+
+# Verify wurkkos-fc11c max_candela survived (not in clear list)
+AFTER_FC11C_CANDELA=$(${PSQL} -c "SELECT max_candela FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'wurkkos-fc11c')" 2>&1 | tr -d ' \n')
+[[ "${AFTER_FC11C_CANDELA}" == "${BEFORE_FC11C_CANDELA}" ]] || fail "wurkkos-fc11c max_candela should survive import (not in clear list), was ${BEFORE_FC11C_CANDELA}, got: ${AFTER_FC11C_CANDELA}"
+echo "OK  non-listed product: wurkkos-fc11c max_candela survived (${AFTER_FC11C_CANDELA})"
 
 # PR#75 QA: Run scoring batch and verify partial-spec cap
 echo "→ Running scoring batch (PR#75 QA requirement)"

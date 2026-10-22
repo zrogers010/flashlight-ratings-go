@@ -6,20 +6,16 @@ export type ComparePair = {
   slug: string;
 };
 
-function topScore(item: { 
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(item: { 
+  overall_score?: number;
   tactical_score?: number;
   edc_score?: number;
   value_score?: number;
   throw_score?: number;
   flood_score?: number;
 }) {
-  return Math.max(
-    item.tactical_score || 0,
-    item.edc_score || 0,
-    item.value_score || 0,
-    item.throw_score || 0,
-    item.flood_score || 0
-  );
+  return Math.round(item.overall_score || 0);
 }
 
 let cachedPairs: ComparePair[] | null = null;
@@ -58,7 +54,7 @@ export async function curatedComparePairs(): Promise<ComparePair[]> {
     }
     
     // Filter out unscored/incomplete products (score <= 0) before taking top 10
-    const scored = slugs.filter((s) => s.slug && topScore(s) > 0);
+    const scored = slugs.filter((s) => s.slug && overallScoreRounded(s) > 0);
     const top10 = scored.slice(0, 10);
     const pairs: ComparePair[] = [];
 

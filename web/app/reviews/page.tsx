@@ -15,15 +15,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/reviews" },
 };
 
-function topScore(item: { overall_score?: number; tactical_score?: number; edc_score?: number; value_score?: number; throw_score?: number; flood_score?: number }) {
-  return Math.max(
-    item.overall_score || 0,
-    item.tactical_score || 0,
-    item.edc_score || 0,
-    item.value_score || 0,
-    item.throw_score || 0,
-    item.flood_score || 0
-  );
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(item: { overall_score?: number; tactical_score?: number; edc_score?: number; value_score?: number; throw_score?: number; flood_score?: number }) {
+  return Math.round(item.overall_score || 0);
 }
 
 function fmt(v?: number, digits = 0) {
@@ -78,7 +72,7 @@ export default async function ReviewsIndexPage() {
 
       <div className="review-index-grid">
         {scoredItems.map((item) => {
-          const score = topScore(item);
+          const score = overallScoreRounded(item);
           return (
             <Link
               key={item.id}
