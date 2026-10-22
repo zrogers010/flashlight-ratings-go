@@ -249,7 +249,8 @@ export async function generateMetadata({
     const batteryInfo = data.battery_types?.join("/");
     if (batteryInfo) descParts.push(`${batteryInfo} battery`);
     if (data.waterproof_rating) descParts.push(`${data.waterproof_rating} rated`);
-    if (score > 0) descParts.push(`Score: ${score}/100`);
+    // Meta description shows overall_score to 1 decimal (matches rankings exactly)
+    if (data.overall_score && data.overall_score > 0) descParts.push(`Score: ${data.overall_score.toFixed(1)}/100`);
     
     return {
       title,
@@ -261,7 +262,8 @@ export async function generateMetadata({
           data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
           data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
           `Best for ${bestForLabel(data)}`,
-          score > 0 ? `Score ${score}/100` : null,
+          // OpenGraph description shows overall_score to 1 decimal (matches rankings)
+          data.overall_score && data.overall_score > 0 ? `Score ${data.overall_score.toFixed(1)}/100` : null,
         ].filter(Boolean).join(" · "),
         // OG image is rendered by `opengraph-image.tsx` in this route folder
         // (per-product custom image with score, photo, and key specs).
@@ -369,7 +371,8 @@ export default async function BreakdownArticlePage({
             <div>
               <p className="review-score-label">
                 FlashlightRatings Score:{" "}
-                <strong>{score > 0 ? `${score}/100` : "Not rated"}</strong>
+                {/* Body shows overall_score to 1 decimal (matches rankings exactly) */}
+                <strong>{data.overall_score && data.overall_score > 0 ? `${data.overall_score.toFixed(1)}/100` : "Not rated"}</strong>
               </p>
               <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
                 Best for {bestFor}

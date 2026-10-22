@@ -61,6 +61,12 @@ check_json "/rankings?use_case=tactical&page=1&page_size=5" \
   '.items | type == "array"' \
   "rankings tactical"
 
+# Test the f.id ORDER BY fix: hit a rankings endpoint that triggers alternate lookup with matchClosestScore=true
+# This exercises findInStockAlternateForUseCase with family fallback (weapon-mount -> tactical)
+check_json "/rankings?use_case=weapon-mount&page=1&page_size=50" \
+  '.items | type == "array"' \
+  "rankings weapon-mount (tests f.id ORDER BY fix)"
+
 # FLR-QA-01 retest #3: Tactical top-10 validation
 # - No badge-only (items without buyable affiliate_url that also lack in_stock_alternate)
 # - No specialty (penlight|keychain|toy) slugs in in_stock_alternate
@@ -150,13 +156,50 @@ check_json "/rankings?use_case=edc&page=1&page_size=50" \
   '.items | map(select(.flashlight.availability_status != "in_stock" and .in_stock_alternate == null)) | length == 0' \
   "edc rankings: no OOS/unknown without alternates"
 
-# Cleanup PR: Document blank CSV cell behavior (issue #1)
-# The fix changes import-manual-catalog.sh to use EXCLUDED.column instead of COALESCE,
-# so blank CSV cells become NULL (clearing old values). Manual verification after deploy:
-# 1. Run: scripts/import-manual-catalog.sh data/manual_catalog.csv
-# 2. Check weltool-m6-dr and energizer-vision-hd-pro have NULL max_lumens
-# 3. Verify their scores become 0 and titles don't show "1 Lumens"
-echo "OK  blank CSV cell handling documented (verify manually after deploy)"
+# Cleanup PR: Test explicit clear mechanism (issue #1)
+echo "→ Testing explicit clear mechanism for stale values"
+
+# Get database credentials
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-flashlight}"
+DB_USER="${DB_USER:-flashlight_app}"
+DB_PASS="${DB_PASS:-flashlight_dev}"
+export PGPASSWORD="${DB_PASS}"
+PSQL="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -t -A"
+
+# Seed weltool-m6-dr with max_lumens=1 (simulating the stale value in prod)
+${PSQL} <<SQL >/dev/null 2>&1
+UPDATE flashlight_specs 
+SET max_lumens = 1, max_candela = 1
+WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr');
+SQL
+
+# Verify the seed worked
+BEFORE_LUMENS=$(${PSQL} -c "SELECT max_lumens FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr')" 2>&1 | tr -d ' \n')
+[[ "${BEFORE_LUMENS}" == "1" ]] || fail "weltool-m6-dr max_lumens should be 1 before import, got: ${BEFORE_LUMENS}"
+
+# Also check a non-listed product with a real value survives import
+# olight-i3t-2-eos has max_candela=961 in prod (from YAML), not in clear list
+BEFORE_I3T_CANDELA=$(${PSQL} -c "SELECT max_candela FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'olight-i3t-2-eos')" 2>&1 | tr -d ' \n')
+# If it doesn't exist or is NULL, seed it
+if [[ "${BEFORE_I3T_CANDELA}" == "" ]]; then
+  ${PSQL} -c "UPDATE flashlight_specs SET max_candela = 961 WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'olight-i3t-2-eos')" >/dev/null 2>&1
+  BEFORE_I3T_CANDELA="961"
+fi
+
+# Run the import (should trigger explicit clears for weltool-m6-dr)
+./scripts/import-manual-catalog.sh data/manual_catalog.csv >/dev/null 2>&1 || fail "CSV import failed"
+
+# Verify weltool-m6-dr max_lumens is now NULL
+AFTER_LUMENS=$(${PSQL} -c "SELECT max_lumens FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'weltool-m6-dr')" 2>&1 | tr -d ' \n')
+[[ "${AFTER_LUMENS}" == "" ]] || fail "weltool-m6-dr max_lumens should be NULL after import, got: ${AFTER_LUMENS}"
+echo "OK  explicit clear: weltool-m6-dr max_lumens (was 1, now NULL)"
+
+# Verify olight-i3t-2-eos max_candela survived (not in clear list)
+AFTER_I3T_CANDELA=$(${PSQL} -c "SELECT max_candela FROM flashlight_specs WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = 'olight-i3t-2-eos')" 2>&1 | tr -d ' \n')
+[[ "${AFTER_I3T_CANDELA}" == "${BEFORE_I3T_CANDELA}" ]] || fail "olight-i3t-2-eos max_candela should survive import (not in clear list), was ${BEFORE_I3T_CANDELA}, got: ${AFTER_I3T_CANDELA}"
+echo "OK  non-listed product: olight-i3t-2-eos max_candela survived (${AFTER_I3T_CANDELA})"
 
 # PR#75 QA: Run scoring batch and verify partial-spec cap
 echo "→ Running scoring batch (PR#75 QA requirement)"

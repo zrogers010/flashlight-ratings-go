@@ -44,15 +44,9 @@ function bestForLabel(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
   return picks[0]?.label || "General Use";
 }
 
-function topScore(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
-  return Math.max(
-    data.overall_score || 0,
-    data.tactical_score || 0,
-    data.edc_score || 0,
-    data.value_score || 0,
-    data.throw_score || 0,
-    data.flood_score || 0
-  );
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
+  return Math.round(data.overall_score || 0);
 }
 
 function pros(data: Awaited<ReturnType<typeof fetchFlashlightByID>>) {
@@ -102,7 +96,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const data = await fetchFlashlightByID(id);
   const name = `${data.brand} ${data.name}`;
-  const score = topScore(data);
+  const score = overallScoreRounded(data);
 
   const specsText = [
     data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
@@ -193,7 +187,7 @@ export default async function FlashlightDetailPage({ params }: { params: Promise
   const positive = pros(data);
   const drawbacks = cons(data);
   const faqItems = generateFAQ(data);
-  const score = topScore(data);
+  const score = overallScoreRounded(data);
   const bestFor = bestForLabel(data);
 
   return (

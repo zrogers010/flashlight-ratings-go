@@ -29,14 +29,9 @@ function fmt(v?: number, digits = 0) {
   return v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
-function topScore(item: FlashlightDetail): number {
-  return Math.max(
-    item.tactical_score || 0,
-    item.edc_score || 0,
-    item.value_score || 0,
-    item.throw_score || 0,
-    item.flood_score || 0
-  );
+// Use overall_score (rounded) to match rankings display
+function overallScoreRounded(item: FlashlightDetail): number {
+  return Math.round(item.overall_score || 0);
 }
 
 function computeWinners(items: FlashlightDetail[]): WinnerEntry[] {
@@ -85,7 +80,7 @@ export function CompareCardView({ items, showFullSpecsToggle = true }: Props) {
       <div className={gridClass}>
         {items.map((item) => {
           const wins = winnerProfilesForItem(item.id, winners);
-          const score = topScore(item);
+          const score = overallScoreRounded(item);
           const name = `${item.brand} ${item.name}`;
           const isWinner = wins.length > 0;
           const winnerSummary = isWinner

@@ -13,20 +13,9 @@ function fmt(v?: number) {
   return v.toLocaleString();
 }
 
-function topScore(d: {
-  tactical_score?: number;
-  edc_score?: number;
-  value_score?: number;
-  throw_score?: number;
-  flood_score?: number;
-}): number {
-  return Math.max(
-    d.tactical_score || 0,
-    d.edc_score || 0,
-    d.value_score || 0,
-    d.throw_score || 0,
-    d.flood_score || 0,
-  );
+// Use overall_score (rounded) to match rankings, not max of all profiles
+function overallScoreRounded(d: { overall_score?: number }): number {
+  return Math.round(d.overall_score || 0);
 }
 
 function bestForLabel(d: {
@@ -60,7 +49,7 @@ export default async function OpengraphImage({
     return fallback();
   }
 
-  const score = topScore(data);
+  const score = overallScoreRounded(data);
   const best = bestForLabel(data);
   const image = data.image_urls?.[0] || data.image_url;
 
@@ -149,7 +138,7 @@ export default async function OpengraphImage({
                   lineHeight: 1,
                 }}
               >
-                {score.toFixed(0)}
+                {score}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ fontSize: 20, color: "#8b949e" }}>/100</div>

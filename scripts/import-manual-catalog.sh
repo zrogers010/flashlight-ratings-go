@@ -189,9 +189,6 @@ ON CONFLICT (slug) DO UPDATE
     updated_at = NOW();
 
 -- Step 4: Upsert specs (can now see all flashlights)
--- CSV ownership: for products in manual_catalog.csv, the CSV is the source of truth
--- for spec columns. Blank cells become NULL (clearing old values).
--- Products not in the CSV (imported via catalog-sync cron) are unaffected.
 INSERT INTO flashlight_specs (
   flashlight_id, max_lumens, sustained_lumens, max_candela, beam_distance_m,
   runtime_high_min, runtime_500_min, turbo_stepdown_sec, beam_pattern,
@@ -222,24 +219,73 @@ FROM cleaned c
 JOIN flashlights f ON f.slug = c.model_slug
 ON CONFLICT (flashlight_id) DO UPDATE
   SET
-    max_lumens = EXCLUDED.max_lumens,
-    sustained_lumens = EXCLUDED.sustained_lumens,
-    max_candela = EXCLUDED.max_candela,
-    beam_distance_m = EXCLUDED.beam_distance_m,
-    runtime_high_min = EXCLUDED.runtime_high_min,
-    runtime_500_min = EXCLUDED.runtime_500_min,
-    turbo_stepdown_sec = EXCLUDED.turbo_stepdown_sec,
-    beam_pattern = EXCLUDED.beam_pattern,
-    recharge_type = EXCLUDED.recharge_type,
-    battery_replaceable = EXCLUDED.battery_replaceable,
-    weight_g = EXCLUDED.weight_g,
-    length_mm = EXCLUDED.length_mm,
-    head_diameter_mm = EXCLUDED.head_diameter_mm,
-    body_diameter_mm = EXCLUDED.body_diameter_mm,
-    switch_type = EXCLUDED.switch_type,
-    waterproof_rating = EXCLUDED.waterproof_rating,
-    impact_resistance_m = EXCLUDED.impact_resistance_m,
-    body_material = EXCLUDED.body_material;
+    max_lumens = COALESCE(EXCLUDED.max_lumens, flashlight_specs.max_lumens),
+    sustained_lumens = COALESCE(EXCLUDED.sustained_lumens, flashlight_specs.sustained_lumens),
+    max_candela = COALESCE(EXCLUDED.max_candela, flashlight_specs.max_candela),
+    beam_distance_m = COALESCE(EXCLUDED.beam_distance_m, flashlight_specs.beam_distance_m),
+    runtime_high_min = COALESCE(EXCLUDED.runtime_high_min, flashlight_specs.runtime_high_min),
+    runtime_500_min = COALESCE(EXCLUDED.runtime_500_min, flashlight_specs.runtime_500_min),
+    turbo_stepdown_sec = COALESCE(EXCLUDED.turbo_stepdown_sec, flashlight_specs.turbo_stepdown_sec),
+    beam_pattern = COALESCE(EXCLUDED.beam_pattern, flashlight_specs.beam_pattern),
+    recharge_type = COALESCE(EXCLUDED.recharge_type, flashlight_specs.recharge_type),
+    battery_replaceable = COALESCE(EXCLUDED.battery_replaceable, flashlight_specs.battery_replaceable),
+    weight_g = COALESCE(EXCLUDED.weight_g, flashlight_specs.weight_g),
+    length_mm = COALESCE(EXCLUDED.length_mm, flashlight_specs.length_mm),
+    head_diameter_mm = COALESCE(EXCLUDED.head_diameter_mm, flashlight_specs.head_diameter_mm),
+    body_diameter_mm = COALESCE(EXCLUDED.body_diameter_mm, flashlight_specs.body_diameter_mm),
+    switch_type = COALESCE(EXCLUDED.switch_type, flashlight_specs.switch_type),
+    waterproof_rating = COALESCE(EXCLUDED.waterproof_rating, flashlight_specs.waterproof_rating),
+    impact_resistance_m = COALESCE(EXCLUDED.impact_resistance_m, flashlight_specs.impact_resistance_m),
+    body_material = COALESCE(EXCLUDED.body_material, flashlight_specs.body_material);
+
+-- Step 4b: Explicit clears for stale values
+-- Narrowly scoped: only clears listed (slug, column) pairs.
+-- Whitelist: only spec columns that exist in flashlight_specs.
+-- This clears stale max_lumens=1 on weltool-m6-dr and energizer-vision-hd-pro
+-- left over from old imports, without touching any other products or columns.
+DO $$
+DECLARE
+  clear_list TEXT[][] := ARRAY[
+    ['weltool-m6-dr', 'max_lumens'],
+    ['weltool-m6-dr', 'max_candela'],
+    ['energizer-vision-hd-pro', 'max_lumens'],
+    ['energizer-vision-hd-pro', 'max_candela']
+  ];
+  clear_entry TEXT[];
+  product_slug TEXT;
+  column_name TEXT;
+  cleared_count INT := 0;
+BEGIN
+  FOREACH clear_entry SLICE 1 IN ARRAY clear_list LOOP
+    product_slug := clear_entry[1];
+    column_name := clear_entry[2];
+    
+    -- Whitelist: only allow these spec columns to prevent SQL injection
+    IF column_name NOT IN (
+      'max_lumens', 'sustained_lumens', 'max_candela', 'beam_distance_m',
+      'runtime_high_min', 'runtime_low_min', 'runtime_medium_min', 'runtime_turbo_min',
+      'runtime_500_min', 'turbo_stepdown_sec', 'beam_pattern', 'recharge_type',
+      'battery_replaceable', 'weight_g', 'length_mm', 'head_diameter_mm',
+      'body_diameter_mm', 'switch_type', 'waterproof_rating', 'impact_resistance_m',
+      'body_material', 'usb_c_rechargeable', 'battery_included', 'battery_rechargeable',
+      'has_strobe', 'has_memory_mode', 'has_lockout', 'has_moonlight_mode',
+      'has_magnetic_tailcap', 'has_pocket_clip', 'led_model', 'cri', 'cct_min_k', 'cct_max_k'
+    ) THEN
+      RAISE EXCEPTION 'Invalid column name in clear list: %', column_name;
+    END IF;
+    
+    EXECUTE format(
+      'UPDATE flashlight_specs SET %I = NULL WHERE flashlight_id = (SELECT id FROM flashlights WHERE slug = $1) AND %I IS NOT NULL',
+      column_name, column_name
+    ) USING product_slug;
+    
+    IF FOUND THEN
+      cleared_count := cleared_count + 1;
+    END IF;
+  END LOOP;
+  
+  RAISE NOTICE 'Explicit clears: % column values set to NULL', cleared_count;
+END $$;
 
 -- Step 5: Battery compatibility
 INSERT INTO flashlight_battery_compatibility (flashlight_id, battery_type_id, quantity, is_primary, notes)
