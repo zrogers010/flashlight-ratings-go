@@ -9,28 +9,22 @@ import { AmazonDisclosure } from "@/components/AmazonDisclosure";
 import {
   fetchFlashlightByID,
   fetchFlashlightBySlug,
-  fetchAllSlugs,
   type FlashlightDetail,
 } from "@/lib/api";
 import { compareUrl } from "@/lib/compare-url";
+import { curatedComparePairs, isInCuratedSet } from "@/lib/compare-pairs";
 
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  try {
-    const slugs = await fetchAllSlugs();
-    const top = slugs.filter((s) => s.slug).slice(0, 30);
-    const params: { slug: string }[] = [];
-    for (let i = 0; i < top.length; i++) {
-      for (let j = i + 1; j < top.length; j++) {
-        const [a, b] = [top[i].slug, top[j].slug].sort();
-        params.push({ slug: `${a}-vs-${b}` });
-      }
+  const pairs = await curatedComparePairs();
+  if (pairs.length === 0) {
+    if (process.env.REQUIRE_COMPARE_PAIRS === '1') {
+      throw new Error("generateStaticParams: no compare pairs generated from curatedComparePairs");
     }
-    return params;
-  } catch {
     return [];
   }
+  return pairs.map((p) => ({ slug: p.slug }));
 }
 
 function fmt(v?: number, digits = 0) {
@@ -96,13 +90,32 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { a, b } = pair;
   const nameA = `${a.brand} ${a.name}`;
   const nameB = `${b.brand} ${b.name}`;
+  
+  // Check if this comparison is in the curated set (top 10 × top 10)
+  // If not, add noindex to avoid thin/scaled-content penalties
+  const inCuratedSet = await isInCuratedSet(slug);
+  
+  const aSpecs = [
+    a.max_lumens ? `${fmt(a.max_lumens)} lm` : null,
+    a.beam_distance_m ? `${fmt(a.beam_distance_m)}m throw` : null,
+  ].filter(Boolean).join(", ");
+  
+  const bSpecs = [
+    b.max_lumens ? `${fmt(b.max_lumens)} lm` : null,
+    b.beam_distance_m ? `${fmt(b.beam_distance_m)}m throw` : null,
+  ].filter(Boolean).join(", ");
+  
   return {
     title: `${nameA} vs ${nameB} — Side by Side Comparison 2026`,
-    description: `Compare the ${nameA} (${fmt(a.max_lumens)} lm, ${fmt(a.beam_distance_m)}m throw) against the ${nameB} (${fmt(b.max_lumens)} lm, ${fmt(b.beam_distance_m)}m throw). Specs, scores, and pricing compared.`,
+    description: `Compare the ${nameA}${aSpecs ? ` (${aSpecs})` : ""} against the ${nameB}${bSpecs ? ` (${bSpecs})` : ""}. Specs, scores, and pricing compared.`,
     alternates: { canonical: compareUrl([a, b]) },
     openGraph: {
       title: `${nameA} vs ${nameB} — Which Is Better?`,
       description: `Head-to-head comparison of specs, scores, and value.`,
+    },
+    robots: inCuratedSet ? undefined : {
+      index: false,
+      follow: true,
     },
   };
 }

@@ -292,14 +292,38 @@ export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDet
   return fetchFlashlightByID(String(match.id));
 }
 
-export async function fetchAllSlugs(): Promise<{ slug: string; id: number }[]> {
-  const allSlugs: { slug: string; id: number }[] = [];
+export async function fetchAllSlugs(): Promise<{ 
+  slug: string; 
+  id: number;
+  tactical_score?: number;
+  edc_score?: number;
+  value_score?: number;
+  throw_score?: number;
+  flood_score?: number;
+}[]> {
+  const allSlugs: { 
+    slug: string; 
+    id: number;
+    tactical_score?: number;
+    edc_score?: number;
+    value_score?: number;
+    throw_score?: number;
+    flood_score?: number;
+  }[] = [];
   let page = 1;
   let hasMore = true;
 
   while (hasMore) {
     const listing = await fetchFlashlights({ page, pageSize: 100 });
-    allSlugs.push(...listing.items.map((item) => ({ slug: item.slug, id: item.id })));
+    allSlugs.push(...listing.items.map((item) => ({ 
+      slug: item.slug, 
+      id: item.id,
+      tactical_score: item.tactical_score,
+      edc_score: item.edc_score,
+      value_score: item.value_score,
+      throw_score: item.throw_score,
+      flood_score: item.flood_score,
+    })));
     hasMore = page < listing.total_pages;
     page++;
   }

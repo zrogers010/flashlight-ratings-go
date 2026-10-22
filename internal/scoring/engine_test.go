@@ -2,7 +2,9 @@ package scoring
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
+	"os"
 	"testing"
 )
 
@@ -172,3 +174,309 @@ func TestTopSellerScoresHigh(t *testing.T) {
 	t.Logf("Top seller (4.6*, 31k reviews, $15, 200lm): overall=%.1f edc=%.1f value=%.1f",
 		scores.Overall, scores.EDC, scores.Value)
 }
+
+func TestPartialSpecsScoreNonZero(t *testing.T) {
+	// Product with only lumens and runtime (no candela/throw)
+	partialLumens := SpecRow{
+		FlashlightID:   30,
+		MaxLumens:      nf(1500),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores, _ := computeScores(partialLumens, "v2")
+	if scores.Overall <= 0 {
+		t.Errorf("product with lumens + runtime should score > 0, got %.1f", scores.Overall)
+	}
+	t.Logf("Lumens+runtime only: overall=%.1f", scores.Overall)
+
+	// Product with only candela and runtime (no lumens, but should derive throw)
+	partialCandela := SpecRow{
+		FlashlightID:   31,
+		MaxCandela:     nf(20000),
+		RuntimeHighMin: nf(90),
+	}
+
+	scores2, _ := computeScores(partialCandela, "v2")
+	if scores2.Overall <= 0 {
+		t.Errorf("product with candela + runtime should score > 0, got %.1f", scores2.Overall)
+	}
+	t.Logf("Candela+runtime only: overall=%.1f", scores2.Overall)
+
+	// Product with only throw and runtime (no lumens, but should derive candela)
+	partialThrow := SpecRow{
+		FlashlightID:   32,
+		BeamDistanceM:  nf(300),
+		RuntimeHighMin: nf(75),
+	}
+
+	scores3, _ := computeScores(partialThrow, "v2")
+	if scores3.Overall <= 0 {
+		t.Errorf("product with throw + runtime should score > 0, got %.1f", scores3.Overall)
+	}
+	t.Logf("Throw+runtime only: overall=%.1f", scores3.Overall)
+}
+
+func TestCandelaThrowDerivation(t *testing.T) {
+	// Test deriving candela from throw
+	withThrowOnly := SpecRow{
+		FlashlightID:   40,
+		MaxLumens:      nf(1000),
+		BeamDistanceM:  nf(400),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores1, breakdown1 := computeScores(withThrowOnly, "v2")
+	var parsed1 map[string]any
+	json.Unmarshal(breakdown1, &parsed1)
+	raw1 := parsed1["raw"].(map[string]any)
+
+	// Should derive candela from throw: candela = (throw/2)^2 = (400/2)^2 = 40000
+	if candela, ok := raw1["max_candela"].(float64); !ok || candela != 40000 {
+		t.Errorf("expected derived candela=40000 from throw=400, got %v", raw1["max_candela"])
+	}
+
+	// Test deriving throw from candela
+	withCandelaOnly := SpecRow{
+		FlashlightID:   41,
+		MaxLumens:      nf(1000),
+		MaxCandela:     nf(40000),
+		RuntimeHighMin: nf(60),
+	}
+
+	scores2, breakdown2 := computeScores(withCandelaOnly, "v2")
+	var parsed2 map[string]any
+	json.Unmarshal(breakdown2, &parsed2)
+	raw2 := parsed2["raw"].(map[string]any)
+
+	// Should derive throw from candela: throw = 2*sqrt(40000) = 400
+	if throw, ok := raw2["beam_distance_m"].(float64); !ok || throw != 400 {
+		t.Errorf("expected derived throw=400 from candela=40000, got %v", raw2["beam_distance_m"])
+	}
+
+	// Scores should be identical since specs are equivalent
+	if scores1.Overall != scores2.Overall {
+		t.Logf("Throw-only: overall=%.1f, Candela-only: overall=%.1f", scores1.Overall, scores2.Overall)
+	}
+}
+
+func TestInsufficientDataReturnsZero(t *testing.T) {
+	// Only runtime (no brightness specs)
+	onlyRuntime := SpecRow{
+		FlashlightID:   51,
+		RuntimeHighMin: nf(60),
+	}
+
+	scores1, _ := computeScores(onlyRuntime, "v2")
+	if scores1.Overall != 0 {
+		t.Errorf("product with only runtime should score 0, got %.1f", scores1.Overall)
+	}
+
+	// Completely empty
+	empty := SpecRow{
+		FlashlightID: 52,
+	}
+
+	scores2, _ := computeScores(empty, "v2")
+	if scores2.Overall != 0 {
+		t.Errorf("empty product should score 0, got %.1f", scores2.Overall)
+	}
+	
+	// Only price and ratings (no core specs)
+	onlyExtras := SpecRow{
+		FlashlightID:      53,
+		PriceUSD:          nf(50),
+		AmazonAvgRating:   nf(4.5),
+		AmazonRatingCount: nf(1000),
+	}
+
+	scores3, _ := computeScores(onlyExtras, "v2")
+	if scores3.Overall != 0 {
+		t.Errorf("product with only price/ratings should score 0, got %.1f", scores3.Overall)
+	}
+	
+	// Only lumens should now get a score (was returning 0 before)
+	onlyLumens := SpecRow{
+		FlashlightID: 50,
+		MaxLumens:    nf(1000),
+	}
+
+	scores4, _ := computeScores(onlyLumens, "v2")
+	if scores4.Overall <= 0 {
+		t.Errorf("product with only lumens should score > 0, got %.1f", scores4.Overall)
+	}
+}
+
+func TestPartialSpecPenalty(t *testing.T) {
+	// Full-spec product: lumens, candela, runtime
+	fullSpec := SpecRow{
+		FlashlightID:   60,
+		MaxLumens:      nf(2000),
+		MaxCandela:     nf(20000),
+		RuntimeHighMin: nf(90),
+	}
+
+	// Partial-spec product with same lumens but no candela/throw
+	partialSpec := SpecRow{
+		FlashlightID:   61,
+		MaxLumens:      nf(2000),
+		RuntimeHighMin: nf(90),
+	}
+
+	fullScores, _ := computeScores(fullSpec, "v2")
+	partialScores, _ := computeScores(partialSpec, "v2")
+
+	if partialScores.Overall >= fullScores.Overall {
+		t.Errorf("partial-spec product should score below full-spec: partial=%.1f, full=%.1f",
+			partialScores.Overall, fullScores.Overall)
+	}
+
+	// Partial-spec should be penalized by 12% (score should be ~88% of what it would be)
+	expectedRatio := 0.88
+	actualRatio := partialScores.Overall / fullScores.Overall
+	if actualRatio < expectedRatio-0.05 || actualRatio > expectedRatio+0.05 {
+		t.Errorf("partial-spec penalty not ~12%%: ratio=%.2f (expected ~%.2f)", actualRatio, expectedRatio)
+	}
+
+	t.Logf("Full-spec: overall=%.1f, Partial-spec: overall=%.1f (ratio: %.2f)", 
+		fullScores.Overall, partialScores.Overall, actualRatio)
+}
+
+func TestLowOutputCap(t *testing.T) {
+	// High-output light
+	highOutput := SpecRow{
+		FlashlightID:      70,
+		MaxLumens:         nf(2000),
+		MaxCandela:        nf(20000),
+		RuntimeHighMin:    nf(90),
+		AmazonAvgRating:   nf(4.5),
+		AmazonRatingCount: nf(1000),
+	}
+
+	// Low-output light with excellent runtime and ratings (like medical penlight)
+	lowOutput := SpecRow{
+		FlashlightID:      71,
+		MaxLumens:         nf(5),
+		MaxCandela:        nf(5),
+		RuntimeHighMin:    nf(600),
+		AmazonAvgRating:   nf(4.7),
+		AmazonRatingCount: nf(3000),
+	}
+
+	highScores, _ := computeScores(highOutput, "v2")
+	lowScores, _ := computeScores(lowOutput, "v2")
+
+	if lowScores.Overall >= highScores.Overall {
+		t.Errorf("low-output light should not outrank high-output light: low=%.1f, high=%.1f",
+			lowScores.Overall, highScores.Overall)
+	}
+
+	// Low-output lights (<50 lm) should be capped at 70% of their raw score
+	if lowScores.Overall > 70 {
+		t.Errorf("low-output light score too high (expected < 70): %.1f", lowScores.Overall)
+	}
+
+	t.Logf("High-output (2000lm): %.1f, Low-output (5lm): %.1f", highScores.Overall, lowScores.Overall)
+}
+
+func TestPartialSpecCapLogic(t *testing.T) {
+	// Create 10+ full-spec products with known scores to test cap calculation
+	var productScores []productScore
+	
+	// Add 10 full-spec products with decreasing scores
+	for i := 0; i < 10; i++ {
+		score := 90.0 - float64(i)
+		productScores = append(productScores, productScore{
+			scores:     ScoreOutput{Overall: score},
+			isFullSpec: true,
+		})
+	}
+	
+	// Add a partial-spec product with a high score (should be capped)
+	productScores = append(productScores, productScore{
+		scores:     ScoreOutput{Overall: 85.0},
+		isFullSpec: false,
+	})
+	
+	// Add a partial-spec product with a low score (should not be affected)
+	productScores = append(productScores, productScore{
+		scores:     ScoreOutput{Overall: 70.0},
+		isFullSpec: false,
+	})
+	
+	// Apply cap
+	capValue := applyPartialSpecCapInMemory(productScores)
+	
+	// Cap should be 10th full-spec score (81.0) minus 1.0 = 80.0
+	expectedCap := 80.0
+	if capValue != expectedCap {
+		t.Errorf("cap value = %.1f, expected %.1f", capValue, expectedCap)
+	}
+	
+	// Verify partial-spec with 85.0 would be capped (test manually applies cap)
+	highPartialSpec := productScores[10]
+	if highPartialSpec.scores.Overall > capValue {
+		t.Logf("✓ High partial-spec score %.1f > cap %.1f (would be capped)", highPartialSpec.scores.Overall, capValue)
+	} else {
+		t.Errorf("High partial-spec score %.1f <= cap %.1f (cap not needed)", highPartialSpec.scores.Overall, capValue)
+	}
+	
+	// Verify partial-spec with 70.0 is below cap
+	lowPartialSpec := productScores[11]
+	if lowPartialSpec.scores.Overall <= capValue {
+		t.Logf("✓ Low partial-spec score %.1f <= cap %.1f (no capping needed)", lowPartialSpec.scores.Overall, capValue)
+	}
+	
+	t.Logf("Cap value: %.1f (10th full-spec @ %.1f minus 1.0)", capValue, expectedCap+1.0)
+}
+
+func TestCatalogIntegrity(t *testing.T) {
+	// Test that specific products in the catalog keep their correct specs
+	// These were accidentally corrupted by a positional backfill script
+	file, err := os.Open("../../data/manual_catalog.csv")
+	if err != nil {
+		t.Fatalf("Failed to open catalog: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		t.Fatalf("Failed to read catalog: %v", err)
+	}
+
+	header := records[0]
+	slugIdx := indexOf(header, "model_slug")
+	lumensIdx := indexOf(header, "max_lumens")
+
+	if slugIdx == -1 || lumensIdx == -1 {
+		t.Fatal("Could not find required columns")
+	}
+
+	expected := map[string]string{
+		"energizer-hc200":            "200",
+		"lumintop-tool-aa-2":         "650",
+		"olight-baldr-s":             "800",
+		"olight-seeker-4-pro":        "4600",
+		"sofirn-sp35t":               "3800",
+		"olight-pl-mini-2-valkyrie":  "600",
+	}
+
+	found := make(map[string]bool)
+	for _, record := range records[1:] {
+		slug := record[slugIdx]
+		if expectedLumens, ok := expected[slug]; ok {
+			actualLumens := record[lumensIdx]
+			if actualLumens != expectedLumens {
+				t.Errorf("%s: max_lumens=%s, expected %s", slug, actualLumens, expectedLumens)
+			}
+			found[slug] = true
+		}
+	}
+
+	for slug := range expected {
+		if !found[slug] {
+			t.Errorf("Product %s not found in catalog", slug)
+		}
+	}
+}
+

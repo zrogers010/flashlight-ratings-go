@@ -70,7 +70,10 @@ function topScore(data: FlashlightDetail) {
 function generateStrengths(data: FlashlightDetail): string[] {
   const out: string[] = [];
   if ((data.max_candela || 0) >= 80000) out.push(`With ${fmt(data.max_candela)} candela, this is an elite-tier thrower that can illuminate targets at extreme distances — ideal for search-and-rescue or property security.`);
-  else if ((data.max_candela || 0) >= 40000) out.push(`${fmt(data.max_candela)} candela of peak intensity delivers strong throw performance, reaching objects ${fmt(data.beam_distance_m)} meters away with a focused hotspot.`);
+  else if ((data.max_candela || 0) >= 40000) {
+    const throwDist = data.beam_distance_m ? `, reaching objects ${fmt(data.beam_distance_m)} meters away with a focused hotspot` : '';
+    out.push(`${fmt(data.max_candela)} candela of peak intensity delivers strong throw performance${throwDist}.`);
+  }
   if ((data.max_lumens || 0) >= 4000) out.push(`At ${fmt(data.max_lumens)} lumens on turbo, this flashlight produces an enormous amount of light — enough to illuminate an entire backyard or trail with ease.`);
   else if ((data.max_lumens || 0) >= 2000) out.push(`${fmt(data.max_lumens)} lumens provides bright, capable output suitable for most demanding situations, from tactical use to outdoor exploration.`);
   if ((data.runtime_medium_min || 0) >= 600) out.push(`An impressive ${fmt(data.runtime_medium_min)}-minute runtime on medium mode means you can run this light for ${(data.runtime_medium_min! / 60).toFixed(0)}+ hours before needing a recharge — outstanding for extended outings.`);
@@ -96,7 +99,7 @@ function generateWeaknesses(data: FlashlightDetail): string[] {
   if ((data.runtime_high_min || 0) > 0 && (data.runtime_high_min || 0) < 60) out.push(`Only ${fmt(data.runtime_high_min)} minutes on high mode is limited. You'll be stepping down to medium frequently on longer outings.`);
   if (!data.usb_c_rechargeable && !data.battery_rechargeable) out.push(`No built-in charging means you'll need a separate battery charger, adding cost and inconvenience for new users.`);
   if (!data.has_memory_mode) out.push(`No mode memory — the light resets to a default mode on every power cycle instead of remembering your last brightness.`);
-  if ((data.max_lumens || 0) < 500) out.push(`${fmt(data.max_lumens)} lumens is modest by modern standards. This light prioritizes other qualities over raw output.`);
+  if ((data.max_lumens || 0) > 0 && (data.max_lumens || 0) < 500) out.push(`${fmt(data.max_lumens)} lumens is modest by modern standards. This light prioritizes other qualities over raw output.`);
   return out.slice(0, 4);
 }
 
@@ -107,16 +110,18 @@ function generateUseCaseParagraphs(data: FlashlightDetail): { heading: string; t
   const bestFor = bestForLabel(data);
 
   if (tags.includes("tactical") || bestFor === "Tactical") {
+    const tacticalScore = data.tactical_score || 0;
     sections.push({
       heading: "Tactical & Law Enforcement",
-      text: `The ${name} earns a ${fmt(data.tactical_score, 1)}/100 tactical score. ${(data.max_lumens || 0) >= 1000 ? `Its ${fmt(data.max_lumens)}-lumen output can temporarily disorient a subject and illuminate threats at distance.` : `While not the brightest, it offers reliability and ergonomics suited for duty.`} ${data.has_strobe ? `The strobe mode adds a disorienting tactical option.` : ``} ${data.has_tail_switch ? `A tail switch enables instinctive cigar-grip activation preferred by most tactical users.` : ``}`.trim(),
+      text: `The ${name} ${tacticalScore > 0 ? `earns a ${fmt(tacticalScore, 1)}/100 tactical score` : `is designed for tactical use, though we lack sufficient spec data to score it`}. ${(data.max_lumens || 0) >= 1000 ? `Its ${fmt(data.max_lumens)}-lumen output can temporarily disorient a subject and illuminate threats at distance.` : `While not the brightest, it offers reliability and ergonomics suited for duty.`} ${data.has_strobe ? `The strobe mode adds a disorienting tactical option.` : ``} ${data.has_tail_switch ? `A tail switch enables instinctive cigar-grip activation preferred by most tactical users.` : ``}`.trim(),
     });
   }
 
   if (tags.includes("edc") || bestFor === "EDC") {
+    const edcScore = data.edc_score || 0;
     sections.push({
       heading: "Everyday Carry",
-      text: `Scoring ${fmt(data.edc_score, 1)}/100 in our EDC category, the ${name} ${(data.weight_g || 0) <= 100 ? `weighs just ${fmt(data.weight_g)}g — barely noticeable in a pocket.` : `weighs ${fmt(data.weight_g)}g, which is reasonable for daily carry.`} ${data.has_pocket_clip ? `The included pocket clip allows deep-carry positioning.` : ``} ${data.has_moonlight_mode ? `A moonlight mode provides just enough light for close-range tasks without disturbing others.` : ``}`.trim(),
+      text: `${edcScore > 0 ? `Scoring ${fmt(edcScore, 1)}/100 in our EDC category` : `Designed for everyday carry, though we lack sufficient spec data to score it`}, the ${name} ${(data.weight_g || 0) > 0 && (data.weight_g || 0) <= 100 ? `weighs just ${fmt(data.weight_g)}g — barely noticeable in a pocket.` : (data.weight_g || 0) > 0 ? `weighs ${fmt(data.weight_g)}g, which is reasonable for daily carry.` : `is designed for portability.`} ${data.has_pocket_clip ? `The included pocket clip allows deep-carry positioning.` : ``} ${data.has_moonlight_mode ? `A moonlight mode provides just enough light for close-range tasks without disturbing others.` : ``}`.trim(),
     });
   }
 
@@ -128,23 +133,35 @@ function generateUseCaseParagraphs(data: FlashlightDetail): { heading: string; t
   }
 
   if (tags.includes("throw") || bestFor === "Throw") {
+    const throwScore = data.throw_score || 0;
+    const specsText = [
+      data.max_candela ? `${fmt(data.max_candela)} candela` : null,
+      data.beam_distance_m ? `${fmt(data.beam_distance_m)}m rated throw` : null,
+    ].filter(Boolean).join(" and ");
+    
     sections.push({
       heading: "Long-Range & Search",
-      text: `With ${fmt(data.max_candela)} candela and a ${fmt(data.beam_distance_m)}m rated throw, the ${name} is built for reaching out into the distance. ${(data.throw_score || 0) >= 80 ? `Our algorithm rates its throw capability at ${fmt(data.throw_score, 1)}/100 — placing it among the best throwers in our database.` : `It scores ${fmt(data.throw_score, 1)}/100 for throw performance.`}`.trim(),
+      text: `${specsText ? `With ${specsText}, the` : `The`} ${name} is built for reaching out into the distance. ${throwScore > 0 ? (throwScore >= 80 ? `Our algorithm rates its throw capability at ${fmt(throwScore, 1)}/100 — placing it among the best throwers in our database.` : `It scores ${fmt(throwScore, 1)}/100 for throw performance.`) : `We lack sufficient spec data to score its throw performance.`}`.trim(),
     });
   }
 
   if (tags.includes("value") || bestFor === "Value") {
+    const valueScore = data.value_score || 0;
     sections.push({
       heading: "Budget & Value",
-      text: `At ${data.price_usd ? `$${fmt(data.price_usd, 2)}` : `its price point`}, the ${name} scores ${fmt(data.value_score, 1)}/100 on our value index, meaning you're getting more lumens, throw, and features per dollar than most competitors. ${data.usb_c_rechargeable ? `USB-C charging eliminates the expense of a separate charger.` : ``} ${data.battery_included ? `A battery is included in the box, so there's no additional purchase needed.` : ``}`.trim(),
+      text: `At ${data.price_usd ? `$${fmt(data.price_usd, 2)}` : `its price point`}, the ${name} ${valueScore > 0 ? `scores ${fmt(valueScore, 1)}/100 on our value index, meaning you're getting more lumens, throw, and features per dollar than most competitors` : `offers solid features, though we lack sufficient spec data to score its value`}. ${data.usb_c_rechargeable ? `USB-C charging eliminates the expense of a separate charger.` : ``} ${data.battery_included ? `A battery is included in the box, so there's no additional purchase needed.` : ``}`.trim(),
     });
   }
 
   if (sections.length === 0) {
+    const specsText = [
+      data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+      data.beam_distance_m ? `${fmt(data.beam_distance_m)}m of throw` : null,
+    ].filter(Boolean).join(" and ");
+    
     sections.push({
       heading: "General Use",
-      text: `The ${name} is a well-rounded flashlight suitable for a variety of situations. With ${fmt(data.max_lumens)} lumens and ${fmt(data.beam_distance_m)}m of throw, it handles everyday tasks, outdoor activities, and emergency preparedness with competence.`,
+      text: `The ${name} is a well-rounded flashlight suitable for a variety of situations.${specsText ? ` With ${specsText}, it` : ` It`} handles everyday tasks, outdoor activities, and emergency preparedness with competence.`,
     });
   }
 
@@ -209,13 +226,42 @@ export async function generateMetadata({
     const data = await fetchFlashlightBySlug(slug);
     const name = `${data.brand} ${data.name}`;
     const score = topScore(data);
+    
+    // Build title with only available specs (omit "—" placeholders)
+    const titleParts = [`${name} Breakdown`];
+    if (data.max_lumens && data.max_lumens > 0) {
+      titleParts.push(`${fmt(data.max_lumens)} Lumens`);
+    }
+    if (data.beam_distance_m && data.beam_distance_m > 0) {
+      titleParts.push(`${fmt(data.beam_distance_m)}m Throw`);
+    }
+    if (score > 0) {
+      titleParts.push(`(${score.toFixed(0)}/100)`);
+    }
+    const title = titleParts.join(" — ");
+    
+    // Build description with only available specs
+    const descParts = [`${name}: spec-based analysis`];
+    if (data.max_lumens && data.max_lumens > 0) descParts.push(`${fmt(data.max_lumens)} lumens`);
+    if (data.max_candela && data.max_candela > 0) descParts.push(`${fmt(data.max_candela)} candela`);
+    if (data.beam_distance_m && data.beam_distance_m > 0) descParts.push(`${fmt(data.beam_distance_m)}m throw`);
+    const batteryInfo = data.battery_types?.join("/");
+    if (batteryInfo) descParts.push(`${batteryInfo} battery`);
+    if (data.waterproof_rating) descParts.push(`${data.waterproof_rating} rated`);
+    if (score > 0) descParts.push(`Score: ${score.toFixed(1)}/100`);
+    
     return {
-      title: `${name} Breakdown — ${fmt(data.max_lumens)} Lumens, ${fmt(data.beam_distance_m)}m Throw${score > 0 ? ` (${score.toFixed(0)}/100)` : ""}`,
-      description: `In-depth analysis of the ${name}: ${fmt(data.max_lumens)} lumens, ${fmt(data.max_candela)} candela, ${fmt(data.beam_distance_m)}m throw. ${data.battery_types?.join("/") || ""} battery, ${data.waterproof_rating || "N/A"} rated. Score: ${score > 0 ? score.toFixed(1) : "N/A"}/100. See how it compares.`,
+      title,
+      description: descParts.join(". ") + ". Algorithmic rating based on manufacturer specs.",
       alternates: { canonical: `/reviews/${slug}` },
       openGraph: {
         title: `${name} — In-Depth Breakdown & Analysis`,
-        description: `${fmt(data.max_lumens)} lumens · ${fmt(data.beam_distance_m)}m throw · Best for ${bestForLabel(data)} · Score ${score.toFixed(0)}/100`,
+        description: [
+          data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null,
+          data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null,
+          `Best for ${bestForLabel(data)}`,
+          score > 0 ? `Score ${score.toFixed(0)}/100` : null,
+        ].filter(Boolean).join(" · "),
         // OG image is rendered by `opengraph-image.tsx` in this route folder
         // (per-product custom image with score, photo, and key specs).
       },
@@ -273,7 +319,7 @@ export default async function BreakdownArticlePage({
       <ArticleStructuredData
         url={`${SITE_URL}/reviews/${slug}`}
         headline={`${name} Breakdown: Performance, Specs & Value Analysis`}
-        description={`Data-driven analysis of the ${name} — ${fmt(data.max_lumens)} lumens, ${fmt(data.beam_distance_m)}m throw. Scores, specs, and comparisons.`}
+        description={`Data-driven analysis of the ${name}${data.max_lumens || data.beam_distance_m ? ` — ${[data.max_lumens ? `${fmt(data.max_lumens)} lumens` : null, data.beam_distance_m ? `${fmt(data.beam_distance_m)}m throw` : null].filter(Boolean).join(", ")}` : ""}. Scores, specs, and comparisons.`}
         imageUrls={data.image_urls?.length ? data.image_urls : data.image_url ? [data.image_url] : undefined}
         publishedAt={publishedAt}
         updatedAt={updatedAt}
@@ -309,15 +355,19 @@ export default async function BreakdownArticlePage({
           </p>
           <h1>{name}</h1>
           <p className="review-subtitle">
-            {fmt(data.max_lumens)} lumens · {fmt(data.beam_distance_m)}m throw ·{" "}
-            {batteryLabel} · {data.waterproof_rating || "N/A"} rated
+            {[
+              data.max_lumens && data.max_lumens > 0 ? `${fmt(data.max_lumens)} lumens` : null,
+              data.beam_distance_m && data.beam_distance_m > 0 ? `${fmt(data.beam_distance_m)}m throw` : null,
+              batteryLabel !== "Unknown" ? batteryLabel : null,
+              data.waterproof_rating ? `${data.waterproof_rating} rated` : null,
+            ].filter(Boolean).join(" · ")}
           </p>
           <div className="review-hero-badges">
             {score > 0 && <ScoreBadge score={score} size="lg" />}
             <div>
               <p className="review-score-label">
                 FlashlightRatings Score:{" "}
-                <strong>{score > 0 ? score.toFixed(1) : "N/A"}</strong>/100
+                <strong>{score > 0 ? `${score.toFixed(1)}/100` : "Not rated"}</strong>
               </p>
               <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
                 Best for {bestFor}
@@ -397,49 +447,61 @@ export default async function BreakdownArticlePage({
 
       {/* ── Disclaimer ───────────────────────── */}
       <aside className="review-disclaimer">
-        Analysis based on manufacturer specs, algorithmic scoring, and
-        aggregated customer data. Not a hands-on review.
+        Algorithmic analysis based on manufacturer specifications and aggregated customer ratings. 
+        Scores are computed from verified spec data — not measured testing.
       </aside>
 
       {/* ── Quick Specs ──────────────────────── */}
       <div className="panel">
         <h2 style={{ marginBottom: 16 }}>At a Glance</h2>
         <div className="review-spec-grid">
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.max_lumens)}</span>
-            <span className="review-spec-label">Max Lumens</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.max_candela)}</span>
-            <span className="review-spec-label">Peak Candela</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.beam_distance_m)}m</span>
-            <span className="review-spec-label">Throw Distance</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{data.waterproof_rating || "—"}</span>
-            <span className="review-spec-label">IP Rating</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">{fmt(data.weight_g)}g</span>
-            <span className="review-spec-label">Weight</span>
-          </div>
-          <div className="review-spec-item">
-            <span className="review-spec-value">
-              {data.price_usd ? `$${fmt(data.price_usd, 2)}` : "—"}
-            </span>
-            <span className="review-spec-label">Price</span>
-            {priceFresh && (
-              <span
-                className={`review-spec-freshness review-spec-freshness--${priceFresh.tone}`}
-              >
-                {priceFresh.tone === "stale"
-                  ? priceFresh.label
-                  : priceFresh.label.replace(/^Last checked /, "")}
+          {(data.max_lumens ?? 0) > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.max_lumens)}</span>
+              <span className="review-spec-label">Max Lumens</span>
+            </div>
+          )}
+          {(data.max_candela ?? 0) > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.max_candela)}</span>
+              <span className="review-spec-label">Peak Candela</span>
+            </div>
+          )}
+          {(data.beam_distance_m ?? 0) > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.beam_distance_m)}m</span>
+              <span className="review-spec-label">Throw Distance</span>
+            </div>
+          )}
+          {data.waterproof_rating && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{data.waterproof_rating}</span>
+              <span className="review-spec-label">IP Rating</span>
+            </div>
+          )}
+          {data.weight_g && data.weight_g > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">{fmt(data.weight_g)}g</span>
+              <span className="review-spec-label">Weight</span>
+            </div>
+          )}
+          {data.price_usd && data.price_usd > 0 && (
+            <div className="review-spec-item">
+              <span className="review-spec-value">
+                ${fmt(data.price_usd, 2)}
               </span>
-            )}
-          </div>
+              <span className="review-spec-label">Price</span>
+              {priceFresh && (
+                <span
+                  className={`review-spec-freshness review-spec-freshness--${priceFresh.tone}`}
+                >
+                  {priceFresh.tone === "stale"
+                    ? priceFresh.label
+                    : priceFresh.label.replace(/^Last checked /, "")}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -528,11 +590,10 @@ export default async function BreakdownArticlePage({
           <div>
             <h3 style={{ fontSize: "0.9rem", marginBottom: 12 }}>Construction</h3>
             <p>
-              {data.body_material
-                ? `Built from ${data.body_material.toLowerCase()}, `
-                : ""}
-              the {data.name} weighs {fmt(data.weight_g)}g and measures{" "}
-              {fmt(data.length_mm, 1)}mm in length.
+              {data.body_material ? `Built from ${data.body_material.toLowerCase()}, the ${data.name}` : `The ${data.name}`}
+              {data.weight_g ? ` weighs ${fmt(data.weight_g)}g` : ''}
+              {data.weight_g && data.length_mm ? ' and' : ''}
+              {data.length_mm ? ` measures ${fmt(data.length_mm, 1)}mm in length` : ''}.
               {data.head_diameter_mm
                 ? ` The head diameter is ${fmt(data.head_diameter_mm, 1)}mm.`
                 : ""}
@@ -547,7 +608,7 @@ export default async function BreakdownArticlePage({
               {data.led_model
                 ? `The ${data.led_model} LED`
                 : "The LED emitter"}
-              {" "}produces up to {fmt(data.max_lumens)} lumens.
+              {data.max_lumens ? ` produces up to ${fmt(data.max_lumens)} lumens` : ''}.
               {data.cri ? ` CRI is rated at ${data.cri}.` : ""}
               {data.beam_pattern
                 ? ` The beam pattern is ${data.beam_pattern.toLowerCase()}.`
@@ -581,7 +642,7 @@ export default async function BreakdownArticlePage({
                   <tr key={mode.name}>
                     <td style={{ fontWeight: 600 }}>{mode.name}</td>
                     <td style={{ fontFamily: "var(--font-mono)" }}>
-                      {fmt(mode.output_lumens)} lm
+                      {mode.output_lumens ? `${fmt(mode.output_lumens)} lm` : '—'}
                     </td>
                     <td style={{ fontFamily: "var(--font-mono)" }}>
                       {mode.runtime_min
@@ -594,7 +655,7 @@ export default async function BreakdownArticlePage({
                       {fmt(mode.candela)}
                     </td>
                     <td style={{ fontFamily: "var(--font-mono)" }}>
-                      {fmt(mode.beam_distance_m)}m
+                      {mode.beam_distance_m ? `${fmt(mode.beam_distance_m)}m` : '—'}
                     </td>
                   </tr>
                 ))}
@@ -662,11 +723,11 @@ export default async function BreakdownArticlePage({
             ? "an outstanding flashlight that earns high marks across the board"
             : score >= 65
               ? "a solid performer that delivers good value in its category"
-              : "a capable light with specific strengths for the right buyer"}
-          . Its best fit is <strong>{bestFor.toLowerCase()}</strong> use, where
-          it scores{" "}
-          {fmt(
-            bestFor === "Tactical"
+              : score > 0
+                ? "a capable light with specific strengths for the right buyer"
+                : "a flashlight we haven't yet scored due to insufficient spec data"}
+          . Its best fit is <strong>{bestFor.toLowerCase()}</strong> use{(() => {
+            const bestForScore = bestFor === "Tactical"
               ? data.tactical_score
               : bestFor === "EDC"
                 ? data.edc_score
@@ -674,10 +735,9 @@ export default async function BreakdownArticlePage({
                   ? data.value_score
                   : bestFor === "Throw"
                     ? data.throw_score
-                    : data.flood_score,
-            1
-          )}
-          /100.
+                    : data.flood_score;
+            return (bestForScore || 0) > 0 ? `, where it scores ${fmt(bestForScore, 1)}/100` : "";
+          })()}.
           {data.price_usd
             ? ` At $${fmt(data.price_usd, 2)}, ${(data.value_score || 0) >= 75 ? "it represents strong value for money." : "pricing is in line with competitors in this segment."}`
             : ""}
@@ -777,8 +837,8 @@ export default async function BreakdownArticlePage({
                   {alt.brand} {alt.name}
                 </div>
                 <div className="review-competitor-specs">
-                  <span>{fmt(alt.max_lumens)} lm</span>
-                  <span>{fmt(alt.beam_distance_m)}m</span>
+                  <span>{alt.max_lumens ? `${fmt(alt.max_lumens)} lm` : '—'}</span>
+                  <span>{alt.beam_distance_m ? `${fmt(alt.beam_distance_m)}m` : '—'}</span>
                   {alt.price_usd ? (
                     <span>${fmt(alt.price_usd, 2)}</span>
                   ) : null}

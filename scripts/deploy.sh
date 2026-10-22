@@ -335,14 +335,25 @@ do_deploy() {
   # Without this, ISR-cached pages (/reviews, /brands, the homepage
   # CategoryStrips, etc.) stay empty until their 1-hour revalidate
   # window finally fires. Costs ~30-60s of extra deploy time.
-  echo "→ Waiting for api to respond..."
-  timeout 60 bash -c \
-    'until curl -sf -o /dev/null http://localhost:8080/rankings; do sleep 2; done' \
-    || echo "WARNING: api did not respond in time; web rebuild may produce empty pages"
-  echo "→ Re-prerendering web with live api data..."
-  ${COMPOSE} exec -T web npm run build
-  echo "→ Restarting web to pick up fresh prerenders..."
-  ${COMPOSE} restart web
+  echo "→ Waiting for api to return scored products..."
+  n=0
+  for i in $(seq 1 30); do
+    n=$(curl -sf "http://localhost:8080/flashlights?page_size=200" | grep -oE '"overall_score":[0-9.]+' | awk -F: '$2>0' | wc -l) || n=0
+    [ "$n" -ge 2 ] && break
+    sleep 2
+  done
+  [ "$n" -ge 2 ] || { echo "ERROR: API has <2 scored products after 60s; aborting before strict rebuild"; exit 1; }
+  
+  echo "→ Re-prerendering web with live api data (strict compare pairs check enabled)..."
+  if ${COMPOSE} exec -T -e REQUIRE_COMPARE_PAIRS=1 web npm run build; then
+    echo "→ Restarting web to pick up fresh prerenders..."
+    ${COMPOSE} restart web
+  else
+    echo "ERROR: Strict rebuild failed; restoring working web container..."
+    ${COMPOSE} up -d --force-recreate web
+    echo "ERROR: Web rebuild with REQUIRE_COMPARE_PAIRS=1 failed. Site remains up with stale data."
+    exit 1
+  fi
   sleep 5
 
   # ── Health check ─────────────────────────────────────────────────

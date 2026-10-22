@@ -43,14 +43,18 @@ export default async function ReviewsIndexPage() {
     total_pages: 0,
     items: [] as never[],
   }));
-  const items = catalog.items;
+  // Filter out products without scores
+  const scoredItems = catalog.items.filter((item) => {
+    const score = item.overall_score || item.tactical_score || item.edc_score || item.value_score || item.throw_score || item.flood_score || 0;
+    return score > 0;
+  });
 
   return (
     <section className="grid">
       <BreadcrumbStructuredData items={[{ name: "Reviews" }]} />
       <ItemListStructuredData
         name="Flashlight Breakdowns"
-        items={items.slice(0, 20).map((item, i) => ({
+        items={scoredItems.slice(0, 20).map((item, i) => ({
           position: i + 1,
           name: `${item.brand} ${item.name}`,
           url: `/reviews/${item.slug}`,
@@ -73,7 +77,7 @@ export default async function ReviewsIndexPage() {
       </div>
 
       <div className="review-index-grid">
-        {items.map((item) => {
+        {scoredItems.map((item) => {
           const score = topScore(item);
           return (
             <Link
@@ -96,8 +100,8 @@ export default async function ReviewsIndexPage() {
                 <p className="review-index-brand">{item.brand}</p>
                 <h3 className="review-index-name">{item.name}</h3>
                 <div className="review-index-specs">
-                  <span>{fmt(item.max_lumens)} lm</span>
-                  <span>{fmt(item.beam_distance_m)}m</span>
+                  {item.max_lumens ? <span>{fmt(item.max_lumens)} lm</span> : null}
+                  {item.beam_distance_m ? <span>{fmt(item.beam_distance_m)}m</span> : null}
                   {item.price_usd ? (
                     <span>${fmt(item.price_usd, 2)}</span>
                   ) : null}

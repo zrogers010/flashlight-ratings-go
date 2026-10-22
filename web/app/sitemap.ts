@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { parseCompositeFilter, composeCompositeSlug } from "./best-flashlights/[category]/composite";
 import { compareUrl } from "@/lib/compare-url";
+import { curatedComparePairs } from "@/lib/compare-pairs";
 
 const BASE_URL = process.env.SITE_URL || "https://flashlightratings.com";
 
@@ -70,20 +71,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.85
         }));
 
-      // Generate vs-pages for the top-30 by listing position (post-scoring sort).
-      // 30 x 30 with i<j = 435 pairs, slug-based for SEO. Google won't crawl them
-      // all but having them in the sitemap signals which combos to prioritize.
-      const top = items.slice(0, 30).filter((i) => i.slug);
-      for (let i = 0; i < top.length; i++) {
-        for (let j = i + 1; j < top.length; j++) {
-          vsPages.push({
-            url: `${BASE_URL}${compareUrl([top[i], top[j]])}`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.65
-          });
-        }
-      }
+      // Generate vs-pages using the same curated pairs as the page's noindex check.
+      // This ensures sitemap and page metadata are consistent.
+      // Top 10 × top 10 = 45 pairs
+      const pairs = await curatedComparePairs();
+      vsPages = pairs.map((pair) => ({
+        url: `${BASE_URL}/compare/${pair.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.70
+      }));
     }
 
     if (brandsRes.ok) {
@@ -139,6 +136,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // API unavailable — static pages still generated; products added on next revalidation
+  }
+
+  // When REQUIRE_COMPARE_PAIRS=1 (in-container rebuild), enforce that we have compare pairs
+  if (process.env.REQUIRE_COMPARE_PAIRS === '1' && vsPages.length === 0) {
+    throw new Error("sitemap: REQUIRE_COMPARE_PAIRS=1 but no compare pairs were generated - API may be down or data incomplete");
   }
 
   const guidePages: MetadataRoute.Sitemap = guideSlugs.map((slug) => ({

@@ -238,7 +238,7 @@ async function resolveBrandSlugs(): Promise<Map<string, string>> {
 async function fetchCompositeItems(filter: CompositeFilter): Promise<FlashlightItem[]> {
   const sortField = filter.useCase ? `${filter.useCase}_score` : "overall_score";
   try {
-    const res = await fetchFlashlights({
+    let res = await fetchFlashlights({
       brand: filter.brandName,
       useCase: filter.useCase,
       batteryType: filter.batteryType,
@@ -248,7 +248,11 @@ async function fetchCompositeItems(filter: CompositeFilter): Promise<FlashlightI
       order: "desc",
       pageSize: 200,
     });
-    return res.items;
+    // Exclude products without scores from ranked lists
+    return res.items.filter((item) => {
+      const score = item.overall_score || item.tactical_score || item.edc_score || item.value_score || item.throw_score || item.flood_score || 0;
+      return score > 0;
+    });
   } catch {
     return [];
   }
