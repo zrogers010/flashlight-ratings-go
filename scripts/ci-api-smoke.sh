@@ -161,6 +161,14 @@ echo "OK  blank CSV cell handling documented (verify manually after deploy)"
 # PR#75 QA: Run scoring batch and verify partial-spec cap
 echo "→ Running scoring batch (PR#75 QA requirement)"
 
+# Get database credentials from environment or use defaults (match docker-compose.yml)
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-flashlight}"
+DB_USER="${DB_USER:-flashlight_app}"
+DB_PASS="${DB_PASS:-flashlight_dev}"
+DB_SSLMODE="${DB_SSLMODE:-disable}"
+
 # Build and run scoring job
 cd "$(dirname "$0")/.."
 go build -o /tmp/scorejob ./cmd/scorejob || fail "failed to build scorejob"
