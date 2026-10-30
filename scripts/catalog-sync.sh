@@ -22,6 +22,19 @@
 # discard those changes unless they are committed back to the repo. See
 # CATALOG_AUTO_COMMIT below for the auto-commit option.
 #
+# Production cron (live server; do not reinstall blindly):
+#   Daily at 14:00 UTC (7 AM PT):
+#     SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off \
+#     SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200 PRUNE_THRESHOLD=2 \
+#     bash scripts/catalog-sync.sh
+#   That is one full pass (~176 credits/day, ~5.3k/month) on the 10k plan.
+#
+# WARNING: `scripts/deploy.sh install-cron` defaults are 3×/day full-catalog
+# (06:00, 14:00, 22:00 UTC) with SYNC_SOURCE=auto and
+# SYNC_RATINGS_SOURCE=rainforest. At ~176 ASINs that is ~15.8k Rainforest
+# credits/month — over the 10k plan. Do NOT run install-cron with defaults
+# on production.
+#
 # Environment:
 #   AMAZON_CREATORS_CLIENT_ID / _SECRET
 #                          Creators API credentials (primary source; free).

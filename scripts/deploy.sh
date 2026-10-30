@@ -26,6 +26,12 @@ usage() {
   echo "  deploy                 Pull latest code and deploy (run as deploy user)"
   echo "  install-cron           Install frequent FULL-catalog Rainforest sync"
   echo "                          (default: 3×/day UTC — 06:00, 14:00, 22:00)"
+  echo "                          WARNING: those defaults use ~15.8k Rainforest"
+  echo "                          credits/month at ~176 ASINs (over the 10k plan)."
+  echo "                          Do NOT run with defaults on production. Live cron"
+  echo "                          is daily 14:00 UTC with SYNC_SOURCE=rainforest"
+  echo "                          SYNC_RATINGS_SOURCE=off SYNC_ROTATE_DAYS=0"
+  echo "                          SYNC_LIMIT=200 PRUNE_THRESHOLD=2."
   echo "  install-cron-rotated   Install daily cron that refreshes 1/N of the catalog"
   echo "                          (default N=1 = full catalog once/day; raise N for"
   echo "                          larger catalogs to spread Rainforest credits)"
@@ -406,6 +412,14 @@ do_catalog_sync() {
 # Tuned for a larger Rainforest plan where credits support full sweeps.
 # SYNC_ROTATE_DAYS=0 means every run touches all ASINs.
 #
+# WARNING: those defaults must NOT be used on the current 10k-credit plan.
+# At ~176 ASINs, 3×/day is ~15.8k credits/month. Production is a single
+# daily run at 14:00 UTC (7 AM PT):
+#   SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off \
+#   SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200 PRUNE_THRESHOLD=2
+# The helper below still installs the 3×/day schedule if invoked without
+# overrides — it does not change the live crontab by itself.
+#
 # Override examples:
 #   CRON_SCHEDULE="0 */6 * * *" bash scripts/deploy.sh install-cron   # every 6h
 #   CRON_SCHEDULE="0 9 * * *"   bash scripts/deploy.sh install-cron   # once daily
@@ -434,6 +448,12 @@ do_install_cron() {
 
   echo "→ Installing frequent full-catalog cron entry:"
   echo "    ${CRON_LINE}"
+  echo ""
+  echo "  WARNING: install-cron defaults are 3×/day full-catalog (~15.8k"
+  echo "  Rainforest credits/month at ~176 ASINs). That exceeds the 10k plan."
+  echo "  Production is daily at 14:00 UTC with SYNC_SOURCE=rainforest"
+  echo "  SYNC_RATINGS_SOURCE=off SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200"
+  echo "  PRUNE_THRESHOLD=2. Do not use these defaults on production."
   echo ""
   echo "  Each run refreshes the ENTIRE catalog (SYNC_ROTATE_DAYS=0)."
   echo "  Amazon CTAs are disabled after ${PRUNE_THRESHOLD} consecutive unavailable runs."
