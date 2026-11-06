@@ -141,8 +141,8 @@ export default async function OpengraphImage({
                 {score}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", fontSize: 20, color: "#8b949e" }}>/100</div>
-                <div style={{ display: "flex", fontSize: 22, color: "#e6edf3", marginTop: 4 }}>
+                <div style={{ fontSize: 20, color: "#8b949e" }}>/100</div>
+                <div style={{ fontSize: 22, color: "#e6edf3", marginTop: 4 }}>
                   {`Best for ${best}`}
                 </div>
               </div>
