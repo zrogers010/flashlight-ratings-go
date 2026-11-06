@@ -33,6 +33,13 @@ temp/
 # by the API, worker, deploy script, or DB import.
 data/*.sync_state.json
 
+# rainforest-sync daily budget state and cross-process lock files.
+# Tracks Rainforest API request usage to enforce hard 200/day ceiling.
+# Regenerated/updated on every sync run; persists across runs on shared volume.
+data/*rainforest_budget.json
+data/*rainforest_budget.json.lock
+data/*rainforest_budget.json.tmp
+
 # Test artifacts
 web/mobile-screenshots/
 web/mobile-test*.js

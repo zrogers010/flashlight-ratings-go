@@ -295,6 +295,7 @@ export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDet
 export async function fetchAllSlugs(): Promise<{ 
   slug: string; 
   id: number;
+  overall_score?: number;
   tactical_score?: number;
   edc_score?: number;
   value_score?: number;
@@ -304,6 +305,7 @@ export async function fetchAllSlugs(): Promise<{
   const allSlugs: { 
     slug: string; 
     id: number;
+    overall_score?: number;
     tactical_score?: number;
     edc_score?: number;
     value_score?: number;
@@ -318,6 +320,7 @@ export async function fetchAllSlugs(): Promise<{
     allSlugs.push(...listing.items.map((item) => ({ 
       slug: item.slug, 
       id: item.id,
+      overall_score: item.overall_score,
       tactical_score: item.tactical_score,
       edc_score: item.edc_score,
       value_score: item.value_score,
