@@ -34,7 +34,7 @@ func main() {
 	limit := flag.Int("limit", envInt("SYNC_LIMIT", 0), "process at most N rows in update mode (0 = all). Ignored when -rotate-days is set.")
 	offset := flag.Int("offset", envInt("SYNC_OFFSET", 0), "skip the first N rows in update mode. Ignored when -rotate-days is set.")
 	source := flag.String("source", envOr("SYNC_SOURCE", "auto"), "offer data source: auto (creators with rainforest failover), creators, or rainforest")
-	ratingsSource := flag.String("ratings-source", envOr("SYNC_RATINGS_SOURCE", "rainforest"), "ratings reinforcement when the primary source has none: rainforest or off")
+	ratingsSource := flag.String("ratings-source", envOr("SYNC_RATINGS_SOURCE", "off"), "ratings reinforcement when the primary source has none: rainforest or off (default: off, fallback-only)")
 	discoverApply := flag.Bool("discover-apply", false, "append vetted discovery candidates directly to the catalog CSV (default: write data/discovery_candidates.csv for review)")
 	minRating := flag.Float64("min-rating", 4.3, "discovery: minimum average rating")
 	minRatings := flag.Int("min-ratings", 150, "discovery: minimum number of ratings")
@@ -55,11 +55,25 @@ func main() {
 	}
 
 	partnerTag := envOr("AMAZON_PARTNER_TAG", "flashlightrat-20")
+	
+	// Rainforest daily budget (hard ceiling on API requests)
+	rainforestMaxPerDay := envInt("RAINFOREST_MAX_PER_DAY", 200)
 
 	// Rainforest client (fallback + ratings + legacy discovery).
 	var rfClient *rainforest.Client
 	if key := os.Getenv("RAINFOREST_API_KEY"); key != "" {
 		rfClient = rainforest.NewClient(key, *delay)
+		
+		// Attach budget tracker if limit > 0
+		if rainforestMaxPerDay > 0 {
+			budgetPath := rainforest.BudgetPathFor(*csvPath)
+			budget, err := rainforest.NewDailyBudget(budgetPath, rainforestMaxPerDay)
+			if err != nil {
+				log.Fatalf("initialize rainforest budget: %v", err)
+			}
+			rfClient.SetBudget(budget)
+			log.Printf("Rainforest budget: %d/%d used today", budget.Used(), rainforestMaxPerDay)
+		}
 	}
 
 	// Creators API client (primary).

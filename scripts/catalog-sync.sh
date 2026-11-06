@@ -22,18 +22,19 @@
 # discard those changes unless they are committed back to the repo. See
 # CATALOG_AUTO_COMMIT below for the auto-commit option.
 #
-# Production cron (live server; do not reinstall blindly):
+# Production cron (live server; verify actual config before changing):
 #   Daily at 14:00 UTC (7 AM PT):
-#     SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off \
-#     SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200 PRUNE_THRESHOLD=2 \
+#     SYNC_SOURCE=auto SYNC_RATINGS_SOURCE=off \
+#     RAINFOREST_MAX_PER_DAY=200 PRUNE_THRESHOLD=2 \
 #     bash scripts/catalog-sync.sh
-#   That is one full pass (~176 credits/day, ~5.3k/month) on the 10k plan.
+#   Creators API primary (free, batched), Rainforest fallback only.
+#   RAINFOREST_MAX_PER_DAY=200 enforces genuine hard daily request ceiling.
+#   SYNC_RATINGS_SOURCE=off means Rainforest only on eligibility loss.
 #
 # WARNING: `scripts/deploy.sh install-cron` defaults are 3×/day full-catalog
-# (06:00, 14:00, 22:00 UTC) with SYNC_SOURCE=auto and
-# SYNC_RATINGS_SOURCE=rainforest. At ~176 ASINs that is ~15.8k Rainforest
-# credits/month — over the 10k plan. Do NOT run install-cron with defaults
-# on production.
+# (06:00, 14:00, 22:00 UTC) with SYNC_SOURCE=auto. With fallback-only mode
+# (SYNC_RATINGS_SOURCE=off), Rainforest is only used when Creators eligibility
+# lapses. Set RAINFOREST_MAX_PER_DAY=200 to enforce request budget regardless.
 #
 # Environment:
 #   AMAZON_CREATORS_CLIENT_ID / _SECRET
@@ -84,6 +85,13 @@ if [[ -z "${AMAZON_CREATORS_CLIENT_ID:-}" && -z "${RAINFOREST_API_KEY:-}" ]]; th
   echo "ERROR: neither AMAZON_CREATORS_CLIENT_ID nor RAINFOREST_API_KEY is set."
   echo "  Add at least one to .env or export it before running this script."
   exit 1
+fi
+
+# Warn when Rainforest available but no budget set
+if [[ -n "${RAINFOREST_API_KEY:-}" && "${RAINFOREST_MAX_PER_DAY:-0}" == "0" ]]; then
+  echo "⚠️  WARNING: Rainforest API key set but RAINFOREST_MAX_PER_DAY not configured."
+  echo "   Rainforest usage will be unlimited. Set RAINFOREST_MAX_PER_DAY=200 to"
+  echo "   enforce a hard daily request ceiling."
 fi
 
 # docker-compose v1 vs v2 detection (mirrors deploy.sh)
