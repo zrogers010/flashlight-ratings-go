@@ -143,8 +143,9 @@ func SyncCSVWithSources(ctx context.Context, src Sources, csvPath string, opts S
 	if bp, ok := src.Primary.(BatchPreloader); ok && len(selectedASINs) > 0 {
 		if err := bp.Preload(ctx, selectedASINs); err != nil {
 			if errors.Is(err, ErrSourceUnavailable) && src.Fallback != nil {
-				log.Printf("WARNING: %s unavailable (%v) — failing over to %s for this run",
-					src.Primary.SourceName(), err, src.Fallback.SourceName())
+				log.Printf("WARNING: %s unavailable (reason: %v)", src.Primary.SourceName(), redactError(err))
+				log.Printf("Failing over to %s for this run (will retry %s on next scheduled run)",
+					src.Fallback.SourceName(), src.Primary.SourceName())
 				usingFallback = true
 			} else {
 				return nil, fmt.Errorf("preload %s: %w", src.Primary.SourceName(), err)
@@ -164,8 +165,9 @@ func SyncCSVWithSources(ctx context.Context, src Sources, csvPath string, opts S
 				// logic instead of counting an error.
 				return &ProductResult{}, src.Primary.SourceName(), nil
 			case errors.Is(err, ErrSourceUnavailable) && src.Fallback != nil:
-				log.Printf("WARNING: %s unavailable (%v) — failing over to %s for the rest of the run",
-					src.Primary.SourceName(), err, src.Fallback.SourceName())
+				log.Printf("WARNING: %s unavailable mid-run (reason: %v)", src.Primary.SourceName(), redactError(err))
+				log.Printf("Failing over to %s for remainder of run (will retry %s on next scheduled run)",
+					src.Fallback.SourceName(), src.Primary.SourceName())
 				usingFallback = true
 			default:
 				return nil, src.Primary.SourceName(), err
@@ -533,6 +535,30 @@ func formatFloat(v float64) string {
 	if s == "" {
 		s = "0"
 	}
+	return s
+}
+
+// redactError returns a safe version of an error for logging, without exposing
+// credentials or sensitive details.
+func redactError(err error) string {
+	if err == nil {
+		return ""
+	}
+	s := err.Error()
+	// Common patterns that might contain credentials
+	patterns := []string{
+		"client_secret=",
+		"api_key=",
+		"Authorization: Bearer ",
+		"access_token",
+	}
+	for _, p := range patterns {
+		if idx := strings.Index(s, p); idx >= 0 {
+			// Found sensitive pattern - redact everything after it
+			return s[:idx] + p + "[REDACTED]"
+		}
+	}
+	// No sensitive patterns found
 	return s
 }
 

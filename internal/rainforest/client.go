@@ -17,6 +17,7 @@ type Client struct {
 	httpClient *http.Client
 	delay      time.Duration
 	lastCall   time.Time
+	budget     *DailyBudget // nil = unlimited
 }
 
 func NewClient(apiKey string, delay time.Duration) *Client {
@@ -25,8 +26,15 @@ func NewClient(apiKey string, delay time.Duration) *Client {
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 		},
-		delay: delay,
+		delay:  delay,
+		budget: nil, // unlimited by default
 	}
+}
+
+// SetBudget attaches a daily budget tracker to this client. All subsequent
+// requests will check and increment the budget.
+func (c *Client) SetBudget(budget *DailyBudget) {
+	c.budget = budget
 }
 
 func (c *Client) throttle() {
@@ -41,6 +49,13 @@ func (c *Client) throttle() {
 }
 
 func (c *Client) get(ctx context.Context, params url.Values) ([]byte, error) {
+	// Check budget before making the request
+	if c.budget != nil {
+		if err := c.budget.Increment(1); err != nil {
+			return nil, fmt.Errorf("rainforest %w", err)
+		}
+	}
+	
 	c.throttle()
 
 	params.Set("api_key", c.apiKey)
