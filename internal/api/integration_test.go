@@ -75,9 +75,11 @@ func TestIntegration_Finder_ExecutesWithoutError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	budget := 150.0
+	minThrow := int64(100)
 	filters := finderFilters{
-		MaxPrice: ptrFloat64(150.0),
-		MinThrow: ptrInt64(100),
+		Budget:   &budget,
+		MinThrow: &minThrow,
 	}
 
 	results, err := server.finder(ctx, filters, 10)
@@ -158,7 +160,7 @@ func TestIntegration_ListFlashlights_InStockFiltering(t *testing.T) {
 		len(slugs), total)
 }
 
-func TestIntegration_GetFlashlightBySlug_OutOfStock(t *testing.T) {
+func TestIntegration_OutOfStockProducts_InAllSlugs(t *testing.T) {
 	db := getTestDB(t)
 	defer db.Close()
 
@@ -166,6 +168,7 @@ func TestIntegration_GetFlashlightBySlug_OutOfStock(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Get all out-of-stock product slugs from database
 	var oosSlugs []string
 	rows, err := db.QueryContext(ctx, `
 		SELECT f.slug 
@@ -179,7 +182,7 @@ func TestIntegration_GetFlashlightBySlug_OutOfStock(t *testing.T) {
 		) lp ON lp.flashlight_id = f.id
 		WHERE f.is_active = TRUE 
 		  AND (lp.in_stock = FALSE OR lp.in_stock IS NULL)
-		LIMIT 5
+		LIMIT 10
 	`)
 	if err != nil {
 		t.Fatalf("failed to query out-of-stock slugs: %v", err)
@@ -198,24 +201,24 @@ func TestIntegration_GetFlashlightBySlug_OutOfStock(t *testing.T) {
 		t.Skip("no out-of-stock products found in test database")
 	}
 
+	// Get all slugs from getAllSlugs endpoint
+	allSlugs, err := server.getAllSlugs(ctx)
+	if err != nil {
+		t.Fatalf("getAllSlugs failed: %v", err)
+	}
+
+	slugMap := make(map[string]bool)
+	for _, item := range allSlugs {
+		slugMap[item.Slug] = true
+	}
+
+	// Verify OOS products are in getAllSlugs
 	for _, slug := range oosSlugs {
-		detail, err := server.getFlashlightBySlug(ctx, slug)
-		if err != nil {
-			t.Errorf("getFlashlightBySlug(%s) failed: %v", slug, err)
-			continue
+		if !slugMap[slug] {
+			t.Errorf("out-of-stock product %s not found in getAllSlugs", slug)
+		} else {
+			t.Logf("✓ Out-of-stock product %s found in getAllSlugs", slug)
 		}
-
-		if detail == nil {
-			t.Errorf("getFlashlightBySlug(%s) returned nil for out-of-stock product", slug)
-			continue
-		}
-
-		if detail.AvailabilityStatus == "in_stock" {
-			t.Errorf("out-of-stock product %s returned availability_status=in_stock", slug)
-		}
-
-		t.Logf("✓ Out-of-stock product %s is accessible with status: %s", 
-			slug, detail.AvailabilityStatus)
 	}
 }
 
