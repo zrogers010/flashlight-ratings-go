@@ -286,10 +286,7 @@ export async function fetchBrandBySlug(slug: string) {
 }
 
 export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDetail> {
-  const listing = await fetchFlashlights({ q: slug, pageSize: 1 });
-  const match = listing.items.find((item) => item.slug === slug);
-  if (!match) throw new Error(`Flashlight not found: ${slug}`);
-  return fetchFlashlightByID(String(match.id));
+  return getJSON<FlashlightDetail>(`/flashlights/by-slug/${encodeURIComponent(slug)}`);
 }
 
 export async function fetchAllSlugs(): Promise<{ 

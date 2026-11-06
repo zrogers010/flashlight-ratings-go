@@ -24,6 +24,7 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/flashlights", s.handleFlashlights)
 	mux.HandleFunc("/flashlights/all-slugs", s.handleAllSlugs)
+	mux.HandleFunc("/flashlights/by-slug/", s.handleFlashlightBySlug)
 	mux.HandleFunc("/flashlights/", s.handleFlashlightByID)
 	mux.HandleFunc("/brands", s.handleBrands)
 	mux.HandleFunc("/brands/", s.handleBrandBySlug)
@@ -391,6 +392,35 @@ func (s *Server) handleAllSlugs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, slugs)
+}
+
+func (s *Server) handleFlashlightBySlug(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+
+	slug := strings.TrimPrefix(r.URL.Path, "/flashlights/by-slug/")
+	slug = strings.TrimSpace(slug)
+	if slug == "" || strings.Contains(slug, "/") {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid slug"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	item, err := s.getFlashlightBySlugUnfiltered(ctx, slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, apiError{Error: "flashlight not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to fetch flashlight"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, item)
 }
 
 func (s *Server) handleBrands(w http.ResponseWriter, r *http.Request) {

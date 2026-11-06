@@ -189,7 +189,7 @@ func TestIntegration_OutOfStockProducts_InAllSlugs(t *testing.T) {
 			ORDER BY flashlight_id, captured_at DESC
 		) lp ON lp.flashlight_id = f.id
 		WHERE f.is_active = TRUE 
-		  AND (lp.in_stock = FALSE OR lp.in_stock IS NULL)
+		  AND lp.in_stock = FALSE
 		LIMIT 10
 	`)
 	if err != nil {
@@ -206,7 +206,7 @@ func TestIntegration_OutOfStockProducts_InAllSlugs(t *testing.T) {
 	}
 
 	if len(oosSlugs) == 0 {
-		t.Skip("no out-of-stock products found in test database")
+		t.Skip("no out-of-stock products found in test database (seed data should include acebeam-l19-2)")
 	}
 
 	// Get all slugs from getAllSlugs endpoint
@@ -228,6 +228,45 @@ func TestIntegration_OutOfStockProducts_InAllSlugs(t *testing.T) {
 			t.Logf("✓ Out-of-stock product %s found in getAllSlugs", slug)
 		}
 	}
+	
+	// Verify OOS products can be fetched by slug (unfiltered)
+	for _, slug := range oosSlugs {
+		detail, err := server.getFlashlightBySlugUnfiltered(ctx, slug)
+		if err != nil {
+			t.Errorf("getFlashlightBySlugUnfiltered(%s) failed: %v", slug, err)
+			continue
+		}
+		
+		if detail.AvailabilityStatus != "out_of_stock" {
+			t.Errorf("product %s has wrong availability_status: %s (expected out_of_stock)", 
+				slug, detail.AvailabilityStatus)
+		} else {
+			t.Logf("✓ Out-of-stock product %s accessible with correct status", slug)
+		}
+	}
+	
+	// Verify OOS products are NOT in filtered listing
+	filters := flashlightFilters{
+		Page:     1,
+		PageSize: 100,
+	}
+	items, _, err := server.listFlashlights(ctx, filters)
+	if err != nil {
+		t.Fatalf("listFlashlights failed: %v", err)
+	}
+	
+	filteredSlugs := make(map[string]bool)
+	for _, item := range items {
+		filteredSlugs[item.Slug] = true
+	}
+	
+	for _, slug := range oosSlugs {
+		if filteredSlugs[slug] {
+			t.Errorf("out-of-stock product %s should NOT be in filtered listing", slug)
+		}
+	}
+	
+	t.Logf("✓ Verified: %d OOS products in getAllSlugs but excluded from filtered listing", len(oosSlugs))
 }
 
 func ptrFloat64(v float64) *float64 {
