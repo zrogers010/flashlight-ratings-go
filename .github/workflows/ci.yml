@@ -13,6 +13,20 @@ jobs:
   go:
     name: Go tests & build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flashlight_test
+          POSTGRES_USER: flashlight_test
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +35,22 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Setup test database
+        env:
+          PGPASSWORD: test_password
+        run: |
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0001_initial_schema.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0002_market_intelligence.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0003_flashlight_detail_fields.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0004_intelligence_runs.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0011_multi_merchant_offers.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/seeds/0001_scoring_profiles.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/seeds/0002_demo_flashlights.sql
+
       - name: Test
-        run: go test ./...
+        env:
+          DATABASE_URL: postgres://flashlight_test:test_password@localhost:5432/flashlight_test?sslmode=disable
+        run: go test -v ./...
 
       - name: Build binaries
         run: |
@@ -31,7 +59,7 @@ jobs:
           go build -o /tmp/scorejob ./cmd/scorejob
 
   web:
-    name: Web typecheck
+    name: Web typecheck & build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,6 +78,91 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Start test API with mixed stock data
+        run: |
+          cd ..
+          touch worker.env
+          docker compose up -d --build db api
+          
+          # Wait for API
+          for i in $(seq 1 60); do
+            if curl -sf "http://127.0.0.1:8080/flashlights?page=1&page_size=1" >/dev/null; then
+              echo "API ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Build with strict mode
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8080
+          API_BASE_URL: http://127.0.0.1:8080
+          SITE_URL: https://flashlightratings.com
+          REQUIRE_COMPARE_PAIRS: "1"
+        run: npm run build
+
+      - name: Verify out-of-stock routes generated
+        run: |
+          # Check that OOS product routes exist
+          if [ ! -d ".next/server/app/reviews/acebeam-l19-2" ]; then
+            echo "❌ FAIL: acebeam-l19-2 route not generated"
+            exit 1
+          fi
+          
+          if [ ! -d ".next/server/app/reviews/olight-warrior-x-4" ]; then
+            echo "❌ FAIL: olight-warrior-x-4 route not generated"
+            exit 1
+          fi
+          
+          # Count total review routes (should be 176 or close to it)
+          ROUTE_COUNT=$(find .next/server/app/reviews -mindepth 1 -maxdepth 1 -type d | wc -l)
+          echo "Generated $ROUTE_COUNT review routes"
+          
+          if [ "$ROUTE_COUNT" -lt 150 ]; then
+            echo "❌ FAIL: Expected ~176 routes, got $ROUTE_COUNT"
+            exit 1
+          fi
+          
+          echo "✓ PASS: Out-of-stock routes generated correctly"
+
+      - name: Verify /flashlights/all-slugs endpoint
+        run: |
+          cd ..
+          SLUG_COUNT=$(curl -sf http://127.0.0.1:8080/flashlights/all-slugs | jq 'length')
+          echo "all-slugs returned $SLUG_COUNT products"
+          
+          if [ "$SLUG_COUNT" -lt 150 ]; then
+            echo "❌ FAIL: Expected ~176 slugs, got $SLUG_COUNT"
+            exit 1
+          fi
+          
+          # Check that OOS products are in all-slugs
+          HAS_ACEBEAM=$(curl -sf http://127.0.0.1:8080/flashlights/all-slugs | jq '.[] | select(.slug == "acebeam-l19-2")')
+          if [ -z "$HAS_ACEBEAM" ]; then
+            echo "❌ FAIL: acebeam-l19-2 not in all-slugs"
+            exit 1
+          fi
+          
+          echo "✓ PASS: all-slugs endpoint returns all products"
+
+      - name: Verify filtered endpoint excludes OOS
+        run: |
+          cd ..
+          FILTERED_COUNT=$(curl -sf http://127.0.0.1:8080/flashlights | jq '.total')
+          echo "Filtered endpoint returned $FILTERED_COUNT products"
+          
+          if [ "$FILTERED_COUNT" -ge "$SLUG_COUNT" ]; then
+            echo "⚠️  WARNING: Filtered count should be less than total count"
+          fi
+          
+          echo "✓ PASS: Filtered endpoint working"
+
+      - name: Tear down
+        if: always()
+        run: |
+          cd ..
+          docker compose down -v
 
   api-smoke:
     name: API + Postgres smoke

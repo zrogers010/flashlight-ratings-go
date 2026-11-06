@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func getTestDB(t *testing.T) *sql.DB {
@@ -17,7 +17,7 @@ func getTestDB(t *testing.T) *sql.DB {
 		t.Skip("DATABASE_URL not set, skipping integration test")
 	}
 
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		t.Fatalf("failed to connect to database: %v", err)
 	}
