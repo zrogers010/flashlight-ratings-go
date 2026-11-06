@@ -23,6 +23,7 @@ func NewServer(db *sql.DB) *Server {
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/flashlights", s.handleFlashlights)
+	mux.HandleFunc("/flashlights/all-slugs", s.handleAllSlugs)
 	mux.HandleFunc("/flashlights/", s.handleFlashlightByID)
 	mux.HandleFunc("/brands", s.handleBrands)
 	mux.HandleFunc("/brands/", s.handleBrandBySlug)
@@ -372,6 +373,24 @@ func (s *Server) handleFlashlights(w http.ResponseWriter, r *http.Request) {
 		TotalPage: totalPages,
 		Items:     items,
 	})
+}
+
+func (s *Server) handleAllSlugs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	slugs, err := s.getAllSlugs(ctx)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, slugs)
 }
 
 func (s *Server) handleBrands(w http.ResponseWriter, r *http.Request) {

@@ -47,8 +47,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const [flashlightsRes, brandsRes] = await Promise.all([
-      fetch(`${API_BASE}/flashlights?page=1&page_size=500`, {
+    const [allSlugsRes, brandsRes] = await Promise.all([
+      fetch(`${API_BASE}/flashlights/all-slugs`, {
         signal: controller.signal,
         next: { revalidate: 3600 },
       }),
@@ -59,9 +59,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]);
     clearTimeout(timeout);
 
-    if (flashlightsRes.ok) {
-      const data = await flashlightsRes.json();
-      const items: { id: number; slug: string }[] = data.items || [];
+    if (allSlugsRes.ok) {
+      const items: { id: number; slug: string }[] = await allSlugsRes.json();
       reviewPages = items
         .filter((item) => item.slug)
         .map((item) => ({

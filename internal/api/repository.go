@@ -13,6 +13,17 @@ import (
 	"time"
 )
 
+type slugItem struct {
+	Slug          string   `json:"slug"`
+	ID            int64    `json:"id"`
+	OverallScore  *float64 `json:"overall_score,omitempty"`
+	TacticalScore *float64 `json:"tactical_score,omitempty"`
+	EDCScore      *float64 `json:"edc_score,omitempty"`
+	ValueScore    *float64 `json:"value_score,omitempty"`
+	ThrowScore    *float64 `json:"throw_score,omitempty"`
+	FloodScore    *float64 `json:"flood_score,omitempty"`
+}
+
 type flashlightFilters struct {
 	BatteryType string
 	UseCase     string
@@ -1559,7 +1570,8 @@ WITH latest_run AS (
 latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
-		p.price
+		p.price,
+		p.in_stock
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
@@ -2166,6 +2178,79 @@ WHERE b.slug = $1
 
 func round1(v float64) float64 {
 	return math.Round(v*10) / 10
+}
+
+func (s *Server) getAllSlugs(ctx context.Context) ([]slugItem, error) {
+	query := `
+WITH latest_run AS (
+	SELECT id
+	FROM scoring_runs
+	WHERE status = 'completed'
+	ORDER BY completed_at DESC NULLS LAST, id DESC
+	LIMIT 1
+)
+SELECT 
+	f.id,
+	f.slug,
+	MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
+	MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
+	MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
+	MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
+	MAX(CASE WHEN sp.slug = 'throw' THEN fs.score END) AS throw_score,
+	MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score
+FROM flashlights f
+LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id
+LEFT JOIN scoring_profiles sp ON sp.id = fs.profile_id
+LEFT JOIN latest_run lr ON lr.id = fs.run_id
+WHERE f.is_active = TRUE
+GROUP BY f.id, f.slug
+ORDER BY f.id ASC
+`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	slugs := make([]slugItem, 0)
+	for rows.Next() {
+		var item slugItem
+		var overall, tactical, edc, value, throw, flood sql.NullFloat64
+		if err := rows.Scan(
+			&item.ID,
+			&item.Slug,
+			&overall,
+			&tactical,
+			&edc,
+			&value,
+			&throw,
+			&flood,
+		); err != nil {
+			return nil, err
+		}
+		if overall.Valid {
+			item.OverallScore = &overall.Float64
+		}
+		if tactical.Valid {
+			item.TacticalScore = &tactical.Float64
+		}
+		if edc.Valid {
+			item.EDCScore = &edc.Float64
+		}
+		if value.Valid {
+			item.ValueScore = &value.Float64
+		}
+		if throw.Valid {
+			item.ThrowScore = &throw.Float64
+		}
+		if flood.Valid {
+			item.FloodScore = &flood.Float64
+		}
+		slugs = append(slugs, item)
+	}
+
+	return slugs, rows.Err()
 }
 
 func buildFlashlightWhere(f flashlightFilters) (string, []any) {
