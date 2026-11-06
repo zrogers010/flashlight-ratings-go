@@ -104,9 +104,13 @@ jobs:
 
       - name: Verify route generation
         run: |
+          # Debug: list actual generated routes
+          echo "Generated review routes:"
+          find .next/server/app/reviews -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort || echo "No routes found"
+          
           # Count total review routes
           ROUTE_COUNT=$(find .next/server/app/reviews -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-          echo "Generated $ROUTE_COUNT review routes"
+          echo "Total: $ROUTE_COUNT review routes"
           
           if [ "$ROUTE_COUNT" -lt 3 ]; then
             echo "❌ FAIL: Expected at least 3 routes (2 in-stock + 1 OOS), got $ROUTE_COUNT"
