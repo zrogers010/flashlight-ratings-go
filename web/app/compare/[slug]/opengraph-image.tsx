@@ -152,7 +152,6 @@ function ProductPanel({
       {isWinner && !isTie ? (
         <div
           style={{
-            display: "flex",
             position: "absolute",
             top: -16,
             background: "#7ee787",
@@ -191,7 +190,6 @@ function ProductPanel({
 
       <div
         style={{
-          display: "flex",
           color: "#7ee787",
           fontSize: 18,
           textTransform: "uppercase",
@@ -203,7 +201,6 @@ function ProductPanel({
       </div>
       <div
         style={{
-          display: "flex",
           fontSize: 32,
           fontWeight: 800,
           textAlign: "center",
@@ -235,7 +232,6 @@ function ProductPanel({
         <div style={{ display: "flex", alignItems: "baseline" }}>
           <div
             style={{
-              display: "flex",
               fontSize: 64,
               fontWeight: 900,
               color: isWinner ? "#7ee787" : "#e6edf3",
@@ -244,7 +240,7 @@ function ProductPanel({
           >
             {score.toFixed(0)}
           </div>
-          <div style={{ display: "flex", fontSize: 18, color: "#8b949e", marginLeft: 4 }}>
+          <div style={{ fontSize: 18, color: "#8b949e", marginLeft: 4 }}>
             /100
           </div>
         </div>
@@ -289,10 +285,10 @@ function fallback() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
+        <div style={{ color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
           • FLASHLIGHTRATINGS
         </div>
-        <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>
+        <div style={{ fontSize: 64, fontWeight: 800 }}>
           Flashlight Comparison
         </div>
       </div>

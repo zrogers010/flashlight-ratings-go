@@ -95,7 +95,6 @@ export default async function OpengraphImage({
         >
           <div
             style={{
-              display: "flex",
               color: "#7ee787",
               fontSize: 24,
               textTransform: "uppercase",
@@ -107,7 +106,6 @@ export default async function OpengraphImage({
           </div>
           <div
             style={{
-              display: "flex",
               fontSize: 78,
               fontWeight: 800,
               lineHeight: 1.05,
@@ -217,10 +215,10 @@ function fallback() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
+        <div style={{ color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
           • FLASHLIGHTRATINGS
         </div>
-        <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>
+        <div style={{ fontSize: 64, fontWeight: 800 }}>
           Flashlight Review
         </div>
       </div>
