@@ -104,22 +104,21 @@ jobs:
 
       - name: Verify route generation
         run: |
-          # Debug: list actual generated routes
-          echo "Generated review routes:"
-          find .next/server/app/reviews -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort || echo "No routes found"
-          
-          # Count total review routes
-          ROUTE_COUNT=$(find .next/server/app/reviews -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-          echo "Total: $ROUTE_COUNT review routes"
+          # Count static product routes (.segments files)
+          ROUTE_COUNT=$(find .next/server/app/reviews -mindepth 1 -maxdepth 1 -name "*.segments" -type f 2>/dev/null | wc -l)
+          echo "Generated $ROUTE_COUNT product review routes"
           
           if [ "$ROUTE_COUNT" -lt 3 ]; then
             echo "❌ FAIL: Expected at least 3 routes (2 in-stock + 1 OOS), got $ROUTE_COUNT"
+            find .next/server/app/reviews -mindepth 1 -maxdepth 1 2>/dev/null | sort
             exit 1
           fi
           
           # Verify OOS product route was generated
-          if [ ! -d ".next/server/app/reviews/acebeam-l19-2" ]; then
-            echo "❌ FAIL: Out-of-stock product route (acebeam-l19-2) not generated"
+          if [ ! -f ".next/server/app/reviews/acebeam-l19-2.segments" ]; then
+            echo "❌ FAIL: Out-of-stock product route (acebeam-l19-2.segments) not generated"
+            echo "Found routes:"
+            find .next/server/app/reviews -mindepth 1 -maxdepth 1 -name "*.segments" 2>/dev/null | sort
             exit 1
           fi
           
