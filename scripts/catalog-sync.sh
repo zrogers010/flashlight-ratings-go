@@ -24,16 +24,19 @@
 #
 # Production cron (live server; do not reinstall blindly):
 #   Daily at 14:00 UTC (7 AM PT):
-#     SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off \
+#     SYNC_SOURCE=auto SYNC_RATINGS_SOURCE=rainforest \
 #     SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200 PRUNE_THRESHOLD=2 \
 #     bash scripts/catalog-sync.sh
-#   That is one full pass (~176 credits/day, ~5.3k/month) on the 10k plan.
+#   Creators API primary (free, batched), Rainforest ratings reinforcement.
+#   SYNC_LIMIT=200 hard ceiling ensures max 200 Rainforest calls even when
+#   ratings are gated. Typical: 18 Creators + 0-176 Rainforest (~0-5.3k/mo).
 #
 # WARNING: `scripts/deploy.sh install-cron` defaults are 3×/day full-catalog
 # (06:00, 14:00, 22:00 UTC) with SYNC_SOURCE=auto and
-# SYNC_RATINGS_SOURCE=rainforest. At ~176 ASINs that is ~15.8k Rainforest
-# credits/month — over the 10k plan. Do NOT run install-cron with defaults
-# on production.
+# SYNC_RATINGS_SOURCE=rainforest. If Creators ratings are gated, that could
+# use up to 3×176 Rainforest calls/day (~16k/month) — over the 10k plan.
+# Do NOT run install-cron with defaults on production without verifying
+# Creators ratings access or setting SYNC_LIMIT appropriately.
 #
 # Environment:
 #   AMAZON_CREATORS_CLIENT_ID / _SECRET
@@ -84,6 +87,15 @@ if [[ -z "${AMAZON_CREATORS_CLIENT_ID:-}" && -z "${RAINFOREST_API_KEY:-}" ]]; th
   echo "ERROR: neither AMAZON_CREATORS_CLIENT_ID nor RAINFOREST_API_KEY is set."
   echo "  Add at least one to .env or export it before running this script."
   exit 1
+fi
+
+# Warn when running with gated ratings and no SYNC_LIMIT
+if [[ -n "${AMAZON_CREATORS_CLIENT_ID:-}" && -n "${RAINFOREST_API_KEY:-}" ]]; then
+  if [[ "${SYNC_RATINGS_SOURCE:-rainforest}" == "rainforest" && "${SYNC_LIMIT:-0}" == "0" && "${SYNC_ROTATE_DAYS:-0}" == "0" ]]; then
+    echo "⚠️  WARNING: Creators + Rainforest ratings reinforcement without SYNC_LIMIT."
+    echo "   If Creators customerReviews are gated, this will make 1 Rainforest call"
+    echo "   per ASIN. Set SYNC_LIMIT=200 to cap Rainforest usage at 200 calls/run."
+  fi
 fi
 
 # docker-compose v1 vs v2 detection (mirrors deploy.sh)

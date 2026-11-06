@@ -28,22 +28,32 @@
 
 2. **Cadence (production):** full-catalog sync **once daily at 14:00 UTC
    (7 AM PT)** with
-   `SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off SYNC_ROTATE_DAYS=0
+   `SYNC_SOURCE=auto SYNC_RATINGS_SOURCE=rainforest SYNC_ROTATE_DAYS=0
    SYNC_LIMIT=200 PRUNE_THRESHOLD=2`.
-   - Every run refreshes **all** ASINs (~176 credits/day, ~5.3k/month).
+   - Every run processes up to **200 ASINs** (SYNC_LIMIT hard ceiling).
+   - **Primary source: Creators API** (free, official, batched 10 ASINs/call).
+   - **Rainforest reinforcement:** Ratings only when Creators withholds them
+     (typical for most Associates accounts without qualifying sales).
+   - **Rainforest failover:** Full run if Creators credentials rejected.
+   - With 176 ASINs: ~18 Creators calls + up to 176 Rainforest rating calls
+     if customerReviews gated, or 0 Rainforest calls if Creators provides
+     ratings. Hard limit: 200 Rainforest calls max (SYNC_LIMIT ceiling).
    - Average age ~12 hours, worst case ~24h.
    - **Do not** run `bash scripts/deploy.sh install-cron` with its defaults
      on production. Those defaults are 3×/day (06:00, 14:00, 22:00 UTC)
-     and would use ~15.8k Rainforest credits/month — over the 10k plan.
+     and could use more Rainforest credits if Creators ratings are gated.
    - For very large catalogs, fall back to rotation with
      `bash scripts/deploy.sh install-cron-rotated` and `ROTATE_DAYS=N`
      (shard = `(UTC day-of-year - 1) mod N`, each ASIN once per N days).
 
-3. **Per-row update.** For each ASIN in today's shard:
+3. **Per-row update.** For each ASIN in today's shard (up to SYNC_LIMIT):
    - Primary source: **Creators API** `getItems` (batched 10 ASINs/call,
-     free, official). Rainforest `type=product` reinforces star ratings the
-     Creators API withholds and takes over the whole run if Creators
-     credentials are rejected (`SYNC_SOURCE=auto`).
+     free, official). Preloads all selected ASINs before processing.
+   - **Ratings reinforcement**: When Creators returns no customerReviews data
+     (typical for most accounts) and `SYNC_RATINGS_SOURCE=rainforest`,
+     Rainforest `type=product` supplies ratings only (1 call/ASIN).
+   - **Failover**: If Creators Preload returns ErrSourceUnavailable
+     (401/403 auth rejection), the entire run switches to Rainforest.
    - Require a positive buy-box price **and** an in-stock availability type
      before considering the offer purchasable.
    - Update `current_price_usd`, `rating_count`, `average_rating` if changed.
@@ -82,7 +92,7 @@ For a catalog of ~176 ASINs (1 Rainforest credit ≈ 1 product call):
 
 | Setup | Credits/day | Credits/month | Avg price age | Bad-offer disable |
 |---|---|---|---|---|
-| **Production: daily 14:00 UTC, Rainforest-only, limit 200** | **~176** | **~5.3k** | **~12h** | **~2 days** |
+| **Production: daily 14:00 UTC, Creators primary + Rainforest ratings, limit 200** | **0-200** | **0-6k** | **~12h** | **~2 days** |
 | `install-cron` defaults 3×/day full (**do not use** — over 10k plan) | ~528 | ~15.8k | ~4h | ~16h |
 | `install-cron` every 6h (`0 */6 * * *`) | ~704 | ~21k | ~3h | ~12h |
 | Rotated `ROTATE_DAYS=3` once/day | ~59 | ~1.8k | ~36h | ~6 days |
@@ -90,11 +100,14 @@ For a catalog of ~176 ASINs (1 Rainforest credit ≈ 1 product call):
 Production crontab (do not replace with `install-cron` defaults):
 
 ```bash
-# Daily 14:00 UTC (7 AM PT) — matches the live server
+# Daily 14:00 UTC (7 AM PT) — Creators API primary, Rainforest ratings reinforcement
 # 0 14 * * *  cd $APP_DIR && \
-#   SYNC_SOURCE=rainforest SYNC_RATINGS_SOURCE=off \
+#   SYNC_SOURCE=auto SYNC_RATINGS_SOURCE=rainforest \
 #   SYNC_ROTATE_DAYS=0 SYNC_LIMIT=200 PRUNE_THRESHOLD=2 \
 #   bash scripts/catalog-sync.sh >> $HOME/catalog-sync.log 2>&1
+
+# SYNC_LIMIT=200 is a hard ceiling on rows processed per run, enforcing the
+# Rainforest API budget even when ratings reinforcement is enabled.
 
 # install-cron defaults are 3×/day and will overspend the 10k plan.
 # Do not run: bash scripts/deploy.sh install-cron
