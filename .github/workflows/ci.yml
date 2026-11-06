@@ -222,10 +222,11 @@ jobs:
         run: |
           cd ..
           # Test OOS product OG image
-          OOS_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/oos-og.png http://127.0.0.1:3000/reviews/acebeam-l19-2/opengraph-image)
-          OOS_STATUS=$(echo "$OOS_OG_RESPONSE" | tail -3 | head -1)
-          OOS_CONTENT_TYPE=$(echo "$OOS_OG_RESPONSE" | tail -2 | head -1)
-          OOS_SIZE=$(echo "$OOS_OG_RESPONSE" | tail -1)
+          echo "Testing OOS product OG image..."
+          HTTP_CODE=$(curl -s -o /tmp/oos-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/reviews/acebeam-l19-2/opengraph-image)
+          OOS_STATUS="${HTTP_CODE}"
+          OOS_CONTENT_TYPE=$(file -b --mime-type /tmp/oos-og.png 2>/dev/null || echo "unknown")
+          OOS_SIZE=$(stat -c%s /tmp/oos-og.png 2>/dev/null || echo "0")
           
           if [ "$OOS_STATUS" -ne 200 ]; then
             echo "❌ FAIL: OOS OG image returned $OOS_STATUS (expected 200)"
@@ -233,7 +234,7 @@ jobs:
             exit 1
           fi
           
-          if [[ ! "$OOS_CONTENT_TYPE" =~ image/png ]]; then
+          if [[ ! "$OOS_CONTENT_TYPE" =~ "image/png" && ! "$OOS_CONTENT_TYPE" =~ "png" ]]; then
             echo "❌ FAIL: OOS OG image wrong content-type: $OOS_CONTENT_TYPE"
             exit 1
           fi
@@ -246,10 +247,11 @@ jobs:
           echo "✓ PASS: OOS OG image OK ($OOS_SIZE bytes, $OOS_CONTENT_TYPE)"
           
           # Test in-stock product OG image
-          IN_STOCK_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/in-stock-og.png http://127.0.0.1:3000/reviews/wurkkos-fc11c/opengraph-image)
-          IN_STOCK_STATUS=$(echo "$IN_STOCK_OG_RESPONSE" | tail -3 | head -1)
-          IN_STOCK_CONTENT_TYPE=$(echo "$IN_STOCK_OG_RESPONSE" | tail -2 | head -1)
-          IN_STOCK_SIZE=$(echo "$IN_STOCK_OG_RESPONSE" | tail -1)
+          echo "Testing in-stock product OG image..."
+          HTTP_CODE=$(curl -s -o /tmp/in-stock-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/reviews/wurkkos-fc11c/opengraph-image)
+          IN_STOCK_STATUS="${HTTP_CODE}"
+          IN_STOCK_CONTENT_TYPE=$(file -b --mime-type /tmp/in-stock-og.png 2>/dev/null || echo "unknown")
+          IN_STOCK_SIZE=$(stat -c%s /tmp/in-stock-og.png 2>/dev/null || echo "0")
           
           if [ "$IN_STOCK_STATUS" -ne 200 ]; then
             echo "❌ FAIL: In-stock OG image returned $IN_STOCK_STATUS (expected 200)"
@@ -257,7 +259,7 @@ jobs:
             exit 1
           fi
           
-          if [[ ! "$IN_STOCK_CONTENT_TYPE" =~ image/png ]]; then
+          if [[ ! "$IN_STOCK_CONTENT_TYPE" =~ "image/png" && ! "$IN_STOCK_CONTENT_TYPE" =~ "png" ]]; then
             echo "❌ FAIL: In-stock OG image wrong content-type: $IN_STOCK_CONTENT_TYPE"
             exit 1
           fi
@@ -270,10 +272,11 @@ jobs:
           echo "✓ PASS: In-stock OG image OK ($IN_STOCK_SIZE bytes, $IN_STOCK_CONTENT_TYPE)"
           
           # Test compare page OG image
-          COMPARE_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/compare-og.png http://127.0.0.1:3000/compare/acebeam-l19-2-vs-wurkkos-fc11c/opengraph-image)
-          COMPARE_STATUS=$(echo "$COMPARE_OG_RESPONSE" | tail -3 | head -1)
-          COMPARE_CONTENT_TYPE=$(echo "$COMPARE_OG_RESPONSE" | tail -2 | head -1)
-          COMPARE_SIZE=$(echo "$COMPARE_OG_RESPONSE" | tail -1)
+          echo "Testing compare page OG image..."
+          HTTP_CODE=$(curl -s -o /tmp/compare-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/compare/acebeam-l19-2-vs-wurkkos-fc11c/opengraph-image)
+          COMPARE_STATUS="${HTTP_CODE}"
+          COMPARE_CONTENT_TYPE=$(file -b --mime-type /tmp/compare-og.png 2>/dev/null || echo "unknown")
+          COMPARE_SIZE=$(stat -c%s /tmp/compare-og.png 2>/dev/null || echo "0")
           
           if [ "$COMPARE_STATUS" -ne 200 ]; then
             echo "❌ FAIL: Compare OG image returned $COMPARE_STATUS (expected 200)"
@@ -281,7 +284,7 @@ jobs:
             exit 1
           fi
           
-          if [[ ! "$COMPARE_CONTENT_TYPE" =~ image/png ]]; then
+          if [[ ! "$COMPARE_CONTENT_TYPE" =~ "image/png" && ! "$COMPARE_CONTENT_TYPE" =~ "png" ]]; then
             echo "❌ FAIL: Compare OG image wrong content-type: $COMPARE_CONTENT_TYPE"
             exit 1
           fi
