@@ -245,7 +245,8 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO flashlight_specs (flashlight_id, max_lumens, max_candela, beam_distance_m, runtime_high_min, waterproof_rating, weight_g)
 SELECT f.id, 1000, 60000, 490, 120, 'IPX8', 145.0
 FROM flashlights f
-WHERE f.slug = 'acebeam-l19-2';
+WHERE f.slug = 'acebeam-l19-2'
+  AND NOT EXISTS (SELECT 1 FROM flashlight_specs WHERE flashlight_id = f.id);
 
 INSERT INTO flashlight_battery_compatibility (flashlight_id, battery_type_id)
 SELECT f.id, bt.id
@@ -253,7 +254,10 @@ FROM flashlights f
 CROSS JOIN battery_types bt
 WHERE f.slug = 'acebeam-l19-2'
   AND bt.code = '18650'
-ON CONFLICT (flashlight_id, battery_type_id) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM flashlight_battery_compatibility fbc 
+    WHERE fbc.flashlight_id = f.id AND fbc.battery_type_id = bt.id
+  );
 
 INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
 SELECT f.id, u.id, 0.95
@@ -261,19 +265,29 @@ FROM flashlights f
 CROSS JOIN use_cases u
 WHERE f.slug = 'acebeam-l19-2'
   AND u.slug = 'throw'
-ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM flashlight_use_cases fuc 
+    WHERE fuc.flashlight_id = f.id AND fuc.use_case_id = u.id
+  );
 
 INSERT INTO affiliate_links (flashlight_id, provider, region_code, affiliate_url, asin, is_active, is_primary)
 SELECT f.id, 'amazon', 'US', 'https://amazon.com/dp/B0ACEBEAM2', 'B0ACEBEAM2', TRUE, TRUE
 FROM flashlights f
 WHERE f.slug = 'acebeam-l19-2'
-ON CONFLICT (flashlight_id, provider, region_code) DO NOTHING;
+  AND NOT EXISTS (
+    SELECT 1 FROM affiliate_links al 
+    WHERE al.flashlight_id = f.id AND al.provider = 'amazon' AND al.region_code = 'US'
+  );
 
 -- Mark as out of stock
-INSERT INTO flashlight_price_snapshots (flashlight_id, source, source_sku, currency_code, price, in_stock)
-SELECT f.id, 'amazon', 'B0ACEBEAM2', 'USD', 89.95, FALSE
+INSERT INTO flashlight_price_snapshots (flashlight_id, source, source_sku, currency_code, price, in_stock, captured_at)
+SELECT f.id, 'amazon', 'B0ACEBEAM2', 'USD', 89.95, FALSE, NOW()
 FROM flashlights f
-WHERE f.slug = 'acebeam-l19-2';
+WHERE f.slug = 'acebeam-l19-2'
+  AND NOT EXISTS (
+    SELECT 1 FROM flashlight_price_snapshots fps 
+    WHERE fps.flashlight_id = f.id AND fps.source = 'amazon'
+  );
 
 WITH run AS (
     INSERT INTO scoring_runs (run_label, formula_version, status, initiated_by, completed_at, notes)
