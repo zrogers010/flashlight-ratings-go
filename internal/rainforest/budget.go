@@ -6,14 +6,17 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 )
 
 // DailyBudget tracks Rainforest API request usage across sync runs to enforce
 // a hard daily ceiling. The budget resets at midnight UTC.
+// Uses POSIX file locking (flock) for cross-process atomic budget reservation.
 type DailyBudget struct {
 	mu         sync.Mutex
 	path       string
+	lockPath   string
 	maxPerDay  int
 	date       string // YYYY-MM-DD UTC
 	used       int
@@ -27,6 +30,8 @@ type budgetState struct {
 
 // NewDailyBudget creates or loads a daily budget tracker. maxPerDay is the
 // hard ceiling; 0 means unlimited.
+// Uses cross-process file locking to ensure budget is enforced across
+// concurrent/overlapping sync processes.
 func NewDailyBudget(statePath string, maxPerDay int) (*DailyBudget, error) {
 	if maxPerDay < 0 {
 		return nil, fmt.Errorf("maxPerDay must be >= 0, got %d", maxPerDay)
@@ -34,6 +39,7 @@ func NewDailyBudget(statePath string, maxPerDay int) (*DailyBudget, error) {
 	
 	b := &DailyBudget{
 		path:       statePath,
+		lockPath:   statePath + ".lock",
 		maxPerDay:  maxPerDay,
 		date:       todayUTC(),
 		used:       0,
@@ -41,9 +47,9 @@ func NewDailyBudget(statePath string, maxPerDay int) (*DailyBudget, error) {
 	}
 	
 	if err := b.load(); err != nil {
-		// File not found is OK (first run), other errors fail
+		// File not found is OK (first run), other errors fail closed
 		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("load budget state: %w", err)
+			return nil, fmt.Errorf("load budget state (fail-closed on corrupt/unreadable): %w", err)
 		}
 	}
 	
@@ -65,6 +71,9 @@ func (b *DailyBudget) Available() int {
 }
 
 // Increment records N requests used. Returns error if budget exhausted.
+// Uses cross-process file locking to atomically reserve quota.
+// Retries lock acquisition up to 3 times with exponential backoff.
+// Fails closed if state file is corrupt or unreadable.
 func (b *DailyBudget) Increment(n int) error {
 	if n < 0 {
 		return fmt.Errorf("increment must be >= 0, got %d", n)
@@ -73,8 +82,58 @@ func (b *DailyBudget) Increment(n int) error {
 		return nil
 	}
 	
+	// In-process mutex to serialize concurrent goroutines
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	
+	// Cross-process file lock for atomic budget reservation
+	const maxRetries = 3
+	var lockErr error
+	for retry := 0; retry < maxRetries; retry++ {
+		if retry > 0 {
+			backoff := time.Duration(50<<uint(retry-1)) * time.Millisecond
+			time.Sleep(backoff)
+		}
+		lockErr = b.acquireLockAndIncrement(n)
+		if lockErr == nil {
+			return nil
+		}
+		// Retry on lock contention or I/O errors, but not on budget exhausted
+		if isBudgetExhausted(lockErr) {
+			return lockErr
+		}
+	}
+	
+	return fmt.Errorf("increment failed after %d retries: %w", maxRetries, lockErr)
+}
+
+func (b *DailyBudget) acquireLockAndIncrement(n int) error {
+	// Ensure lock directory exists
+	if err := os.MkdirAll(filepath.Dir(b.lockPath), 0755); err != nil {
+		return fmt.Errorf("create lock directory: %w", err)
+	}
+	
+	// Open/create lock file
+	lockFile, err := os.OpenFile(b.lockPath, os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("open lock file: %w", err)
+	}
+	defer lockFile.Close()
+	
+	// Acquire exclusive lock (blocks if another process holds it)
+	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
+		return fmt.Errorf("acquire exclusive lock: %w", err)
+	}
+	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+	
+	// Reload state from disk to get cross-process updates
+	if err := b.loadUnlocked(); err != nil {
+		if !os.IsNotExist(err) {
+			// Fail closed on corrupt/unreadable state
+			return fmt.Errorf("load budget state (fail-closed): %w", err)
+		}
+		// First run - state file doesn't exist yet
+	}
 	
 	// Check if date rolled over (new day UTC)
 	today := todayUTC()
@@ -85,21 +144,38 @@ func (b *DailyBudget) Increment(n int) error {
 	
 	// Check if increment would exceed budget
 	if b.maxPerDay > 0 && b.used+n > b.maxPerDay {
-		return fmt.Errorf("daily budget exhausted: %d/%d used, cannot add %d", 
-			b.used, b.maxPerDay, n)
+		return &budgetExhaustedError{
+			used:      b.used,
+			maxPerDay: b.maxPerDay,
+			requested: n,
+		}
 	}
 	
 	b.used += n
 	
-	if b.saveOnIncr {
-		if err := b.saveUnlocked(); err != nil {
-			// Log but don't fail the sync - budget tracking is best-effort
-			// to avoid blocking catalog refreshes on I/O errors
-			fmt.Fprintf(os.Stderr, "WARNING: failed to save budget state: %v\n", err)
-		}
+	// Save atomically while holding lock
+	if err := b.saveUnlocked(); err != nil {
+		// I/O error on save is critical - fail closed to prevent overspend
+		return fmt.Errorf("save budget state (fail-closed): %w", err)
 	}
 	
 	return nil
+}
+
+type budgetExhaustedError struct {
+	used      int
+	maxPerDay int
+	requested int
+}
+
+func (e *budgetExhaustedError) Error() string {
+	return fmt.Sprintf("daily budget exhausted: %d/%d used, cannot add %d",
+		e.used, e.maxPerDay, e.requested)
+}
+
+func isBudgetExhausted(err error) bool {
+	_, ok := err.(*budgetExhaustedError)
+	return ok
 }
 
 // Used returns the number of requests used today.
@@ -120,7 +196,10 @@ func (b *DailyBudget) Reset() {
 func (b *DailyBudget) load() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	
+	return b.loadUnlocked()
+}
+
+func (b *DailyBudget) loadUnlocked() error {
 	data, err := os.ReadFile(b.path)
 	if err != nil {
 		return err
@@ -128,7 +207,8 @@ func (b *DailyBudget) load() error {
 	
 	var state budgetState
 	if err := json.Unmarshal(data, &state); err != nil {
-		return err
+		// Fail closed on corrupt state
+		return fmt.Errorf("unmarshal budget state (corrupt): %w", err)
 	}
 	
 	today := todayUTC()

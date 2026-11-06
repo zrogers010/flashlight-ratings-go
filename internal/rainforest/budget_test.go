@@ -1,9 +1,12 @@
 package rainforest
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestDailyBudgetBasics(t *testing.T) {
@@ -320,5 +323,167 @@ func TestDailyBudgetConcurrentAccess(t *testing.T) {
 	// Should have 50 total (10 goroutines × 5 increments)
 	if budget.Used() != 50 {
 		t.Errorf("concurrent increments: used = %d, want 50", budget.Used())
+	}
+}
+
+// TestDailyBudgetCrossProcessLocking verifies cross-process atomic budget reservation.
+// Simulates multiple independent processes by creating separate DailyBudget instances
+// sharing the same state file and using file locking.
+func TestDailyBudgetCrossProcessLocking(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "budget.json")
+	
+	// Budget allows 50 total requests
+	const maxBudget = 50
+	const numProcesses = 10
+	const incrementsPerProcess = 5
+	
+	// Launch 10 simulated "processes" (goroutines with independent budget instances)
+	errors := make(chan error, numProcesses)
+	for i := 0; i < numProcesses; i++ {
+		go func() {
+			// Each "process" creates its own budget instance
+			b, err := NewDailyBudget(path, maxBudget)
+			if err != nil {
+				errors <- err
+				return
+			}
+			
+			// Try to increment 5 times
+			for j := 0; j < incrementsPerProcess; j++ {
+				if err := b.Increment(1); err != nil {
+					errors <- err
+					return
+				}
+			}
+			errors <- nil
+		}()
+	}
+	
+	// Collect results
+	var firstErr error
+	for i := 0; i < numProcesses; i++ {
+		if err := <-errors; err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	
+	// Should succeed: 10 processes × 5 requests = 50 (exactly at budget)
+	if firstErr != nil {
+		t.Fatalf("unexpected error during cross-process increment: %v", firstErr)
+	}
+	
+	// Verify final state
+	finalBudget, err := NewDailyBudget(path, maxBudget)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	if finalBudget.Used() != numProcesses*incrementsPerProcess {
+		t.Errorf("cross-process total: used = %d, want %d", 
+			finalBudget.Used(), numProcesses*incrementsPerProcess)
+	}
+	
+	// Try one more increment - should fail (budget exhausted)
+	if err := finalBudget.Increment(1); err == nil {
+		t.Error("expected budget exhausted error after reaching limit")
+	}
+}
+
+// TestDailyBudgetFailClosedOnCorruptState verifies fail-closed behavior when
+// state file is corrupt or unreadable.
+func TestDailyBudgetFailClosedOnCorruptState(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "budget.json")
+	
+	// Write corrupt JSON to state file
+	if err := os.WriteFile(path, []byte("{ corrupt json }"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	
+	// NewDailyBudget should fail closed on corrupt state
+	_, err := NewDailyBudget(path, 100)
+	if err == nil {
+		t.Fatal("expected error when loading corrupt budget state")
+	}
+	if !strings.Contains(err.Error(), "fail-closed") {
+		t.Errorf("error should mention fail-closed, got: %v", err)
+	}
+}
+
+// TestDailyBudgetFailClosedDuringIncrement verifies fail-closed behavior when
+// state becomes corrupt between initialization and increment.
+func TestDailyBudgetFailClosedDuringIncrement(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "budget.json")
+	
+	// Create valid budget
+	budget, err := NewDailyBudget(path, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// First increment should succeed
+	if err := budget.Increment(5); err != nil {
+		t.Fatal(err)
+	}
+	
+	// Corrupt the state file
+	if err := os.WriteFile(path, []byte("corrupted"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	
+	// Next increment should fail closed
+	err = budget.Increment(5)
+	if err == nil {
+		t.Fatal("expected fail-closed error after state corruption")
+	}
+	if !strings.Contains(err.Error(), "fail-closed") {
+		t.Errorf("error should mention fail-closed, got: %v", err)
+	}
+}
+
+// TestDailyBudgetMidnightReset verifies budget resets at midnight UTC across processes.
+func TestDailyBudgetMidnightReset(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "budget.json")
+	
+	budget, err := NewDailyBudget(path, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Use some budget
+	if err := budget.Increment(30); err != nil {
+		t.Fatal(err)
+	}
+	
+	if budget.Used() != 30 {
+		t.Fatalf("used = %d, want 30", budget.Used())
+	}
+	
+	// Manually advance date to simulate midnight rollover
+	// (save stale state with yesterday's date)
+	yesterday := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
+	state := budgetState{Date: yesterday, Used: 30}
+	data, _ := json.MarshalIndent(state, "", "  ")
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	
+	// Create new budget instance (simulates new process on new day)
+	newDayBudget, err := NewDailyBudget(path, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Should reset to 0 for new day
+	if newDayBudget.Used() != 0 {
+		t.Errorf("budget should reset at midnight: used = %d, want 0", newDayBudget.Used())
+	}
+	
+	// Should be able to use full budget again
+	if err := newDayBudget.Increment(50); err != nil {
+		t.Errorf("should allow full budget on new day: %v", err)
 	}
 }

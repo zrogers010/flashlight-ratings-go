@@ -26,15 +26,18 @@
    Postgres is reloaded from the CSV after every sync via
    `scripts/import-manual-catalog.sh`.
 
-2. **Cadence (production):** documented as **once daily at 14:00 UTC (7 AM PT)**
-   (actual production config unverified) with
+2. **Cadence (production):** documented as **once daily at 7:00 AM America/Los_Angeles**
+   (actual production config unverified; currently 14:00 UTC = 6 AM PST / 7 AM PDT) with
    `SYNC_SOURCE=auto SYNC_RATINGS_SOURCE=off RAINFOREST_MAX_PER_DAY=200
    PRUNE_THRESHOLD=2`.
    - **Primary source: Creators API** (free, official, batched 10 ASINs/call).
    - **Rainforest fallback only:** Used only when Creators eligibility lapses.
    - **Hard daily budget:** RAINFOREST_MAX_PER_DAY=200 genuine request ceiling,
-     resets at midnight UTC, enforced before each API call.
+     resets at midnight UTC, enforced with cross-process file locking before each API call.
    - Average age ~12 hours, worst case ~24h (subject to catalog size).
+   - **DST-aware scheduling:** See [docs/cron-dst-scheduling.md](./cron-dst-scheduling.md)
+     for proper `CRON_TZ=America/Los_Angeles` configuration to maintain consistent
+     7 AM local time year-round across PST/PDT transitions.
    - **Do not** run `bash scripts/deploy.sh install-cron` with defaults
      without verifying actual production configuration first.
    - For very large catalogs, fall back to rotation with
