@@ -68,7 +68,10 @@ func TestCatalogBuild_PreservesExistingPriceSnapshots(t *testing.T) {
 				ASIN:      existingASIN,
 				PriceUSD:  99.99, // Different price
 				Specs: Specs{
-					MaxLumens: 1000,
+					MaxLumens:  1000,
+					HasStrobe:  false,
+					HasMemory:  false,
+					HasLockout: false,
 				},
 			},
 		},
@@ -161,7 +164,10 @@ func TestCatalogBuild_DoesNotOverwriteOOSStatus(t *testing.T) {
 				ASIN:      asin,
 				PriceUSD:  79.99,
 				Specs: Specs{
-					MaxLumens: 1500,
+					MaxLumens:  1500,
+					HasStrobe:  false,
+					HasMemory:  false,
+					HasLockout: false,
 				},
 			},
 		},
@@ -230,7 +236,10 @@ func TestCatalogBuild_NewProductGetsSnapshot(t *testing.T) {
 				ASIN:      testASIN,
 				PriceUSD:  49.99,
 				Specs: Specs{
-					MaxLumens: 800,
+					MaxLumens:  800,
+					HasStrobe:  false,
+					HasMemory:  false,
+					HasLockout: false,
 				},
 			},
 		},
