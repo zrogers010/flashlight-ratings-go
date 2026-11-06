@@ -80,7 +80,7 @@ export default async function OpengraphImage({
             letterSpacing: "0.08em",
           }}
         >
-          ◉ FLASHLIGHTRATINGS
+          • FLASHLIGHTRATINGS
         </div>
 
         <div
@@ -95,6 +95,7 @@ export default async function OpengraphImage({
         >
           <div
             style={{
+              display: "flex",
               color: "#7ee787",
               fontSize: 24,
               textTransform: "uppercase",
@@ -106,6 +107,7 @@ export default async function OpengraphImage({
           </div>
           <div
             style={{
+              display: "flex",
               fontSize: 78,
               fontWeight: 800,
               lineHeight: 1.05,
@@ -141,8 +143,8 @@ export default async function OpengraphImage({
                 {score}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 20, color: "#8b949e" }}>/100</div>
-                <div style={{ fontSize: 22, color: "#e6edf3", marginTop: 4 }}>
+                <div style={{ display: "flex", fontSize: 20, color: "#8b949e" }}>/100</div>
+                <div style={{ display: "flex", fontSize: 22, color: "#e6edf3", marginTop: 4 }}>
                   {`Best for ${best}`}
                 </div>
               </div>
@@ -215,10 +217,10 @@ function fallback() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
-          ◉ FLASHLIGHTRATINGS
+        <div style={{ display: "flex", color: "#7ee787", fontSize: 28, marginBottom: 20 }}>
+          • FLASHLIGHTRATINGS
         </div>
-        <div style={{ fontSize: 64, fontWeight: 800 }}>
+        <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>
           Flashlight Review
         </div>
       </div>

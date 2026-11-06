@@ -217,6 +217,81 @@ jobs:
           fi
           
           echo "✓ PASS: In-stock review pages return HTTP 200"
+      
+      - name: Test OpenGraph images
+        run: |
+          cd ..
+          # Test OOS product OG image
+          OOS_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/oos-og.png http://127.0.0.1:3000/reviews/acebeam-l19-2/opengraph-image)
+          OOS_STATUS=$(echo "$OOS_OG_RESPONSE" | tail -3 | head -1)
+          OOS_CONTENT_TYPE=$(echo "$OOS_OG_RESPONSE" | tail -2 | head -1)
+          OOS_SIZE=$(echo "$OOS_OG_RESPONSE" | tail -1)
+          
+          if [ "$OOS_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: OOS OG image returned $OOS_STATUS (expected 200)"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$OOS_CONTENT_TYPE" =~ image/png ]]; then
+            echo "❌ FAIL: OOS OG image wrong content-type: $OOS_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$OOS_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: OOS OG image too small: $OOS_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: OOS OG image OK ($OOS_SIZE bytes, $OOS_CONTENT_TYPE)"
+          
+          # Test in-stock product OG image
+          IN_STOCK_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/in-stock-og.png http://127.0.0.1:3000/reviews/wurkkos-fc11c/opengraph-image)
+          IN_STOCK_STATUS=$(echo "$IN_STOCK_OG_RESPONSE" | tail -3 | head -1)
+          IN_STOCK_CONTENT_TYPE=$(echo "$IN_STOCK_OG_RESPONSE" | tail -2 | head -1)
+          IN_STOCK_SIZE=$(echo "$IN_STOCK_OG_RESPONSE" | tail -1)
+          
+          if [ "$IN_STOCK_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: In-stock OG image returned $IN_STOCK_STATUS (expected 200)"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$IN_STOCK_CONTENT_TYPE" =~ image/png ]]; then
+            echo "❌ FAIL: In-stock OG image wrong content-type: $IN_STOCK_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$IN_STOCK_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: In-stock OG image too small: $IN_STOCK_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: In-stock OG image OK ($IN_STOCK_SIZE bytes, $IN_STOCK_CONTENT_TYPE)"
+          
+          # Test compare page OG image
+          COMPARE_OG_RESPONSE=$(curl -s -w "\n%{http_code}\n%{content_type}\n%{size_download}" -o /tmp/compare-og.png http://127.0.0.1:3000/compare/acebeam-l19-2-vs-wurkkos-fc11c/opengraph-image)
+          COMPARE_STATUS=$(echo "$COMPARE_OG_RESPONSE" | tail -3 | head -1)
+          COMPARE_CONTENT_TYPE=$(echo "$COMPARE_OG_RESPONSE" | tail -2 | head -1)
+          COMPARE_SIZE=$(echo "$COMPARE_OG_RESPONSE" | tail -1)
+          
+          if [ "$COMPARE_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: Compare OG image returned $COMPARE_STATUS (expected 200)"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$COMPARE_CONTENT_TYPE" =~ image/png ]]; then
+            echo "❌ FAIL: Compare OG image wrong content-type: $COMPARE_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$COMPARE_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: Compare OG image too small: $COMPARE_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: Compare OG image OK ($COMPARE_SIZE bytes, $COMPARE_CONTENT_TYPE)"
 
       - name: Tear down
         if: always()
