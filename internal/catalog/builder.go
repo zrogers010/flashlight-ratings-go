@@ -355,16 +355,15 @@ func (b *Builder) upsertAffiliateLink(ctx context.Context, tx *sql.Tx, fID int64
 }
 
 func (b *Builder) insertPriceSnapshot(ctx context.Context, tx *sql.Tx, fID int64, p Product) error {
+	// Only insert if no price snapshot exists for this product+source+SKU
+	// Never overwrite live availability data from CSV imports or Amazon sync
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM flashlight_price_snapshots
-		WHERE flashlight_id = $1 AND source = 'amazon' AND source_sku = $2
-	`, fID, p.ASIN)
-	if err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `
 		INSERT INTO flashlight_price_snapshots (flashlight_id, source, source_sku, currency_code, price, in_stock, captured_at)
-		VALUES ($1, 'amazon', $2, 'USD', $3, TRUE, NOW())
+		SELECT $1, 'amazon', $2, 'USD', $3, TRUE, NOW()
+		WHERE NOT EXISTS (
+			SELECT 1 FROM flashlight_price_snapshots
+			WHERE flashlight_id = $1 AND source = 'amazon' AND source_sku = $2
+		)
 	`, fID, p.ASIN, p.PriceUSD)
 	return err
 }
