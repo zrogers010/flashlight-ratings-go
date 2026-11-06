@@ -166,8 +166,10 @@ LEFT JOIN latest_scores ls ON ls.flashlight_id = f.id
 LEFT JOIN battery_agg ba ON ba.flashlight_id = f.id
 LEFT JOIN use_case_agg uca ON uca.flashlight_id = f.id
 %s%s
+  AND lp.in_stock = TRUE
+  AND la.affiliate_url IS NOT NULL
+  AND la.affiliate_url != ''
 ORDER BY 
-	CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
 	%s %s,
 	f.id ASC
 LIMIT %d OFFSET %d
@@ -283,21 +285,16 @@ LIMIT %d OFFSET %d
 		}
 		
 		item := iws.item
-		// FLR-QA-01 fix: Check for non-in-stock status OR missing affiliate_url
-		// Catches "out_of_stock" AND "unknown" statuses, plus any items without valid buy buttons
+		// Filter out products without valid purchase CTAs (out of stock OR missing affiliate URL)
+		// Shopping/discovery listings show only currently purchasable products
 		hasValidAffiliateURL := item.AmazonURL != nil && *item.AmazonURL != ""
-		needsAlternate := item.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
+		isCurrentlyPurchasable := item.AvailabilityStatus == "in_stock" && hasValidAffiliateURL
 		
-		if needsAlternate {
-			alternate, err := s.findInStockAlternate(ctx, useCase, item.ID, iws.overallScore)
-			if err == nil && alternate != nil {
-				item.InStockAlternate = alternate
-				items = append(items, item)
-			}
-			// FLR-QA-01 follow-up: If no alternate, exclude from list (backend demotion)
-		} else {
+		if isCurrentlyPurchasable {
 			items = append(items, item)
 		}
+		// Out-of-stock products excluded from shopping listings
+		// Detail pages remain accessible via direct URLs
 	}
 
 	return items, total, nil
@@ -312,12 +309,26 @@ LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
 LEFT JOIN (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
-		p.price
+		p.price,
+		p.in_stock
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
 ) lp ON lp.flashlight_id = f.id
+LEFT JOIN (
+	SELECT DISTINCT ON (al.flashlight_id)
+		al.flashlight_id,
+		al.affiliate_url
+	FROM affiliate_links al
+	WHERE al.provider = 'amazon'
+	  AND al.region_code = 'US'
+	  AND al.is_active = TRUE
+	ORDER BY al.flashlight_id, al.is_primary DESC, al.updated_at DESC
+) la ON la.flashlight_id = f.id
 %s
+  AND lp.in_stock = TRUE
+  AND la.affiliate_url IS NOT NULL
+  AND la.affiliate_url != ''
 `, where)
 	var total int
 	if err := s.db.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
@@ -995,7 +1006,6 @@ ranked_data AS (
 		la.affiliate_url,
 		ROW_NUMBER() OVER (
 			ORDER BY
-				CASE WHEN lp.in_stock = FALSE THEN 1 ELSE 0 END ASC,
 				COALESCE(fs.score, 0) DESC,
 				f.id ASC
 		) AS rank_position,
@@ -1031,7 +1041,11 @@ ranked_data AS (
 		ORDER BY al.is_primary DESC, al.updated_at DESC, al.id DESC
 		LIMIT 1
 	) la ON TRUE
-	WHERE f.is_active = TRUE%s%s
+	WHERE f.is_active = TRUE
+	  AND lp.in_stock = TRUE
+	  AND la.affiliate_url IS NOT NULL
+	  AND la.affiliate_url != ''
+%s%s
 )
 SELECT
 	rank_position,
@@ -1113,43 +1127,52 @@ LIMIT $2 OFFSET $3
 		return nil, 0, err
 	}
 
-	// FLR-QA-01 nit #1 & #2: Find alternates and filter out OOS without alternates
+	// Filter out products without valid purchase CTAs (out of stock OR missing affiliate URL)
+	// Shopping/discovery listings show only currently purchasable products
 	out := make([]rankedResponse, 0, pageSize)
 	for _, iws := range candidates {
 		if len(out) >= pageSize {
-			break // Have enough eligible items
+			break
 		}
 		
 		item := iws.item
-		// FLR-QA-01 fix: Check for non-in-stock status OR missing affiliate_url
-		// Catches "out_of_stock" AND "unknown" statuses, plus any items without valid buy buttons
 		hasValidAffiliateURL := item.Flashlight.AmazonURL != nil && *item.Flashlight.AmazonURL != ""
-		needsAlternate := item.Flashlight.AvailabilityStatus != "in_stock" || !hasValidAffiliateURL
+		isCurrentlyPurchasable := item.Flashlight.AvailabilityStatus == "in_stock" && hasValidAffiliateURL
 		
-		if needsAlternate {
-			// FLR-QA-01 follow-up #3: For rankings use_case=overall, prefer item's own primary use_case
-			altUseCase := useCase
-			if useCase == "overall" {
-				// Look up the item's primary use_case to avoid recommending penlight/keychain/toy as alts
-				primaryUseCase, err := s.getFlashlightPrimaryUseCase(ctx, item.Flashlight.ID)
-				if err == nil && primaryUseCase != "" && !isSpecialtyUseCase(primaryUseCase) {
-					altUseCase = primaryUseCase
-				}
-			}
-			
-			// FLR-QA-01 nit #2: Pass overall_score for closest matching
-			alternate, err := s.findInStockAlternate(ctx, altUseCase, item.Flashlight.ID, iws.overallScore)
-			if err == nil && alternate != nil {
-				item.InStockAlternate = alternate
-				out = append(out, item)
-			}
-			// FLR-QA-01 nit #1: If no alternate, exclude from featured (demoted)
-		} else {
+		if isCurrentlyPurchasable {
 			out = append(out, item)
 		}
+		// Out-of-stock products excluded from rankings
 	}
 
-	countQuery := `SELECT COUNT(*) FROM flashlights WHERE is_active = TRUE`
+	// Count only in-stock products with active affiliate links
+	countQuery := `
+SELECT COUNT(*)
+FROM flashlights f
+JOIN flashlight_specs s ON s.flashlight_id = f.id
+LEFT JOIN (
+	SELECT DISTINCT ON (p.flashlight_id)
+		p.flashlight_id,
+		p.in_stock
+	FROM flashlight_price_snapshots p
+	WHERE p.currency_code = 'USD'
+	ORDER BY p.flashlight_id, p.captured_at DESC
+) lp ON lp.flashlight_id = f.id
+LEFT JOIN (
+	SELECT DISTINCT ON (al.flashlight_id)
+		al.flashlight_id,
+		al.affiliate_url
+	FROM affiliate_links al
+	WHERE al.provider = 'amazon'
+	  AND al.region_code = 'US'
+	  AND al.is_active = TRUE
+	ORDER BY al.flashlight_id, al.is_primary DESC, al.updated_at DESC
+) la ON la.flashlight_id = f.id
+WHERE f.is_active = TRUE
+  AND lp.in_stock = TRUE
+  AND la.affiliate_url IS NOT NULL
+  AND la.affiliate_url != ''
+`
 	var total int
 	if err := s.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, err
@@ -1499,7 +1522,12 @@ LIMIT 1
 }
 
 func (s *Server) finder(ctx context.Context, filters finderFilters, limit int) ([]finderRanking, error) {
-	clauses := []string{"f.is_active = TRUE"}
+	clauses := []string{
+		"f.is_active = TRUE",
+		"lp.in_stock = TRUE",
+		"la.affiliate_url IS NOT NULL",
+		"la.affiliate_url != ''",
+	}
 	args := make([]any, 0, 5)
 	argn := 1
 
