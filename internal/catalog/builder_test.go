@@ -67,6 +67,9 @@ func TestCatalogBuild_PreservesExistingPriceSnapshots(t *testing.T) {
 				Slug:      "test-product",
 				ASIN:      existingASIN,
 				PriceUSD:  99.99, // Different price
+				Specs: Specs{
+					MaxLumens: 1000,
+				},
 			},
 		},
 	}
@@ -157,6 +160,9 @@ func TestCatalogBuild_DoesNotOverwriteOOSStatus(t *testing.T) {
 				Slug:      "test-product-oos",
 				ASIN:      asin,
 				PriceUSD:  79.99,
+				Specs: Specs{
+					MaxLumens: 1500,
+				},
 			},
 		},
 	}
@@ -223,6 +229,9 @@ func TestCatalogBuild_NewProductGetsSnapshot(t *testing.T) {
 				Slug:      "test-catalog-product",
 				ASIN:      testASIN,
 				PriceUSD:  49.99,
+				Specs: Specs{
+					MaxLumens: 800,
+				},
 			},
 		},
 	}
