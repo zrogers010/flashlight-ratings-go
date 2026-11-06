@@ -246,7 +246,7 @@ INSERT INTO flashlight_specs (flashlight_id, max_lumens, max_candela, beam_dista
 SELECT f.id, 1000, 60000, 490, 120, 'IPX8', 145.0
 FROM flashlights f
 WHERE f.slug = 'acebeam-l19-2'
-  AND NOT EXISTS (SELECT 1 FROM flashlight_specs WHERE flashlight_id = f.id);
+ON CONFLICT (flashlight_id) DO NOTHING;
 
 INSERT INTO flashlight_battery_compatibility (flashlight_id, battery_type_id)
 SELECT f.id, bt.id
@@ -254,10 +254,7 @@ FROM flashlights f
 CROSS JOIN battery_types bt
 WHERE f.slug = 'acebeam-l19-2'
   AND bt.code = '18650'
-  AND NOT EXISTS (
-    SELECT 1 FROM flashlight_battery_compatibility fbc 
-    WHERE fbc.flashlight_id = f.id AND fbc.battery_type_id = bt.id
-  );
+ON CONFLICT (flashlight_id, battery_type_id) DO NOTHING;
 
 INSERT INTO flashlight_use_cases (flashlight_id, use_case_id, confidence)
 SELECT f.id, u.id, 0.95
@@ -265,10 +262,7 @@ FROM flashlights f
 CROSS JOIN use_cases u
 WHERE f.slug = 'acebeam-l19-2'
   AND u.slug = 'throw'
-  AND NOT EXISTS (
-    SELECT 1 FROM flashlight_use_cases fuc 
-    WHERE fuc.flashlight_id = f.id AND fuc.use_case_id = u.id
-  );
+ON CONFLICT (flashlight_id, use_case_id) DO NOTHING;
 
 INSERT INTO affiliate_links (flashlight_id, provider, region_code, affiliate_url, asin, is_active, is_primary)
 SELECT f.id, 'amazon', 'US', 'https://amazon.com/dp/B0ACEBEAM2', 'B0ACEBEAM2', TRUE, TRUE
