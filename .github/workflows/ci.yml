@@ -223,13 +223,27 @@ jobs:
           cd ..
           # Test OOS product OG image
           echo "Testing OOS product OG image..."
+          set +e
           HTTP_CODE=$(curl -s -o /tmp/oos-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/reviews/acebeam-l19-2/opengraph-image)
+          CURL_EXIT=$?
+          set -e
+          
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "❌ FAIL: curl exited with code $CURL_EXIT"
+            echo "Docker compose logs:"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
           OOS_STATUS="${HTTP_CODE}"
           OOS_CONTENT_TYPE=$(file -b --mime-type /tmp/oos-og.png 2>/dev/null || echo "unknown")
           OOS_SIZE=$(stat -c%s /tmp/oos-og.png 2>/dev/null || echo "0")
           
+          echo "Status: $OOS_STATUS, Type: $OOS_CONTENT_TYPE, Size: $OOS_SIZE bytes"
+          
           if [ "$OOS_STATUS" -ne 200 ]; then
             echo "❌ FAIL: OOS OG image returned $OOS_STATUS (expected 200)"
+            echo "Docker compose logs:"
             docker compose logs web | tail -100
             exit 1
           fi
