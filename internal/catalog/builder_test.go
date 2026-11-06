@@ -10,6 +10,10 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 func getTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 	dbURL := os.Getenv("DATABASE_URL")
@@ -68,10 +72,10 @@ func TestCatalogBuild_PreservesExistingPriceSnapshots(t *testing.T) {
 				ASIN:      existingASIN,
 				PriceUSD:  99.99, // Different price
 				Specs: Specs{
-					MaxLumens:  1000,
-					HasStrobe:  false,
-					HasMemory:  false,
-					HasLockout: false,
+					MaxLumens:      1000,
+					HasStrobe:      boolPtr(false),
+					HasMemoryMode:  boolPtr(false),
+					HasLockout:     boolPtr(false),
 				},
 			},
 		},
@@ -164,10 +168,10 @@ func TestCatalogBuild_DoesNotOverwriteOOSStatus(t *testing.T) {
 				ASIN:      asin,
 				PriceUSD:  79.99,
 				Specs: Specs{
-					MaxLumens:  1500,
-					HasStrobe:  false,
-					HasMemory:  false,
-					HasLockout: false,
+					MaxLumens:      1500,
+					HasStrobe:      boolPtr(false),
+					HasMemoryMode:  boolPtr(false),
+					HasLockout:     boolPtr(false),
 				},
 			},
 		},
@@ -236,10 +240,10 @@ func TestCatalogBuild_NewProductGetsSnapshot(t *testing.T) {
 				ASIN:      testASIN,
 				PriceUSD:  49.99,
 				Specs: Specs{
-					MaxLumens:  800,
-					HasStrobe:  false,
-					HasMemory:  false,
-					HasLockout: false,
+					MaxLumens:      800,
+					HasStrobe:      boolPtr(false),
+					HasMemoryMode:  boolPtr(false),
+					HasLockout:     boolPtr(false),
 				},
 			},
 		},
