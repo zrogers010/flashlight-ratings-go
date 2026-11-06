@@ -230,11 +230,16 @@ SELECT f.id, 'amazon', 'B09TZJ6CPN', 'USD', 54.99, TRUE
 FROM flashlights f
 WHERE f.slug = 'sofirn-if22a';
 
+-- Add Acebeam brand if not exists
+INSERT INTO brands (slug, name)
+VALUES ('acebeam', 'Acebeam')
+ON CONFLICT (slug) DO NOTHING;
+
 -- Add an out-of-stock product for testing OOS review pages
 INSERT INTO flashlights (slug, name, brand_id, is_active)
 SELECT 'acebeam-l19-2', 'L19 2.0', b.id, TRUE
 FROM brands b
-WHERE b.slug = 'wurkkos'
+WHERE b.slug = 'acebeam'
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO flashlight_specs (flashlight_id, max_lumens, max_candela, beam_distance_m, runtime_high_min, waterproof_rating, weight_g)
