@@ -13,6 +13,20 @@ jobs:
   go:
     name: Go tests & build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flashlight_test
+          POSTGRES_USER: flashlight_test
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +35,22 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Setup test database
+        env:
+          PGPASSWORD: test_password
+        run: |
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0001_initial_schema.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0002_market_intelligence.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0003_flashlight_detail_fields.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0004_intelligence_runs.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/migrations/0011_multi_merchant_offers.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/seeds/0001_scoring_profiles.sql
+          psql -h localhost -U flashlight_test -d flashlight_test -f db/seeds/0002_demo_flashlights.sql
+
       - name: Test
-        run: go test ./...
+        env:
+          DATABASE_URL: postgres://flashlight_test:test_password@localhost:5432/flashlight_test?sslmode=disable
+        run: go test -v ./...
 
       - name: Build binaries
         run: |
@@ -31,7 +59,7 @@ jobs:
           go build -o /tmp/scorejob ./cmd/scorejob
 
   web:
-    name: Web typecheck
+    name: Web typecheck & build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,6 +78,243 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Start test API with mixed stock data
+        run: |
+          cd ..
+          touch worker.env
+          docker compose up -d --build db api
+          
+          # Wait for API
+          for i in $(seq 1 60); do
+            if curl -sf "http://127.0.0.1:8080/flashlights?page=1&page_size=1" >/dev/null; then
+              echo "API ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Build with strict mode
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8080
+          API_BASE_URL: http://127.0.0.1:8080
+          SITE_URL: https://flashlightratings.com
+          REQUIRE_COMPARE_PAIRS: "1"
+        run: npm run build
+
+      - name: Verify route generation
+        run: |
+          # Count static product routes (.segments - can be files or dirs)
+          ROUTE_COUNT=$(find .next/server/app/reviews -mindepth 1 -maxdepth 1 -name "*.segments" 2>/dev/null | wc -l)
+          echo "Generated $ROUTE_COUNT product review routes"
+          
+          if [ "$ROUTE_COUNT" -lt 3 ]; then
+            echo "❌ FAIL: Expected at least 3 routes (2 in-stock + 1 OOS), got $ROUTE_COUNT"
+            find .next/server/app/reviews -mindepth 1 -maxdepth 1 2>/dev/null | sort
+            exit 1
+          fi
+          
+          # Verify OOS product route was generated
+          if [ ! -e ".next/server/app/reviews/acebeam-l19-2.segments" ]; then
+            echo "❌ FAIL: Out-of-stock product route (acebeam-l19-2.segments) not generated"
+            echo "Found routes:"
+            find .next/server/app/reviews -mindepth 1 -maxdepth 1 -name "*.segments" 2>/dev/null | sort
+            exit 1
+          fi
+          
+          echo "✓ PASS: $ROUTE_COUNT review routes generated including OOS products"
+
+      - name: Verify /flashlights/all-slugs endpoint
+        run: |
+          cd ..
+          SLUG_COUNT=$(curl -sf http://127.0.0.1:8080/flashlights/all-slugs | jq 'length')
+          echo "all-slugs returned $SLUG_COUNT products"
+          
+          if [ "$SLUG_COUNT" -lt 3 ]; then
+            echo "❌ FAIL: Expected at least 3 slugs (2 in-stock + 1 OOS), got $SLUG_COUNT"
+            exit 1
+          fi
+          
+          # Verify OOS product is in all-slugs
+          HAS_OOS=$(curl -sf http://127.0.0.1:8080/flashlights/all-slugs | jq '.[] | select(.slug == "acebeam-l19-2")')
+          if [ -z "$HAS_OOS" ]; then
+            echo "❌ FAIL: Out-of-stock product (acebeam-l19-2) not in all-slugs"
+            exit 1
+          fi
+          
+          echo "✓ PASS: all-slugs endpoint returns $SLUG_COUNT products including OOS"
+
+      - name: Verify filtered endpoint excludes OOS
+        run: |
+          cd ..
+          FILTERED_COUNT=$(curl -sf http://127.0.0.1:8080/flashlights | jq '.total')
+          echo "Filtered endpoint returned $FILTERED_COUNT products"
+          SLUG_COUNT=$(curl -sf http://127.0.0.1:8080/flashlights/all-slugs | jq 'length')
+          
+          # With 3 total products (2 in-stock, 1 OOS), filtered should be 2
+          if [ "$FILTERED_COUNT" -ne 2 ]; then
+            echo "❌ FAIL: Expected 2 in-stock products, got $FILTERED_COUNT"
+            exit 1
+          fi
+          
+          if [ "$SLUG_COUNT" -ne 3 ]; then
+            echo "❌ FAIL: Expected 3 total products, got $SLUG_COUNT"
+            exit 1
+          fi
+          
+          # Verify OOS product is NOT in filtered listing
+          HAS_OOS=$(curl -sf http://127.0.0.1:8080/flashlights | jq '.items[] | select(.slug == "acebeam-l19-2")')
+          if [ -n "$HAS_OOS" ]; then
+            echo "❌ FAIL: Out-of-stock product should not be in filtered listing"
+            exit 1
+          fi
+          
+          echo "✓ PASS: Filtering working correctly (2 in-stock, 1 OOS excluded)"
+      
+      - name: Start web server
+        run: |
+          cd ..
+          docker compose up -d web
+          
+          # Wait for web server
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000 >/dev/null 2>&1; then
+              echo "Web server ready"
+              break
+            fi
+            sleep 2
+          done
+      
+      - name: Test OOS review page HTTP 200
+        run: |
+          cd ..
+          # Test that OOS review page returns 200 (not 404)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/reviews/acebeam-l19-2)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "❌ FAIL: OOS review page returned $STATUS (expected 200)"
+            docker compose logs web | tail -50
+            exit 1
+          fi
+          
+          # Verify it shows unavailable status (not a buy button)
+          CONTENT=$(curl -sf http://127.0.0.1:3000/reviews/acebeam-l19-2)
+          if echo "$CONTENT" | grep -qi "currently unavailable\|out of stock"; then
+            echo "✓ PASS: OOS review page shows unavailable status"
+          else
+            echo "⚠️  WARNING: Could not verify unavailable message in response"
+          fi
+          
+          echo "✓ PASS: Out-of-stock review page returns HTTP 200"
+      
+      - name: Test in-stock review pages
+        run: |
+          cd ..
+          # Verify in-stock products also work
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/reviews/wurkkos-fc11c)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "❌ FAIL: In-stock review page returned $STATUS"
+            exit 1
+          fi
+          
+          echo "✓ PASS: In-stock review pages return HTTP 200"
+      
+      - name: Test OpenGraph images
+        run: |
+          cd ..
+          # Test OOS product OG image
+          echo "Testing OOS product OG image..."
+          set +e
+          HTTP_CODE=$(curl -s -o /tmp/oos-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/reviews/acebeam-l19-2/opengraph-image)
+          CURL_EXIT=$?
+          set -e
+          
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "❌ FAIL: curl exited with code $CURL_EXIT"
+            echo "Docker compose logs:"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          OOS_STATUS="${HTTP_CODE}"
+          OOS_CONTENT_TYPE=$(file -b --mime-type /tmp/oos-og.png 2>/dev/null || echo "unknown")
+          OOS_SIZE=$(stat -c%s /tmp/oos-og.png 2>/dev/null || echo "0")
+          
+          echo "Status: $OOS_STATUS, Type: $OOS_CONTENT_TYPE, Size: $OOS_SIZE bytes"
+          
+          if [ "$OOS_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: OOS OG image returned $OOS_STATUS (expected 200)"
+            echo "Docker compose logs:"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$OOS_CONTENT_TYPE" =~ "image/png" && ! "$OOS_CONTENT_TYPE" =~ "png" ]]; then
+            echo "❌ FAIL: OOS OG image wrong content-type: $OOS_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$OOS_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: OOS OG image too small: $OOS_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: OOS OG image OK ($OOS_SIZE bytes, $OOS_CONTENT_TYPE)"
+          
+          # Test in-stock product OG image
+          echo "Testing in-stock product OG image..."
+          HTTP_CODE=$(curl -s -o /tmp/in-stock-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/reviews/wurkkos-fc11c/opengraph-image)
+          IN_STOCK_STATUS="${HTTP_CODE}"
+          IN_STOCK_CONTENT_TYPE=$(file -b --mime-type /tmp/in-stock-og.png 2>/dev/null || echo "unknown")
+          IN_STOCK_SIZE=$(stat -c%s /tmp/in-stock-og.png 2>/dev/null || echo "0")
+          
+          if [ "$IN_STOCK_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: In-stock OG image returned $IN_STOCK_STATUS (expected 200)"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$IN_STOCK_CONTENT_TYPE" =~ "image/png" && ! "$IN_STOCK_CONTENT_TYPE" =~ "png" ]]; then
+            echo "❌ FAIL: In-stock OG image wrong content-type: $IN_STOCK_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$IN_STOCK_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: In-stock OG image too small: $IN_STOCK_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: In-stock OG image OK ($IN_STOCK_SIZE bytes, $IN_STOCK_CONTENT_TYPE)"
+          
+          # Test compare page OG image
+          echo "Testing compare page OG image..."
+          HTTP_CODE=$(curl -s -o /tmp/compare-og.png -w "%{http_code}" --max-time 30 http://127.0.0.1:3000/compare/acebeam-l19-2-vs-wurkkos-fc11c/opengraph-image)
+          COMPARE_STATUS="${HTTP_CODE}"
+          COMPARE_CONTENT_TYPE=$(file -b --mime-type /tmp/compare-og.png 2>/dev/null || echo "unknown")
+          COMPARE_SIZE=$(stat -c%s /tmp/compare-og.png 2>/dev/null || echo "0")
+          
+          if [ "$COMPARE_STATUS" -ne 200 ]; then
+            echo "❌ FAIL: Compare OG image returned $COMPARE_STATUS (expected 200)"
+            docker compose logs web | tail -100
+            exit 1
+          fi
+          
+          if [[ ! "$COMPARE_CONTENT_TYPE" =~ "image/png" && ! "$COMPARE_CONTENT_TYPE" =~ "png" ]]; then
+            echo "❌ FAIL: Compare OG image wrong content-type: $COMPARE_CONTENT_TYPE"
+            exit 1
+          fi
+          
+          if [ "$COMPARE_SIZE" -lt 1000 ]; then
+            echo "❌ FAIL: Compare OG image too small: $COMPARE_SIZE bytes"
+            exit 1
+          fi
+          
+          echo "✓ PASS: Compare OG image OK ($COMPARE_SIZE bytes, $COMPARE_CONTENT_TYPE)"
+
+      - name: Tear down
+        if: always()
+        run: |
+          cd ..
+          docker compose down -v
 
   api-smoke:
     name: API + Postgres smoke

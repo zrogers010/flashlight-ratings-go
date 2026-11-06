@@ -286,10 +286,7 @@ export async function fetchBrandBySlug(slug: string) {
 }
 
 export async function fetchFlashlightBySlug(slug: string): Promise<FlashlightDetail> {
-  const listing = await fetchFlashlights({ q: slug, pageSize: 1 });
-  const match = listing.items.find((item) => item.slug === slug);
-  if (!match) throw new Error(`Flashlight not found: ${slug}`);
-  return fetchFlashlightByID(String(match.id));
+  return getJSON<FlashlightDetail>(`/flashlights/by-slug/${encodeURIComponent(slug)}`);
 }
 
 export async function fetchAllSlugs(): Promise<{ 
@@ -302,7 +299,7 @@ export async function fetchAllSlugs(): Promise<{
   throw_score?: number;
   flood_score?: number;
 }[]> {
-  const allSlugs: { 
+  return getJSON<{ 
     slug: string; 
     id: number;
     overall_score?: number;
@@ -311,27 +308,7 @@ export async function fetchAllSlugs(): Promise<{
     value_score?: number;
     throw_score?: number;
     flood_score?: number;
-  }[] = [];
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore) {
-    const listing = await fetchFlashlights({ page, pageSize: 100 });
-    allSlugs.push(...listing.items.map((item) => ({ 
-      slug: item.slug, 
-      id: item.id,
-      overall_score: item.overall_score,
-      tactical_score: item.tactical_score,
-      edc_score: item.edc_score,
-      value_score: item.value_score,
-      throw_score: item.throw_score,
-      flood_score: item.flood_score,
-    })));
-    hasMore = page < listing.total_pages;
-    page++;
-  }
-
-  return allSlugs;
+  }[]>('/flashlights/all-slugs');
 }
 
 export async function createIntelligenceRun(input: IntelligenceRunInput) {

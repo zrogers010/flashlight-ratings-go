@@ -13,6 +13,17 @@ import (
 	"time"
 )
 
+type slugItem struct {
+	Slug          string   `json:"slug"`
+	ID            int64    `json:"id"`
+	OverallScore  *float64 `json:"overall_score,omitempty"`
+	TacticalScore *float64 `json:"tactical_score,omitempty"`
+	EDCScore      *float64 `json:"edc_score,omitempty"`
+	ValueScore    *float64 `json:"value_score,omitempty"`
+	ThrowScore    *float64 `json:"throw_score,omitempty"`
+	FloodScore    *float64 `json:"flood_score,omitempty"`
+}
+
 type flashlightFilters struct {
 	BatteryType string
 	UseCase     string
@@ -696,6 +707,450 @@ WHERE f.id = $1
 			}
 		}
 	}
+	
+	return item, nil
+}
+
+func (s *Server) getFlashlightBySlugUnfiltered(ctx context.Context, slug string) (flashlightDetail, error) {
+	query := `
+WITH latest_run AS (
+	SELECT id
+	FROM scoring_runs
+	WHERE status = 'completed'
+	ORDER BY completed_at DESC NULLS LAST, id DESC
+	LIMIT 1
+),
+latest_price AS (
+	SELECT p.flashlight_id, p.price, p.in_stock, p.captured_at
+	FROM flashlight_price_snapshots p
+	WHERE p.flashlight_id = (SELECT id FROM flashlights WHERE slug = $1 AND is_active = TRUE)
+	  AND p.currency_code = 'USD'
+	ORDER BY p.captured_at DESC, p.id DESC
+	LIMIT 1
+),
+latest_amazon AS (
+	SELECT aps.flashlight_id, aps.rating_count, aps.average_rating, aps.captured_at
+	FROM amazon_product_snapshots aps
+	WHERE aps.flashlight_id = (SELECT id FROM flashlights WHERE slug = $1 AND is_active = TRUE)
+	ORDER BY aps.captured_at DESC
+	LIMIT 1
+),
+latest_affiliate AS (
+	SELECT a.flashlight_id, a.affiliate_url, a.asin
+	FROM affiliate_links a
+	WHERE a.flashlight_id = (SELECT id FROM flashlights WHERE slug = $1 AND is_active = TRUE)
+	  AND a.provider = 'amazon'
+	  AND a.region_code = 'US'
+	  AND a.is_active = TRUE
+	ORDER BY a.is_primary DESC, a.updated_at DESC, a.id DESC
+	LIMIT 1
+),
+latest_scores AS (
+	SELECT
+		MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
+		MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
+		MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
+		MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
+		MAX(CASE WHEN sp.slug = 'throw' THEN fs.score END) AS throw_score,
+		MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score,
+		(
+			SELECT fs2.metric_breakdown
+			FROM flashlight_scores fs2
+			JOIN scoring_profiles sp2 ON sp2.id = fs2.profile_id
+			WHERE fs2.run_id = (SELECT id FROM latest_run)
+			  AND fs2.flashlight_id = (SELECT id FROM flashlights WHERE slug = $1 AND is_active = TRUE)
+			  AND sp2.slug = 'overall'
+			LIMIT 1
+		) AS metric_breakdown
+	FROM flashlight_scores fs
+	JOIN scoring_profiles sp ON sp.id = fs.profile_id
+	JOIN latest_run lr ON lr.id = fs.run_id
+	WHERE fs.flashlight_id = (SELECT id FROM flashlights WHERE slug = $1 AND is_active = TRUE)
+)
+SELECT
+	f.id,
+	b.name,
+	f.name,
+	f.slug,
+	f.model_code,
+	b.slug,
+	b.website_url,
+	b.country_code,
+	EXTRACT(YEAR FROM f.launch_date)::INTEGER,
+	f.msrp_usd,
+	f.manufacturer_url,
+	f.description,
+	(
+		SELECT m.url
+		FROM flashlight_media m
+		WHERE m.flashlight_id = f.id
+		  AND m.media_type = 'image'
+		ORDER BY m.sort_order ASC, m.id ASC
+		LIMIT 1
+	) AS image_url,
+	(SELECT affiliate_url FROM latest_affiliate),
+	(SELECT asin FROM latest_affiliate),
+	s.max_lumens,
+	s.sustained_lumens,
+	s.max_candela,
+	s.beam_distance_m,
+	s.runtime_low_min,
+	s.runtime_medium_min,
+	s.runtime_high_min,
+	s.runtime_turbo_min,
+	s.runtime_500_min,
+	s.turbo_stepdown_sec,
+	s.beam_pattern,
+	s.recharge_type,
+	s.battery_replaceable,
+	s.waterproof_rating,
+	s.weight_g,
+	s.length_mm,
+	s.head_diameter_mm,
+	s.body_diameter_mm,
+	s.impact_resistance_m,
+	s.body_material,
+	s.usb_c_rechargeable,
+	s.battery_included,
+	s.battery_rechargeable,
+	s.has_strobe,
+	s.has_memory_mode,
+	s.has_lockout,
+	s.has_moonlight_mode,
+	s.has_magnetic_tailcap,
+	s.has_pocket_clip,
+	s.switch_type,
+	s.led_model,
+	s.cri,
+	s.cct_min_k,
+	s.cct_max_k,
+	(SELECT price FROM latest_price),
+	(SELECT in_stock FROM latest_price),
+	(SELECT captured_at FROM latest_price),
+	(SELECT rating_count FROM latest_amazon),
+	(SELECT average_rating FROM latest_amazon),
+	(SELECT captured_at FROM latest_amazon),
+	(SELECT overall_score FROM latest_scores),
+	(SELECT tactical_score FROM latest_scores),
+	(SELECT edc_score FROM latest_scores),
+	(SELECT value_score FROM latest_scores),
+	(SELECT throw_score FROM latest_scores),
+	(SELECT flood_score FROM latest_scores),
+	(SELECT metric_breakdown FROM latest_scores),
+	COALESCE(
+		(
+			SELECT json_agg(bt.code ORDER BY bt.code)
+			FROM flashlight_battery_compatibility fbc
+			JOIN battery_types bt ON bt.id = fbc.battery_type_id
+			WHERE fbc.flashlight_id = f.id
+		),
+		'[]'::json
+	) AS battery_types,
+	COALESCE(
+		(
+			SELECT json_agg(m.url ORDER BY m.sort_order, m.id)
+			FROM flashlight_media m
+			WHERE m.flashlight_id = f.id
+			  AND m.media_type = 'image'
+		),
+		'[]'::json
+	) AS image_urls,
+	COALESCE(
+		(
+			SELECT json_agg(
+				json_build_object(
+					'name', fm.mode_name,
+					'output_lumens', fm.output_lumens,
+					'runtime_min', fm.runtime_min,
+					'candela', fm.candela,
+					'beam_distance_m', fm.beam_distance_m
+				)
+				ORDER BY fm.mode_order ASC, fm.id ASC
+			)
+			FROM flashlight_modes fm
+			WHERE fm.flashlight_id = f.id
+		),
+		'[]'::json
+	) AS modes,
+	COALESCE(
+		(
+			SELECT json_agg(u.slug ORDER BY u.slug)
+			FROM flashlight_use_cases fuc
+			JOIN use_cases u ON u.id = fuc.use_case_id
+			WHERE fuc.flashlight_id = f.id
+		),
+		'[]'::json
+	) AS use_case_tags
+FROM flashlights f
+JOIN brands b ON b.id = f.brand_id
+LEFT JOIN flashlight_specs s ON s.flashlight_id = f.id
+WHERE f.slug = $1
+  AND f.is_active = TRUE
+`
+
+	var (
+		item                                                                                                                                                        flashlightDetail
+		modelCode, desc, imageURL, ip, amazonURL, asin, switchType, ledModel, beamPattern, rechargeType, bodyMaterial, brandSlug, brandWebsiteURL, brandCountryCode, manufacturerURL sql.NullString
+		releaseYear, maxLumens, sustainedLumens, maxCandela, beam, runtimeLow, runtimeMedium, runtimeHi, runtimeTurbo, runtime500, turboStepdown, cri               sql.NullInt64
+		cctMinK, cctMaxK                                                                                                                                            sql.NullInt64
+		msrpUSD, weight, lengthMM, headMM, bodyMM, impact, price, amazonAvgRating, overall, tactical, edc, value, throw, flood                                      sql.NullFloat64
+		batteryReplaceable, usbC, batteryIncluded, batteryRechargeable, amazonInStock                                                                               sql.NullBool
+		hasStrobe, hasMemoryMode, hasLockout, hasMoonlight, hasMagTailcap, hasPocketClip                                                                            sql.NullBool
+		priceUpdatedAt, amazonSyncedAt                                                                                                                              sql.NullTime
+		amazonRatingCount                                                                                                                                           sql.NullInt64
+		batteryTypesJSON, imageURLsJSON, modesJSON, useCaseTagsJSON, metricBreakdownJSON                                                                            []byte
+	)
+
+	if err := s.db.QueryRowContext(ctx, query, slug).Scan(
+		&item.ID,
+		&item.Brand,
+		&item.Name,
+		&item.Slug,
+		&modelCode,
+		&brandSlug,
+		&brandWebsiteURL,
+		&brandCountryCode,
+		&releaseYear,
+		&msrpUSD,
+		&manufacturerURL,
+		&desc,
+		&imageURL,
+		&amazonURL,
+		&asin,
+		&maxLumens,
+		&sustainedLumens,
+		&maxCandela,
+		&beam,
+		&runtimeLow,
+		&runtimeMedium,
+		&runtimeHi,
+		&runtimeTurbo,
+		&runtime500,
+		&turboStepdown,
+		&beamPattern,
+		&rechargeType,
+		&batteryReplaceable,
+		&ip,
+		&weight,
+		&lengthMM,
+		&headMM,
+		&bodyMM,
+		&impact,
+		&bodyMaterial,
+		&usbC,
+		&batteryIncluded,
+		&batteryRechargeable,
+		&hasStrobe,
+		&hasMemoryMode,
+		&hasLockout,
+		&hasMoonlight,
+		&hasMagTailcap,
+		&hasPocketClip,
+		&switchType,
+		&ledModel,
+		&cri,
+		&cctMinK,
+		&cctMaxK,
+		&price,
+		&amazonInStock,
+		&priceUpdatedAt,
+		&amazonRatingCount,
+		&amazonAvgRating,
+		&amazonSyncedAt,
+		&overall,
+		&tactical,
+		&edc,
+		&value,
+		&throw,
+		&flood,
+		&metricBreakdownJSON,
+		&batteryTypesJSON,
+		&imageURLsJSON,
+		&modesJSON,
+		&useCaseTagsJSON,
+	); err != nil {
+		return flashlightDetail{}, err
+	}
+
+	if modelCode.Valid {
+		item.ModelCode = &modelCode.String
+	}
+	if brandSlug.Valid {
+		item.BrandSlug = &brandSlug.String
+	}
+	if brandWebsiteURL.Valid {
+		item.BrandWebsiteURL = &brandWebsiteURL.String
+	}
+	if brandCountryCode.Valid {
+		item.BrandCountryCode = &brandCountryCode.String
+	}
+	if releaseYear.Valid {
+		item.ReleaseYear = &releaseYear.Int64
+	}
+	if msrpUSD.Valid {
+		item.MSRPUSD = &msrpUSD.Float64
+	}
+	if manufacturerURL.Valid {
+		item.ManufacturerURL = &manufacturerURL.String
+	}
+	if desc.Valid {
+		item.Description = &desc.String
+	}
+	if imageURL.Valid {
+		item.ImageURL = &imageURL.String
+	}
+	if amazonURL.Valid {
+		item.AmazonURL = &amazonURL.String
+	}
+	if asin.Valid {
+		item.ASIN = &asin.String
+	}
+	if maxLumens.Valid {
+		item.MaxLumens = &maxLumens.Int64
+	}
+	if sustainedLumens.Valid {
+		item.SustainedLumens = &sustainedLumens.Int64
+	}
+	if maxCandela.Valid {
+		item.MaxCandela = &maxCandela.Int64
+	}
+	if beam.Valid {
+		item.BeamDistanceM = &beam.Int64
+	}
+	if runtimeLow.Valid {
+		item.RuntimeLowMin = &runtimeLow.Int64
+	}
+	if runtimeMedium.Valid {
+		item.RuntimeMediumMin = &runtimeMedium.Int64
+	}
+	if runtimeHi.Valid {
+		item.RuntimeHighMin = &runtimeHi.Int64
+	}
+	if runtimeTurbo.Valid {
+		item.RuntimeTurboMin = &runtimeTurbo.Int64
+	}
+	if runtime500.Valid {
+		item.Runtime500Min = &runtime500.Int64
+	}
+	if turboStepdown.Valid {
+		item.TurboStepdownSec = &turboStepdown.Int64
+	}
+	if beamPattern.Valid {
+		item.BeamPattern = &beamPattern.String
+	}
+	if rechargeType.Valid {
+		item.RechargeType = &rechargeType.String
+	}
+	if batteryReplaceable.Valid {
+		item.BatteryReplaceable = &batteryReplaceable.Bool
+	}
+	if ip.Valid {
+		item.Waterproof = &ip.String
+	}
+	if weight.Valid {
+		item.WeightG = &weight.Float64
+	}
+	if lengthMM.Valid {
+		item.LengthMM = &lengthMM.Float64
+	}
+	if headMM.Valid {
+		item.HeadDiameterMM = &headMM.Float64
+	}
+	if bodyMM.Valid {
+		item.BodyDiameterMM = &bodyMM.Float64
+	}
+	if impact.Valid {
+		item.ImpactResistance = &impact.Float64
+	}
+	if bodyMaterial.Valid {
+		item.BodyMaterial = &bodyMaterial.String
+	}
+	if usbC.Valid {
+		item.USBCRechargeable = &usbC.Bool
+	}
+	if batteryIncluded.Valid {
+		item.BatteryIncluded = &batteryIncluded.Bool
+	}
+	if batteryRechargeable.Valid {
+		item.BatteryRech = &batteryRechargeable.Bool
+	}
+	if hasStrobe.Valid {
+		item.HasStrobe = &hasStrobe.Bool
+	}
+	if hasMemoryMode.Valid {
+		item.HasMemoryMode = &hasMemoryMode.Bool
+	}
+	if hasLockout.Valid {
+		item.HasLockout = &hasLockout.Bool
+	}
+	if hasMoonlight.Valid {
+		item.HasMoonlightMode = &hasMoonlight.Bool
+	}
+	if hasMagTailcap.Valid {
+		item.HasMagTailcap = &hasMagTailcap.Bool
+	}
+	if hasPocketClip.Valid {
+		item.HasPocketClip = &hasPocketClip.Bool
+	}
+	if switchType.Valid {
+		item.SwitchType = &switchType.String
+	}
+	if ledModel.Valid {
+		item.LEDModel = &ledModel.String
+	}
+	if cri.Valid {
+		item.CRI = &cri.Int64
+	}
+	if cctMinK.Valid {
+		item.CCTMinK = &cctMinK.Int64
+	}
+	if cctMaxK.Valid {
+		item.CCTMaxK = &cctMaxK.Int64
+	}
+	if price.Valid {
+		item.PriceUSD = &price.Float64
+	}
+	if amazonInStock.Valid {
+		item.InStock = &amazonInStock.Bool
+	}
+	if priceUpdatedAt.Valid {
+		s := priceUpdatedAt.Time.UTC().Format(time.RFC3339)
+		item.PriceLastUpdatedAt = &s
+	}
+	if amazonRatingCount.Valid {
+		item.AmazonRatingCount = &amazonRatingCount.Int64
+	}
+	if amazonAvgRating.Valid {
+		item.AmazonAverageRating = &amazonAvgRating.Float64
+	}
+	if amazonSyncedAt.Valid {
+		s := amazonSyncedAt.Time.UTC().Format(time.RFC3339)
+		item.AmazonLastSyncedAt = &s
+	}
+	if overall.Valid {
+		item.OverallScore = &overall.Float64
+	}
+	if tactical.Valid {
+		item.TacticalScore = &tactical.Float64
+	}
+	if edc.Valid {
+		item.EDCScore = &edc.Float64
+	}
+	if value.Valid {
+		item.ValueScore = &value.Float64
+	}
+	if throw.Valid {
+		item.ThrowScore = &throw.Float64
+	}
+	if flood.Valid {
+		item.FloodScore = &flood.Float64
+	}
+	item.AvailabilityStatus = availabilityStatus(amazonInStock)
+	item.MetricBreakdown = decodeMetricBreakdown(metricBreakdownJSON)
+	item.BatteryTypes = decodeJSONStringArray(batteryTypesJSON)
+	item.ImageURLs = decodeJSONStringArray(imageURLsJSON)
+	item.Modes = decodeModesJSON(modesJSON)
+	item.UseCaseTags = decodeJSONStringArray(useCaseTagsJSON)
 	
 	return item, nil
 }
@@ -1559,7 +2014,8 @@ WITH latest_run AS (
 latest_price AS (
 	SELECT DISTINCT ON (p.flashlight_id)
 		p.flashlight_id,
-		p.price
+		p.price,
+		p.in_stock
 	FROM flashlight_price_snapshots p
 	WHERE p.currency_code = 'USD'
 	ORDER BY p.flashlight_id, p.captured_at DESC
@@ -2166,6 +2622,78 @@ WHERE b.slug = $1
 
 func round1(v float64) float64 {
 	return math.Round(v*10) / 10
+}
+
+func (s *Server) getAllSlugs(ctx context.Context) ([]slugItem, error) {
+	query := `
+WITH latest_run AS (
+	SELECT id
+	FROM scoring_runs
+	WHERE status = 'completed'
+	ORDER BY completed_at DESC NULLS LAST, id DESC
+	LIMIT 1
+)
+SELECT 
+	f.id,
+	f.slug,
+	MAX(CASE WHEN sp.slug = 'overall' THEN fs.score END) AS overall_score,
+	MAX(CASE WHEN sp.slug = 'tactical' THEN fs.score END) AS tactical_score,
+	MAX(CASE WHEN sp.slug = 'edc' THEN fs.score END) AS edc_score,
+	MAX(CASE WHEN sp.slug = 'value' THEN fs.score END) AS value_score,
+	MAX(CASE WHEN sp.slug = 'throw' THEN fs.score END) AS throw_score,
+	MAX(CASE WHEN sp.slug = 'flood' THEN fs.score END) AS flood_score
+FROM flashlights f
+LEFT JOIN flashlight_scores fs ON fs.flashlight_id = f.id AND fs.run_id = (SELECT id FROM latest_run)
+LEFT JOIN scoring_profiles sp ON sp.id = fs.profile_id
+WHERE f.is_active = TRUE
+GROUP BY f.id, f.slug
+ORDER BY f.id ASC
+`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	slugs := make([]slugItem, 0)
+	for rows.Next() {
+		var item slugItem
+		var overall, tactical, edc, value, throw, flood sql.NullFloat64
+		if err := rows.Scan(
+			&item.ID,
+			&item.Slug,
+			&overall,
+			&tactical,
+			&edc,
+			&value,
+			&throw,
+			&flood,
+		); err != nil {
+			return nil, err
+		}
+		if overall.Valid {
+			item.OverallScore = &overall.Float64
+		}
+		if tactical.Valid {
+			item.TacticalScore = &tactical.Float64
+		}
+		if edc.Valid {
+			item.EDCScore = &edc.Float64
+		}
+		if value.Valid {
+			item.ValueScore = &value.Float64
+		}
+		if throw.Valid {
+			item.ThrowScore = &throw.Float64
+		}
+		if flood.Valid {
+			item.FloodScore = &flood.Float64
+		}
+		slugs = append(slugs, item)
+	}
+
+	return slugs, rows.Err()
 }
 
 func buildFlashlightWhere(f flashlightFilters) (string, []any) {
