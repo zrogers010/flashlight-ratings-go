@@ -217,8 +217,8 @@ func TestCatalogBuild_NewProductGetsSnapshot(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create a test product with no price snapshots
-	testASIN := "B0TESTCATALOG"
+	// Create a test product with no price snapshots (valid Amazon ASIN format)
+	testASIN := "B09TESTCAT"
 	
 	// Clean up any existing test data
 	_, _ = db.ExecContext(ctx, `
